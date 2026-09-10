@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as CasinoRouteRouteImport } from './routes/_casino/route'
 import { Route as GuestRouteRouteImport } from './routes/_guest/route'
 import { Route as CasinoIndexRouteImport } from './routes/_casino/index'
+import { Route as GuestLoginRouteImport } from './routes/_guest/login'
 import { Route as GuestRegisterRouteImport } from './routes/_guest/register'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -28,6 +29,11 @@ const CasinoIndexRoute = CasinoIndexRouteImport.update({
   path: '/',
   getParentRoute: () => CasinoRouteRoute,
 } as any)
+const GuestLoginRoute = GuestLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => GuestRouteRoute,
+} as any)
 const GuestRegisterRoute = GuestRegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -41,11 +47,13 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof CasinoIndexRoute
+  '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof CasinoIndexRoute
+  '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -53,19 +61,21 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_casino': typeof CasinoRouteRouteWithChildren
   '/_guest': typeof GuestRouteRouteWithChildren
+  '/_guest/login': typeof GuestLoginRoute
   '/_guest/register': typeof GuestRegisterRoute
   '/_casino/': typeof CasinoIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/register' | '/api/auth/$'
+  fullPaths: '/' | '/login' | '/register' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/register' | '/api/auth/$'
+  to: '/' | '/login' | '/register' | '/api/auth/$'
   id:
     | '__root__'
     | '/_casino'
     | '/_guest'
+    | '/_guest/login'
     | '/_guest/register'
     | '/_casino/'
     | '/api/auth/$'
@@ -100,6 +110,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasinoIndexRouteImport
       parentRoute: typeof CasinoRouteRoute
     }
+    '/_guest/login': {
+      id: '/_guest/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof GuestLoginRouteImport
+      parentRoute: typeof GuestRouteRoute
+    }
     '/_guest/register': {
       id: '/_guest/register'
       path: '/register'
@@ -130,10 +147,12 @@ const CasinoRouteRouteWithChildren = CasinoRouteRoute._addFileChildren(
 )
 
 interface GuestRouteRouteChildren {
+  GuestLoginRoute: typeof GuestLoginRoute
   GuestRegisterRoute: typeof GuestRegisterRoute
 }
 
 const GuestRouteRouteChildren: GuestRouteRouteChildren = {
+  GuestLoginRoute: GuestLoginRoute,
   GuestRegisterRoute: GuestRegisterRoute,
 }
 

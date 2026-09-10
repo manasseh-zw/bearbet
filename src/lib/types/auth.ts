@@ -47,9 +47,15 @@ export const registrationFormSchema = registerPlayerInputSchema
 		path: ["confirmPassword"],
 	});
 
+export const loginFormSchema = z.object({
+	identifier: z.string().trim().min(1, "Enter your email or username"),
+	password: z.string().min(1, "Enter your password"),
+});
+
 export type PlayerProfileInput = z.infer<typeof playerProfileInputSchema>;
 export type RegisterPlayerInput = z.infer<typeof registerPlayerInputSchema>;
 export type RegistrationFormInput = z.infer<typeof registrationFormSchema>;
+export type LoginFormInput = z.infer<typeof loginFormSchema>;
 
 function isAtLeastAge(
 	dateOfBirth: string,

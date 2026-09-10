@@ -1,19 +1,34 @@
+import { useMutation } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import {
 	BadgePercentIcon,
+	ChevronUpIcon,
 	CircleHelpIcon,
 	CrownIcon,
 	DicesIcon,
 	GiftIcon,
+	LoaderCircleIcon,
+	LogInIcon,
+	LogOutIcon,
 	ReceiptTextIcon,
+	SettingsIcon,
 	ShieldCheckIcon,
 	UserRoundIcon,
+	UserRoundPlusIcon,
 	WalletCardsIcon,
 	XIcon,
 } from "lucide-react";
 import type { ComponentProps } from "react";
 import { Logo } from "#/components/brand";
 import { Button } from "#/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "#/components/ui/dropdown-menu";
 import {
 	Sidebar,
 	SidebarContent,
@@ -28,7 +43,7 @@ import {
 	useSidebar,
 } from "#/components/ui/sidebar";
 import { Skeleton } from "#/components/ui/skeleton";
-import { authClient } from "#/lib/auth-client";
+import { authClient, signOutPlayer } from "#/lib/auth-client";
 
 type NavigationItem = {
 	label: string;
@@ -106,7 +121,14 @@ function NavigationGroup({
 }
 
 function PlayerProfile() {
+	const navigate = useNavigate();
 	const { data: session, isPending } = authClient.useSession();
+	const logout = useMutation({
+		mutationFn: signOutPlayer,
+		onSuccess: async () => {
+			await navigate({ to: "/", replace: true });
+		},
+	});
 
 	if (isPending) {
 		return (
@@ -126,22 +148,79 @@ function PlayerProfile() {
 	const user = session?.user;
 
 	return (
-		<SidebarMenuButton
-			size="lg"
-			className="h-auto gap-3 rounded-lg px-2 py-2.5 hover:bg-sidebar-accent"
-		>
-			<span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-accent text-sidebar-foreground">
-				<UserRoundIcon className="size-4" />
-			</span>
-			<span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-				<span className="truncate font-medium text-sidebar-foreground">
-					{user?.name ?? "Player account"}
-				</span>
-				<span className="truncate text-xs text-sidebar-foreground/45">
-					{user?.email ?? "Sign in to play"}
-				</span>
-			</span>
-		</SidebarMenuButton>
+		<div>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<SidebarMenuButton
+						size="lg"
+						className="h-auto gap-3 rounded-lg px-2 py-2.5 hover:bg-sidebar-accent"
+					>
+						<span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-accent text-sidebar-foreground">
+							<UserRoundIcon className="size-4" />
+						</span>
+						<span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+							<span className="truncate font-medium text-sidebar-foreground">
+								{user?.name ?? "Player account"}
+							</span>
+							<span className="truncate text-xs text-sidebar-foreground/45">
+								{user?.email ?? "Sign in to play"}
+							</span>
+						</span>
+						<ChevronUpIcon className="ml-auto size-4 text-sidebar-foreground/40" />
+					</SidebarMenuButton>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent
+					side="top"
+					align="start"
+					className="w-(--radix-dropdown-menu-trigger-width)"
+				>
+					{user ? (
+						<>
+							<DropdownMenuItem disabled>
+								<SettingsIcon />
+								Settings
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								variant="destructive"
+								disabled={logout.isPending}
+								onSelect={(event) => {
+									event.preventDefault();
+									logout.mutate();
+								}}
+							>
+								{logout.isPending ? (
+									<LoaderCircleIcon className="animate-spin" />
+								) : (
+									<LogOutIcon />
+								)}
+								{logout.isPending ? "Signing out..." : "Log out"}
+							</DropdownMenuItem>
+						</>
+					) : (
+						<>
+							<DropdownMenuItem asChild>
+								<Link to="/login">
+									<LogInIcon />
+									Sign in
+								</Link>
+							</DropdownMenuItem>
+							<DropdownMenuItem asChild>
+								<Link to="/register">
+									<UserRoundPlusIcon />
+									Create account
+								</Link>
+							</DropdownMenuItem>
+						</>
+					)}
+				</DropdownMenuContent>
+			</DropdownMenu>
+			{logout.error ? (
+				<p className="mt-2 px-2 text-xs text-destructive" role="alert">
+					{logout.error.message}
+				</p>
+			) : null}
+		</div>
 	);
 }
 

@@ -12,19 +12,17 @@ The repository now has:
 - One-to-one player and wallet records, separate cash, bonus, and reserved balances, an immutable ledger schema, and retry-safe `$1,000.00` welcome credit provisioning.
 - A validated Better Auth registration endpoint that uses the user lifecycle hook to provision the player, wallet, and welcome credit. Email and username sign-in both resolve the persisted player identity.
 - A responsive registration screen using TanStack Form, shared Zod validation, and the typed Better Auth client. It reports field and server errors and disables repeated submissions while registration is pending.
+- A responsive email-or-username login screen and a session-aware player menu. Guests can open the login or registration routes; signed-in players can log out, while Settings remains unavailable until its route exists.
 - A dark-first Bearbet theme, local logo font, favicon package, fixed desktop sidebar, mobile drawer, and inset content panel.
 
 The registration tests prove that valid email or username credentials resolve the same player identity, provisioning stays idempotent, and invalid age input creates no identity.
 
-## Next slice: registration and session ownership
+## Next slice: session ownership
 
 Finish the identity flow before expanding the interface.
 
-1. Lock the minimum-age policy and registration failure behavior.
-2. Add login, logout, and session reads.
-3. Add the authenticated route layout and complete the guest-route session guard.
-4. Build the login screen.
-5. Test duplicate username and email, suspension, session persistence, and ownership boundaries.
+1. Add the authenticated route layout and complete the guest-route session guard.
+2. Test duplicate username and email, suspension, session persistence, logout, and ownership boundaries.
 
 Checkpoint:
 
