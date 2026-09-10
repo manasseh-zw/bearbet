@@ -12,24 +12,27 @@ import {
 	wallet,
 } from "#/server/infra/db/schema";
 
+import { registerPlayer } from "./player.registration";
 import { provisionPlayer, WELCOME_CREDIT_MINOR } from "./player.service";
 
 after(async () => {
 	await pool.end();
 });
 
-test("Better Auth identity is provisioned as one player and one funded wallet", async (context) => {
+test("player registration provisions one player and one funded wallet", async (context) => {
 	const uniquePart = crypto.randomUUID();
 	const email = `player-${uniquePart}@bearbet.test`;
 	const username = `player_${uniquePart.replaceAll("-", "").slice(0, 12)}`;
 
-	const signUp = await auth.api.signUpEmail({
-		body: {
-			email,
-			name: "Test Player",
-			password: "correct-horse-battery-staple",
-			username,
-		},
+	const signUp = await registerPlayer({
+		email,
+		password: "correct-horse-battery-staple",
+		username,
+		firstName: "Test",
+		lastName: "Player",
+		dateOfBirth: "1990-01-01",
+		countryCode: "zw",
+		currencyCode: "usd",
 	});
 
 	const userId = signUp.user.id;
@@ -50,16 +53,14 @@ test("Better Auth identity is provisioned as one player and one funded wallet", 
 		await db.delete(user).where(eq(user.id, userId));
 	});
 
-	const profile = {
+	await provisionPlayer({
 		userId,
 		firstName: "Test",
 		lastName: "Player",
 		dateOfBirth: "1990-01-01",
 		countryCode: "zw",
 		currencyCode: "usd",
-	};
-
-	await Promise.all([provisionPlayer(profile), provisionPlayer(profile)]);
+	});
 
 	const [playerCount] = await db
 		.select({ value: count() })
@@ -89,4 +90,46 @@ test("Better Auth identity is provisioned as one player and one funded wallet", 
 	assert.equal(storedWallet?.cashBalanceMinor, WELCOME_CREDIT_MINOR);
 	assert.equal(storedWallet?.currencyCode, "USD");
 	assert.equal(credentialAccount?.providerId, "credential");
+
+	const emailSignIn = await auth.api.signInEmail({
+		body: {
+			email,
+			password: "correct-horse-battery-staple",
+		},
+	});
+	const usernameSignIn = await auth.api.signInUsername({
+		body: {
+			username,
+			password: "correct-horse-battery-staple",
+		},
+	});
+
+	assert.equal(emailSignIn.user.id, userId);
+	assert.equal(usernameSignIn.user.id, userId);
+});
+
+test("invalid player registration is rejected before identity creation", async () => {
+	const uniquePart = crypto.randomUUID();
+	const email = `underage-${uniquePart}@bearbet.test`;
+
+	await assert.rejects(
+		registerPlayer({
+			email,
+			password: "correct-horse-battery-staple",
+			username: `underage_${uniquePart.replaceAll("-", "").slice(0, 12)}`,
+			firstName: "Test",
+			lastName: "Player",
+			dateOfBirth: new Date().toISOString().slice(0, 10),
+			countryCode: "zw",
+			currencyCode: "usd",
+		}),
+		/at least 18 years old/,
+	);
+
+	const [identityCount] = await db
+		.select({ value: count() })
+		.from(user)
+		.where(eq(user.email, email));
+
+	assert.equal(identityCount?.value, 0);
 });

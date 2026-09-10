@@ -2,10 +2,13 @@ import "@tanstack/react-start/server-only";
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createAuthMiddleware } from "better-auth/api";
 import { admin } from "better-auth/plugins/admin";
 import { username } from "better-auth/plugins/username";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 
+import { registerPlayerInputSchema } from "#/lib/types/auth";
+import { provisionPlayer } from "#/server/domains/player/player.service";
 import { env } from "#/server/env";
 import { db } from "#/server/infra/db";
 import * as schema from "#/server/infra/db/schema";
@@ -15,6 +18,7 @@ export const auth = betterAuth({
 	database: drizzleAdapter(db, {
 		provider: "pg",
 		schema,
+		transaction: true,
 	}),
 	trustedOrigins: [env.BETTER_AUTH_URL],
 	emailAndPassword: {
@@ -35,6 +39,35 @@ export const auth = betterAuth({
 			"/sign-in/email": { max: 5, window: 60 },
 			"/sign-in/username": { max: 5, window: 60 },
 			"/sign-up/email": { max: 3, window: 60 },
+		},
+	},
+	hooks: {
+		before: createAuthMiddleware(async (context) => {
+			if (context.path === "/sign-up/email") {
+				registerPlayerInputSchema.parse(context.body);
+			}
+		}),
+	},
+	databaseHooks: {
+		user: {
+			create: {
+				after: async (user, context) => {
+					if (context?.path !== "/sign-up/email") {
+						return;
+					}
+
+					const registration = registerPlayerInputSchema.parse(context.body);
+
+					await provisionPlayer({
+						userId: user.id,
+						firstName: registration.firstName,
+						lastName: registration.lastName,
+						dateOfBirth: registration.dateOfBirth,
+						countryCode: registration.countryCode,
+						currencyCode: registration.currencyCode,
+					});
+				},
+			},
 		},
 	},
 	plugins: [

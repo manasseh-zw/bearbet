@@ -10,20 +10,20 @@ The repository now has:
 - PostgreSQL through Docker Compose, Drizzle schemas, validated server environment variables, and working build, typecheck, lint, and test commands.
 - Better Auth backed by PostgreSQL with username and admin plugins, database rate limits, TanStack cookies, and server middleware.
 - One-to-one player and wallet records, separate cash, bonus, and reserved balances, an immutable ledger schema, and retry-safe `$1,000.00` welcome credit provisioning.
+- A validated player-registration server function that uses Better Auth's user lifecycle hook to provision the player, wallet, and welcome credit. Email and username sign-in both resolve the persisted player identity.
 - A dark-first Bearbet theme, local logo font, favicon package, fixed desktop sidebar, mobile drawer, and inset content panel.
 
-The current automated test proves that one Better Auth identity provisions one player, one wallet, and one welcome credit without duplication.
+The registration tests prove that valid email or username credentials resolve the same player identity, provisioning stays idempotent, and invalid age input creates no identity.
 
 ## Next slice: registration and session ownership
 
 Finish the identity flow before expanding the interface.
 
 1. Lock the minimum-age policy and registration failure behavior.
-2. Add the registration server function that creates the Better Auth user and provisions the player and wallet.
-3. Add login, logout, and session reads.
-4. Add the pathless guest and authenticated route layouts.
-5. Build registration and login screens inside the existing shell.
-6. Test retries, duplicate username and email, suspension, session persistence, and ownership boundaries.
+2. Add login, logout, and session reads.
+3. Add the pathless guest and authenticated route layouts.
+4. Build registration and login screens inside the existing shell.
+5. Test duplicate username and email, suspension, session persistence, and ownership boundaries.
 
 Checkpoint:
 

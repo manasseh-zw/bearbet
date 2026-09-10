@@ -157,6 +157,8 @@ Initial model:
 - `player` for first name, last name, date of birth, and country. Its `userId` is both its primary key and foreign key.
 - `wallet` owns the player's selected currency and balances.
 
+Public email registration validates the complete Bearbet player input before Better Auth creates an identity. Better Auth's `user.create.after` database hook then provisions the player, wallet, and welcome-credit ledger entry using the generated user ID. Better Auth commits its identity transaction before running the hook; the Bearbet records are atomic within their own retry-safe transaction. Protected player operations require both a valid session and its player record.
+
 The first admin comes from a seed script or an explicit environment-controlled bootstrap. Public registration can never request the admin role. An administrator needs a player record only when the administrator also participates as a player.
 
 ### Money
