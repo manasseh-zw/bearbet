@@ -11,6 +11,10 @@ Observed against a live self-registered Drakon agent during the Greenbear V0 pro
 - Dashboard probes for `user_balance`, `transaction_bet`, `transaction_win`, and `refund` passed, and Drakon displayed `Integração aprovada!`.
 - The prototype debits bets, credits wins, reverses compatible operations, and ignores identical callback retries.
 
+## Bearbet catalogue capture
+
+On 2026-09-10, Bearbet authenticated through its new Drakon adapter and captured 15,416 catalogue entries across 165 provider codes. The response includes `game_type`, `description`, `cover`, `banner`, `rtp`, demo compatibility, mobile, lobby, table, free-spin, technology, distribution, and status fields. Bearbet keeps the full response in a gitignored local evidence file and commits an 80-game normalized fixture selected from demo-compatible games with artwork.
+
 ## Undocumented live behavior
 
 ### Catalogue compatibility
