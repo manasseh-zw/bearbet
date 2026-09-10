@@ -27,6 +27,8 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "#/components/ui/sidebar";
+import { Skeleton } from "#/components/ui/skeleton";
+import { authClient } from "#/lib/auth-client";
 
 type NavigationItem = {
 	label: string;
@@ -103,6 +105,46 @@ function NavigationGroup({
 	);
 }
 
+function PlayerProfile() {
+	const { data: session, isPending } = authClient.useSession();
+
+	if (isPending) {
+		return (
+			<output
+				className="flex h-14 items-center gap-3 px-2"
+				aria-label="Loading player account"
+			>
+				<Skeleton className="size-9 shrink-0 rounded-lg bg-sidebar-accent" />
+				<div className="grid flex-1 gap-1.5">
+					<Skeleton className="h-3.5 w-24 bg-sidebar-accent" />
+					<Skeleton className="h-3 w-36 bg-sidebar-accent" />
+				</div>
+			</output>
+		);
+	}
+
+	const user = session?.user;
+
+	return (
+		<SidebarMenuButton
+			size="lg"
+			className="h-auto gap-3 rounded-lg px-2 py-2.5 hover:bg-sidebar-accent"
+		>
+			<span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-accent text-sidebar-foreground">
+				<UserRoundIcon className="size-4" />
+			</span>
+			<span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+				<span className="truncate font-medium text-sidebar-foreground">
+					{user?.name ?? "Player account"}
+				</span>
+				<span className="truncate text-xs text-sidebar-foreground/45">
+					{user?.email ?? "Sign in to play"}
+				</span>
+			</span>
+		</SidebarMenuButton>
+	);
+}
+
 export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
 	return (
 		<Sidebar
@@ -145,22 +187,7 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
 				<div className="p-4">
 					<SidebarMenu>
 						<SidebarMenuItem>
-							<SidebarMenuButton
-								size="lg"
-								className="h-auto gap-3 rounded-lg px-2 py-2.5 hover:bg-sidebar-accent"
-							>
-								<span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-accent text-sidebar-foreground">
-									<UserRoundIcon className="size-4" />
-								</span>
-								<span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-									<span className="truncate font-medium text-sidebar-foreground">
-										Player account
-									</span>
-									<span className="truncate text-xs text-sidebar-foreground/45">
-										Sign in to play
-									</span>
-								</span>
-							</SidebarMenuButton>
+							<PlayerProfile />
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</div>
