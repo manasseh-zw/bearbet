@@ -65,8 +65,8 @@ function GameCard({ game }: { game: FeaturedGame }) {
 export function GuestLobby() {
 	return (
 		<main className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-			<section className="grid overflow-hidden rounded-2xl border border-white/8 bg-card lg:grid-cols-[minmax(0,1.8fr)_minmax(19rem,0.8fr)]">
-				<div className="relative min-h-64 overflow-hidden sm:min-h-80 lg:min-h-[23rem]">
+			<section className="grid overflow-hidden rounded-2xl border border-white/8 bg-card lg:grid-cols-[minmax(0,2fr)_minmax(18rem,0.68fr)]">
+				<div className="relative min-h-56 overflow-hidden sm:min-h-64 lg:min-h-[19rem]">
 					<img
 						src="/images/bb_promotional_banner.png"
 						alt="Bearbet casino host surrounded by cards and casino tables"
@@ -76,17 +76,21 @@ export function GuestLobby() {
 					<div className="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/55 to-transparent lg:hidden" />
 				</div>
 
-				<div className="flex flex-col items-center justify-center border-t border-white/8 px-6 py-10 text-center lg:border-t-0 lg:border-l">
+				<div className="flex flex-col items-center justify-center border-t border-white/8 px-6 py-8 text-center lg:border-t-0 lg:border-l">
 					<p className="text-xs font-semibold tracking-[0.22em] text-primary uppercase">
 						The tables are open
 					</p>
-					<h1 className="mt-3 font-logo text-4xl leading-[0.95] text-foreground sm:text-5xl">
+					<h1 className="mt-3 font-logo text-3xl leading-[0.95] text-foreground sm:text-4xl">
 						Welcome to BearBet
 					</h1>
-					<p className="mt-4 max-w-sm text-sm leading-6 text-muted-foreground sm:text-base">
-						Create your account and find your next favourite game.
+					<p className="mt-4 whitespace-nowrap text-sm leading-6 text-muted-foreground">
+						Find your next favourite.
 					</p>
-					<Button asChild size="lg" className="mt-7 min-w-48">
+					<Button
+						asChild
+						size="lg"
+						className="mt-6 h-12 min-w-56 px-8 text-base font-bold"
+					>
 						<Link to="/register">
 							Register now <ArrowRightIcon />
 						</Link>
@@ -118,10 +122,10 @@ export function GuestLobby() {
 							description={card.description}
 							imageSrc={card.imageUrl}
 							imageAlt=""
-							className={`h-64 rounded-2xl border-white/8 hover:border-primary/80 sm:h-72 ${card.className}`}
+							className={`h-64 rounded-2xl border-white/8 hover:border-primary hover:bg-primary hover:bg-none hover:text-primary-foreground sm:h-72 ${card.className}`}
 							tiltProps={{ rotationFactor: 5 }}
 						>
-							<span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+							<span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-colors group-hover:text-primary-foreground">
 								<Icon className="size-4" /> {card.label}
 							</span>
 						</TiltCard>

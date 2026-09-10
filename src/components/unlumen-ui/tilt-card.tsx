@@ -62,7 +62,9 @@ export function TiltCard({
 						{title}
 					</h2>
 					{description && (
-						<p className="text-foreground/50 text-sm">{description}</p>
+						<p className="text-sm text-foreground/50 transition-colors group-hover:text-primary-foreground/70">
+							{description}
+						</p>
 					)}
 					{children && <div className="mt-2">{children}</div>}
 				</div>
