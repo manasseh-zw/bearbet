@@ -1,132 +1,100 @@
 # Bearbet implementation plan
 
-## Execution rule
+Build complete slices. Each phase must end with a visible user or admin outcome and automated proof for its risky rules. `master-task-list.md` tracks individual requirements.
 
-Build in complete slices. Each phase must end with a visible user or admin outcome, automated proof for its risky rules, and a presentation pass. Do not build all tables, then all APIs, then all pages as disconnected layers.
+## Current state
 
-The master list in `master-task-list.md` tracks everything. This plan only describes order and gates.
+The repository now has:
 
-## Phase 0: lock rules and establish the base
+- A conventional TanStack Start layout with server code under `src/server`, shared browser inputs under `src/lib`, and product UI under `src/components`.
+- PostgreSQL through Docker Compose, Drizzle schemas, validated server environment variables, and working build, typecheck, lint, and test commands.
+- Better Auth backed by PostgreSQL with username and admin plugins, database rate limits, TanStack cookies, and server middleware.
+- One-to-one player and wallet records, separate cash, bonus, and reserved balances, an immutable ledger schema, and retry-safe `$1,000.00` welcome credit provisioning.
+- A dark-first Bearbet theme, local logo font, favicon package, fixed desktop sidebar, mobile drawer, and inset content panel.
 
-Tasks: `F01` to `F05`, `B01` to `B03`.
+The current automated test proves that one Better Auth identity provisions one player, one wallet, and one welcome credit without duplication.
 
-Decide the money and bonus policies with worked examples before committing the first migration. Repair the current lint and typecheck baseline, establish the folder structure, validate environment variables, inventory the supplied logo files, and replace the inherited teal styling with Bearbet tokens.
+## Next slice: registration and session ownership
 
-Checkpoint:
+Finish the identity flow before expanding the interface.
 
-- The six decisions in `architecture.md` have explicit answers.
-- Build, typecheck, lint, and the empty test suite run from one command.
-- A small brand specimen shows the logo, typography, colors, controls, game card, wallet control, and core states at desktop and mobile sizes.
-- No product feature depends on raw `process.env` access outside the environment module.
-
-Why first: wallet allocation and withdrawal reservation alter the schema. Brand tokens alter every screen. Both are cheap to correct here and expensive to correct after broad implementation.
-
-## Phase 1: prove identity, ownership, and money
-
-Tasks: `A01` to `A05`, `W01` to `W03`, `W07`, `B04`, and the relevant part of `B05`.
-
-Persist Better Auth, profile data, roles, account status, cash and bonus wallets, and the immutable ledger. Registration creates the profile and the `$1,000.00` cash credit once. Add route guards and server-side ownership checks. Put the real session and wallet balance into the branded responsive shell.
+1. Lock the minimum-age policy and registration failure behavior.
+2. Add the registration server function that creates the Better Auth user and provisions the player and wallet.
+3. Add login, logout, and session reads.
+4. Add the pathless guest and authenticated route layouts.
+5. Build registration and login screens inside the existing shell.
+6. Test retries, duplicate username and email, suspension, session persistence, and ownership boundaries.
 
 Checkpoint:
 
 ```text
-Register → $1,000.00 cash → refresh → restart server → still $1,000.00
-User route allowed → admin route denied → suspended user denied
+Register -> one player -> one wallet -> $1,000.00 cash
+Refresh and restart -> session and balance persist
+Guest routes reject signed-in users -> protected routes reject guests
+Suspended user -> protected server action denied
 ```
 
-Automated tests cover concurrent welcome-credit attempts, negative balances, ownership, and self-promotion. The checkpoint is reviewed in both desktop and phone layouts.
+## Wallet operations
 
-## Phase 2: complete the first vertical slice with the simulator
+After identity is stable, implement wallet movements as the first reusable business service.
 
-Tasks: `G01` to `G06`, `G09`, `P01`, the first pass of `P03`, `P05`, `P06`, and `M01` to `M02` at inspection depth.
+1. Lock cash and bonus stake allocation and withdrawal reservation rules with worked examples.
+2. Add atomic credit, debit, reserve, release, and reversal operations.
+3. Add demo top-ups and simulated withdrawal requests.
+4. Test concurrent debits, insufficient funds, idempotent requests, exact minor-unit arithmetic, and immutable history.
 
-Build the normalized provider boundary and a clearly labelled simulator. Sync a small representative catalogue into the same tables Drakon will use. Launch a simulated game, send normalized bet, win, loss, and refund operations through the production wallet use cases, then show the resulting history to the player and admin.
+The UI checkpoint is a real wallet balance and transaction list in the player shell. Do not build a second transaction table.
+
+## Simulator and casino slice
+
+1. Define normalized catalogue, launch, bet, win, and refund inputs.
+2. Add a deterministic simulated provider that calls the production wallet service.
+3. Persist a representative catalogue, game sessions, rounds, and provider operations.
+4. Build the lobby, game launch state, player history, and a small admin inspection view.
+5. Prove that callback retries do not move money twice and conflicting fingerprints fail.
 
 Checkpoint:
 
 ```text
-Register/login → browse catalogue → launch simulated game
-→ bet → win or lose → optional refund → balance and history update
-→ identical callback retry changes nothing → admin sees the same records
+Sign in -> browse catalogue -> launch simulated game
+-> bet -> settle or refund -> wallet and history update once
+-> admin sees the same persisted activity
 ```
 
-This is the most important milestone. If it is clean, most remaining work is breadth rather than architectural risk.
+## Player MVP
 
-## Phase 3: turn the proving slice into the player MVP
+Complete profile, account recovery, lobby search and filters, game-player behavior, wallet controls, transaction history, bet history, and simulated withdrawals. Add loading, empty, error, unavailable, keyboard, and responsive states as each route lands.
 
-Tasks: `A04`, `A06`, `G04`, `P01` to `P07`, `W04` to `W06`, and remaining shared components in `B05` and `B06`.
+The catalogue must remain usable with roughly 15,000 records. Broken artwork, provider timeouts, empty history, and unavailable games need explicit recovery states.
 
-Complete account recovery and profile screens, lobby collections, search, filters, game-player behavior, wallet controls, demo top-ups, simulated withdrawals, transaction history, and bet history. Finish real loading, empty, error, unavailable, and mobile states as each screen lands.
+## Bonuses and admin
 
-Checkpoint:
-
-- The player can complete every non-bonus step in the required end-to-end brief.
-- Search and lobby remain usable with a catalogue of roughly 15,000 games.
-- A provider timeout, unavailable game, broken image, stale wallet read, and empty history all produce useful UI.
-- The flow passes keyboard, phone, tablet, and desktop review.
-
-## Phase 4: bonuses and operational admin
-
-Tasks: `O01` to `O06`, `M02` to `M06`.
-
-Implement one complete promotional bonus path before adding all bonus configuration options. A player activates or receives an award, qualifying bets advance progress, and completion converts funds using the locked policy. Then expose the required user, game, bonus, transaction, adjustment, and withdrawal controls in admin.
-
-Checkpoint:
+Implement one complete bonus path before adding broad configuration.
 
 ```text
-Admin creates offer → user receives it → eligible bet advances progress
-→ excluded bet does not → completion converts once → history explains each movement
+Admin creates offer -> player receives it -> eligible bet advances progress
+-> excluded bet does not -> completion converts once -> ledger explains the result
 ```
 
-An ordinary user cannot reach or call any admin operation. Every admin mutation records its actor and reason.
+Then complete user, game, bonus, transaction, adjustment, and withdrawal controls. Every admin mutation must check the role on the server and record its actor and reason.
 
-## Phase 5: port and prove Drakon
+## Drakon proof
 
-Tasks: `G07`, `G08`, and `G10`.
+Port the verified Greenbear V0 behavior behind the same provider contract used by the simulator. Keep token caching, one refresh after authorization failure, `only_demo` handling, launch-error detection, request limits, callback authentication, and dashboard probe compatibility.
 
-Port the verified behavior from Greenbear V0 behind the provider contract. Keep V0's authentication, token refresh, `only_demo` handling, launch-error detection, request limits, timing-safe callback checks, and dashboard probe exception. Replace the in-memory wallet with the shared persistent gameplay use cases.
-
-Work that does not require the approved agent can start earlier. Live proof waits for credentials.
-
-Checkpoint:
+Live completion requires an approved agent and this exact proof:
 
 ```text
-Drakon auth → catalogue sync → supported game launch → Bearbet player identity
-→ provider bet and settlement callback → persistent wallet and history update
+Drakon auth -> catalogue sync -> supported game launch -> Bearbet player identity
+-> provider bet and settlement callback -> persistent wallet and history update
 ```
 
-Store redacted request IDs, timestamps, responses, and screenshots. A successful catalogue call or a URL ending at `/game-error` does not pass this gate.
+A successful catalogue request or a URL ending at `/game-error` does not complete this phase.
 
-## Phase 6: hardening, final polish, and delivery
+## Delivery
 
-Tasks: `R01` to `R09`, plus `B06` on every route.
+Add targeted rate limits, structured redacted logs, secure headers, readiness checks, repeatable seeds, clean-install release checks, deployment, screenshots, and reviewer instructions. Finish with a visual and accessibility pass after layouts stop changing.
 
-Add targeted rate limits, structured logs, secure headers, health checks, clean-install tests, production deployment, seed accounts, and handover notes. Run one dedicated visual pass across the whole product after feature work stops changing layouts.
+## Current blocker
 
-Checkpoint:
-
-- A fresh environment installs, migrates, seeds, builds, and starts from the written instructions.
-- The reviewer journey works without developer intervention.
-- The interface has consistent spacing, typography, artwork treatment, feedback, and motion on target viewports.
-- Secrets do not appear in browser bundles, logs, screenshots, or repository history.
-- The handover distinguishes simulated proof, V0 findings, and current live Drakon proof precisely.
-
-## Suggested first implementation batch
-
-The next coding batch should stop after Phase 0. Its concrete order is:
-
-1. Answer and record the six domain decisions.
-2. Repair scripts, Biome, typecheck, and baseline checks.
-3. Establish the simplified `src/server`, `src/components`, and `src/lib` boundaries while moving only existing files.
-4. Add environment validation and test setup.
-5. Review the supplied logo assets and build the brand specimen.
-6. Draft the first Drizzle schema and migration only after the money examples agree with it.
-
-That pause is worth keeping. It gives us one deliberate schema review and one visual review before auth and wallet implementation make either direction costly to change.
-
-## Current known blockers
-
-- The approved Drakon agent credentials have not arrived. The simulator prevents this from blocking Phases 0 to 4.
-- The logo assets are not present in the current Bearbet repository. They are needed for `B01` and the final type choice.
-- The Better Auth route reference is `/Users/manasseh/Projects/work/tanstarter`. Its shared session query, pathless guest/auth layouts, cookie-cached middleware, and fresh-session middleware are useful patterns; its package versions, file placement, and generated schema should not be copied wholesale.
-- `npm run check` currently fails on starter formatting and lint diagnostics. `npm run build` passes.
+The approved Drakon agent credentials have not arrived. This blocks only the live provider proof. The simulator keeps identity, wallet, catalogue, gameplay, bonus, admin, and interface work moving.

@@ -1,6 +1,6 @@
 # Bearbet domain model
 
-Status: initial proposal for review before the first migration.
+Status: the identity, player, wallet, and welcome-credit model is implemented. Catalogue, gameplay, bonus, withdrawal, and admin-audit entities remain planned.
 
 ## Required player journey
 
@@ -184,33 +184,20 @@ admin user ──< admin audit entries
 - No wagering-progress table initially. Store progress on the bonus award.
 - No repository interfaces around Drizzle without a concrete reason.
 
-## Decisions needed before schema implementation
+## Settled identity and wallet choices
 
-1. Can users sign in with username as well as email? Recommended: yes, use Better Auth's username plugin.
-2. Is username immutable? Recommended: yes for the MVP because it may appear in provider identity and audit records.
-3. What minimum age does registration enforce? Recommended: 18, while keeping the policy isolated for later country-specific rules.
-4. Can a user change currency after the wallet exists? Recommended: no.
-5. Does one wallet row hold cash, bonus, and reserved balances? Recommended: yes for the MVP.
-6. Which balance funds a bet, and where are wins returned? This requires worked examples before finalizing wallet and bonus fields.
-7. Does every eligible bet advance wagering, or only bets funded by bonus balance?
-8. What happens to remaining bonus funds when wagering completes or expires?
+- Users can sign in with username or email.
+- Usernames are immutable.
+- One player has one wallet for the MVP.
+- The wallet stores cash, bonus, and reserved cash as integer minor units.
+- Currency is selected during registration and cannot change after wallet creation.
+- Better Auth owns identity, sessions, credentials, roles, and banned state. Bearbet owns the player and wallet.
+- Player provisioning and the `$1,000.00` welcome credit are retry-safe and covered by an integration test.
 
-## First schema slice
+## Open rules before gameplay and bonus implementation
 
-Do not model every P0 table at once. The first migration should prove account creation and ownership with:
-
-1. Better Auth `user`, `session`, `account`, `verification`, and database-backed `rate_limit` tables.
-2. Better Auth username and admin plugin fields.
-3. Bearbet `player`.
-4. `wallet`.
-5. `ledger_entry`.
-
-The first verified flow is:
-
-```text
-Register → user and credential account created → player and wallet provisioned
-→ welcome ledger entry inserted
-→ session survives restart → profile and balances load → suspended user is rejected
-```
-
-Once that passes under retry and concurrency tests, add catalogue and gameplay entities for the simulator slice.
+1. Which balance funds a bet, and where are wins returned?
+2. Does every eligible bet advance wagering, or only bets funded by bonus balance?
+3. What happens to remaining bonus funds when wagering completes or expires?
+4. What minimum-age policy should registration enforce?
+5. Do withdrawals reserve cash when requested or debit only after approval?

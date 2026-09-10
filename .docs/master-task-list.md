@@ -18,9 +18,9 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 
 ## 1. Brand and product shell
 
-- [ ] **B01. Inventory the supplied brand assets.** Choose the canonical bear mark, wordmark variants, favicon, and permitted image formats. Verify sharp rendering on dark and light browser chrome.
-- [ ] **B02. Lock the Bearbet visual tokens.** Replace the inherited teal theme with charcoal surfaces, honey and amber accents, text, semantic colors, radii, spacing, shadows, and motion tokens.
-- [ ] **B03. Choose and self-host typography.** Test Nunito and at least one heavier rounded display option against the wordmark. Verify readable weights and no layout shift.
+- [x] **B01. Inventory the supplied brand assets.** Choose the canonical bear mark, wordmark variants, favicon, and permitted image formats. Verify sharp rendering on dark and light browser chrome.
+- [x] **B02. Establish the Bearbet visual tokens.** Replace the starter theme with the charcoal shell, graphite panel, honey accent, cream text, and shared radius and border tokens.
+- [x] **B03. Self-host the selected typography.** Use Geist for product UI and River Adventurer for the Bearbet lockup without relying on a remote font request.
 - [ ] **B04. Build the responsive app shell.** Add desktop side navigation, compact header, wallet control, account access, and mobile navigation. Verify at 375, 768, 1280, and 1440 pixel widths.
 - [ ] **B05. Build the core component language.** Cover buttons, fields, dialogs, menus, tabs, cards, skeletons, alerts, toasts, tables, and empty states with accessible keyboard and focus behavior.
 - [ ] **B06. Add a route-level presentation checklist.** Every completed screen gets desktop, mobile, loading, empty, error, focus, and reduced-motion checks.

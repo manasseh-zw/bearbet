@@ -237,14 +237,13 @@ The visual base is near-black charcoal, raised graphite surfaces, warm honey and
 
 The design pass must cover focus, hover, disabled, loading, empty, error, and unavailable states. A polished happy path with unstyled failure states does not pass the eye test.
 
-## Decisions to lock before the first migration
+## Decisions still to lock
 
 1. Whether gameplay spends cash first, bonus first, or uses a configurable allocation rule.
 2. Whether Drakon's reported balance is cash only or total playable funds.
 3. The initial bonus conversion rule and whether converted funds become cash.
-4. Currency scope. The recommended MVP choice is one wallet currency selected at registration and no conversion.
-5. Admin bootstrap method and demo-account credentials.
-6. Whether withdrawals reserve cash when requested or debit only when approved. Reserving on request is safer and avoids double spending.
+4. Admin bootstrap method and demo-account credentials.
+5. Whether withdrawals reserve cash when requested or debit only when approved. Reserving on request is safer and avoids double spending.
 
 ## First proving slice
 
