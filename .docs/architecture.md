@@ -239,7 +239,7 @@ Borrow the session-query and middleware split from `/Users/manasseh/Projects/wor
 
 ## Design system boundary
 
-Brand tokens live in `src/styles.css`. Generic controls live in `src/components/ui`; Bearbet-specific components live in the matching folder under `src/components`.
+Brand tokens live in `src/styles.css`. Generic controls live in `src/components/ui`; Bearbet-specific components live in the matching folder under `src/components`. Browser-side React Query definitions live in `src/lib/queries`; components consume query results but do not own cache keys or server-function calls.
 
 The visual base is near-black charcoal, raised graphite surfaces, warm honey and amber for primary actions, restrained cream text, and clear red, green, and blue semantic colors. Dark mode is the default product presentation. The app shell uses shadcn's sidebar behavior with the fixed navigation proportions, inset content frame, section rhythm, and mobile drawer pattern drawn from the Catalyst reference. The desktop sidebar stays expanded and has no collapse control or keyboard shortcut; only the mobile drawer toggles. The wordmark pairs the supplied bear mark with the self-hosted River Adventurer face through Tailwind's `font-logo` token. Geist remains the temporary body and UI face until the broader typography specimen is reviewed.
 

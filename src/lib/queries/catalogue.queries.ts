@@ -2,11 +2,11 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { getGames } from "#/server/domains/game/game.functions";
 
-export const gameQueries = {
-	all: ["games"] as const,
-	catalogue: () =>
+export const catalogueQueries = {
+	all: ["catalogue"] as const,
+	games: () =>
 		queryOptions({
-			queryKey: [...gameQueries.all, "catalogue"] as const,
+			queryKey: [...catalogueQueries.all, "games"] as const,
 			queryFn: () => getGames(),
 			staleTime: 5 * 60 * 1_000,
 		}),
