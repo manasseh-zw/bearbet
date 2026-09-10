@@ -105,7 +105,11 @@ function NavigationGroup({
 
 export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
 	return (
-		<Sidebar collapsible="offcanvas" className="border-r-0" {...props}>
+		<Sidebar
+			collapsible="offcanvas"
+			className="group-data-[side=left]:border-r-0 group-data-[side=right]:border-l-0"
+			{...props}
+		>
 			<SidebarHeader className="h-24 justify-center border-b border-sidebar-border px-6 py-0">
 				<div className="flex items-center">
 					<Logo className="text-[2rem] text-sidebar-foreground" />
