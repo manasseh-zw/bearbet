@@ -29,7 +29,7 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 
 - [ ] **A01. Persist Better Auth data in Postgres.** Add auth tables and migrations, secure cookies, trusted origins, and session expiry. Verify registration, login, refresh, and logout across a server restart.
 - [x] **A02. Model the Bearbet profile.** Store username, name, date of birth, country, currency, status, role, and registration date with correct uniqueness and validation.
-- [ ] **A03. Complete registration.** Validate all brief fields, block underage dates by the chosen policy, create the profile and initial cash credit atomically, and prevent duplicate credit on retries.
+- [x] **A03. Complete registration.** Validate all brief fields, block underage dates by the chosen policy, create the profile and initial cash credit atomically, and prevent duplicate credit on retries.
 - [ ] **A04. Complete account access.** Build login, logout, forgot-password, reset-password, and change-password flows. A local email preview or clearly simulated delivery is acceptable for the demo.
 - [ ] **A05. Enforce route and use-case authorization.** Protect player and admin route groups, reject suspended users, scope reads by user ID, and repeat admin checks on the server.
 - [ ] **A06. Build profile UI.** Show personal details, status, registration date, cash, bonus, and total balance. Allow safe profile edits without exposing role or status controls.

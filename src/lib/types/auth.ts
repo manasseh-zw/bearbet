@@ -38,8 +38,18 @@ export const registerPlayerInputSchema = playerProfileInputSchema.extend({
 	password: z.string().min(8).max(128),
 });
 
+export const registrationFormSchema = registerPlayerInputSchema
+	.extend({
+		confirmPassword: z.string().min(1, "Confirm your password"),
+	})
+	.refine((input) => input.password === input.confirmPassword, {
+		message: "Passwords do not match",
+		path: ["confirmPassword"],
+	});
+
 export type PlayerProfileInput = z.infer<typeof playerProfileInputSchema>;
 export type RegisterPlayerInput = z.infer<typeof registerPlayerInputSchema>;
+export type RegistrationFormInput = z.infer<typeof registrationFormSchema>;
 
 function isAtLeastAge(
 	dateOfBirth: string,

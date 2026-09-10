@@ -115,6 +115,7 @@ provider callbacks → gameplay service → server/infra/db
 6. Database rows do not become public response types by default.
 7. Use `type` declarations unless a library requires an `interface` or declaration merging.
 8. Prefer functions and explicit parameters. Add a class only when a library contract requires one.
+9. Use TanStack server functions as the browser boundary for Bearbet-owned operations. Better Auth already provides its own typed client and HTTP endpoints, so authentication forms call `authClient` rather than wrapping those endpoints in `*.functions.ts`.
 
 ## Type placement
 
