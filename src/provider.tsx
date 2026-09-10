@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { PropsWithChildren } from "react";
+import { TooltipProvider } from "./components/ui/tooltip";
 
 export type AppContext = {
 	queryClient: QueryClient;
@@ -18,7 +19,7 @@ type AppProviderProps = PropsWithChildren<{
 export function AppProvider({ children, context }: AppProviderProps) {
 	return (
 		<QueryClientProvider client={context.queryClient}>
-			{children}
+			<TooltipProvider>{children}</TooltipProvider>
 		</QueryClientProvider>
 	);
 }
