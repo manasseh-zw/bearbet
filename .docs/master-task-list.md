@@ -12,7 +12,7 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 
 - [ ] **F01. Lock the six domain decisions in `architecture.md`.** Record stake allocation, reported balance, bonus conversion, currency scope, admin bootstrap, and withdrawal reservation. Verify with worked bet, win, refund, bonus, and withdrawal examples.
 - [x] **F02. Establish the source structure.** Move database and auth modules under `src/server`, keep UI under `src/components`, add folders only when needed, and enforce server-only imports. Verify with a production build.
-- [ ] **F03. Repair the quality baseline.** Add `typecheck` and `test` scripts, align Biome's schema version, clear current lint failures, and keep build, check, and tests green.
+- [x] **F03. Repair the quality baseline.** Add `typecheck` and `test` scripts, align Biome's schema version, clear current lint failures, and keep build, check, and tests green.
 - [x] **F04. Validate environment configuration.** Parse required server variables once, fail with useful messages, add a secret-free example file, and keep provider credentials out of browser bundles.
 - [ ] **F05. Define seed and reset behavior.** Create repeatable user, admin, wallet, bonus, and catalogue seed data. Document how a reviewer starts from a known state.
 
