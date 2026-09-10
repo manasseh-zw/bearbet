@@ -231,7 +231,7 @@ Borrow the session-query and middleware split from `/Users/manasseh/Projects/wor
 
 Brand tokens live in `src/styles.css`. Generic controls live in `src/components/ui`; Bearbet-specific components live in the matching folder under `src/components`.
 
-The visual base is near-black charcoal, raised graphite surfaces, warm honey and amber for primary actions, restrained cream text, and clear red, green, and blue semantic colors. The wordmark should use a heavy rounded display face. Nunito is a strong body and UI candidate, but typography is not locked until the supplied logo assets and a small type specimen are reviewed.
+The visual base is near-black charcoal, raised graphite surfaces, warm honey and amber for primary actions, restrained cream text, and clear red, green, and blue semantic colors. The wordmark pairs the supplied bear mark with the self-hosted River Adventurer face through Tailwind's `font-logo` token. Geist remains the temporary body and UI face until the broader typography specimen is reviewed.
 
 The design pass must cover focus, hover, disabled, loading, empty, error, and unavailable states. A polished happy path with unstyled failure states does not pass the eye test.
 

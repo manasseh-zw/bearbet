@@ -1,14 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Logo } from "#/components/brand";
 
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
 	return (
-		<div className="p-8">
-			<h1 className="text-4xl font-bold">Welcome to TanStack Start</h1>
-			<p className="mt-4 text-lg">
-				Edit <code>src/routes/index.tsx</code> to get started.
-			</p>
-		</div>
+		<main className="grid min-h-svh place-items-center bg-[#181817] px-6 text-[#f7f2e8]">
+			<Logo className="text-7xl sm:text-8xl" />
+		</main>
 	);
 }
