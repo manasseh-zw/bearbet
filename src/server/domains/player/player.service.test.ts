@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test, { after } from "node:test";
 
 import { count, eq } from "drizzle-orm";
+import type { RegisterPlayerInput } from "#/lib/types/auth";
 import { auth } from "#/server/infra/auth/auth";
 import { db, pool } from "#/server/infra/db";
 import {
@@ -12,8 +13,18 @@ import {
 	wallet,
 } from "#/server/infra/db/schema";
 
-import { registerPlayer } from "./player.registration";
-import { provisionPlayer, WELCOME_CREDIT_MINOR } from "./player.service";
+import { registerPlayer, WELCOME_CREDIT_MINOR } from "./player.service";
+
+type SignUpEmailInput = NonNullable<Parameters<typeof auth.api.signUpEmail>[0]>;
+
+async function signUpPlayer(input: RegisterPlayerInput) {
+	const body: SignUpEmailInput["body"] & RegisterPlayerInput = {
+		...input,
+		name: `${input.firstName} ${input.lastName}`,
+	};
+
+	return auth.api.signUpEmail({ body });
+}
 
 after(async () => {
 	await pool.end();
@@ -24,7 +35,7 @@ test("player registration provisions one player and one funded wallet", async (c
 	const email = `player-${uniquePart}@bearbet.test`;
 	const username = `player_${uniquePart.replaceAll("-", "").slice(0, 12)}`;
 
-	const signUp = await registerPlayer({
+	const signUp = await signUpPlayer({
 		email,
 		password: "correct-horse-battery-staple",
 		username,
@@ -53,7 +64,7 @@ test("player registration provisions one player and one funded wallet", async (c
 		await db.delete(user).where(eq(user.id, userId));
 	});
 
-	await provisionPlayer({
+	await registerPlayer({
 		userId,
 		firstName: "Test",
 		lastName: "Player",
@@ -113,7 +124,7 @@ test("invalid player registration is rejected before identity creation", async (
 	const email = `underage-${uniquePart}@bearbet.test`;
 
 	await assert.rejects(
-		registerPlayer({
+		signUpPlayer({
 			email,
 			password: "correct-horse-battery-staple",
 			username: `underage_${uniquePart.replaceAll("-", "").slice(0, 12)}`,

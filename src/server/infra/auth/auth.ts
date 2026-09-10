@@ -8,7 +8,7 @@ import { username } from "better-auth/plugins/username";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 
 import { registerPlayerInputSchema } from "#/lib/types/auth";
-import { provisionPlayer } from "#/server/domains/player/player.service";
+import { registerPlayer } from "#/server/domains/player/player.service";
 import { env } from "#/server/env";
 import { db } from "#/server/infra/db";
 import * as schema from "#/server/infra/db/schema";
@@ -58,7 +58,7 @@ export const auth = betterAuth({
 
 					const registration = registerPlayerInputSchema.parse(context.body);
 
-					await provisionPlayer({
+					await registerPlayer({
 						userId: user.id,
 						firstName: registration.firstName,
 						lastName: registration.lastName,

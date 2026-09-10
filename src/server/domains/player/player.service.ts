@@ -11,11 +11,11 @@ import { ledgerEntry, player, wallet } from "#/server/infra/db/schema";
 
 export const WELCOME_CREDIT_MINOR = 100_000;
 
-export type ProvisionPlayerInput = PlayerProfileInput & {
+export type RegisterPlayerInput = PlayerProfileInput & {
 	userId: string;
 };
 
-export async function provisionPlayer(input: ProvisionPlayerInput) {
+export async function registerPlayer(input: RegisterPlayerInput) {
 	const profile = playerProfileInputSchema.parse(input);
 	const idempotencyKey = `player:${input.userId}:welcome-credit`;
 
