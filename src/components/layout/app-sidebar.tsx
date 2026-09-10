@@ -84,7 +84,7 @@ function NavigationGroup({
 							{isActive ? (
 								<span
 									aria-hidden="true"
-									className="absolute top-1/2 -left-4 h-6 w-1 -translate-y-1/2 rounded-full bg-primary"
+									className="absolute top-1/2 -left-4 h-6 w-[3px] -translate-y-1/2 rounded-full bg-primary"
 								/>
 							) : null}
 							<SidebarMenuButton
