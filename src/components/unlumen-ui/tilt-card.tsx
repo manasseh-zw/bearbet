@@ -56,7 +56,7 @@ export function TiltCard({
 				className,
 			)}
 		>
-			<div className="flex flex-row transition-all duration-200 justify-between px-4 sm:px-6 py-4 sm:py-5">
+			<div className="relative z-20 flex flex-row justify-between px-4 py-4 transition-colors duration-300 delay-100 group-hover:text-primary-foreground sm:px-6 sm:py-5">
 				<div className="flex flex-col gap-1 flex-1 mr-2">
 					<h2 className="text-lg tracking-tight leading-tight font-medium">
 						{title}
@@ -107,7 +107,12 @@ export function TiltCard({
 				/>
 			)}
 
-			<ClippedCircle circleClassName="bg-white/10" circleSize={800} />
+			<ClippedCircle
+				className="z-0"
+				circleClassName="bg-primary"
+				circleSize={800}
+				mixBlendMode="normal"
+			/>
 		</Tilt>
 	);
 

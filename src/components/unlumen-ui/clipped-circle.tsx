@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import type { CSSProperties } from "react";
 import * as React from "react";
 
 import { cn } from "#/lib/utils.ts";
@@ -9,12 +10,14 @@ type ClippedCircleProps = {
 	className?: string;
 	circleClassName?: string;
 	circleSize?: number;
+	mixBlendMode?: CSSProperties["mixBlendMode"];
 };
 
 function ClippedCircle({
 	className,
 	circleClassName = "bg-white/20",
 	circleSize = 400,
+	mixBlendMode = "difference",
 }: ClippedCircleProps) {
 	const containerRef = React.useRef<HTMLDivElement>(null);
 	const [isHovered, setIsHovered] = React.useState(false);
@@ -74,7 +77,7 @@ function ClippedCircle({
 					top: position.y,
 					width: circleSize,
 					height: circleSize,
-					mixBlendMode: "difference",
+					mixBlendMode,
 				}}
 				initial={{ scale: 0, x: "-50%", y: "-50%" }}
 				animate={{

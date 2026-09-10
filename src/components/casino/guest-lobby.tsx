@@ -122,7 +122,7 @@ export function GuestLobby() {
 							description={card.description}
 							imageSrc={card.imageUrl}
 							imageAlt=""
-							className={`h-64 rounded-2xl border-white/8 hover:border-[#171715] hover:bg-primary hover:bg-none hover:text-primary-foreground hover:ring-1 hover:ring-[#171715] sm:h-72 ${card.className}`}
+							className={`h-64 rounded-2xl border-white/8 hover:border-[#171715] hover:ring-1 hover:ring-[#171715] sm:h-72 ${card.className}`}
 							tiltProps={{ rotationFactor: 5 }}
 						>
 							<span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-colors group-hover:text-primary-foreground">
