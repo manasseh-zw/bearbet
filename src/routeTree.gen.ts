@@ -9,13 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as CasinoRouteRouteImport } from './routes/_casino/route'
+import { Route as GuestRouteRouteImport } from './routes/_guest/route'
+import { Route as CasinoIndexRouteImport } from './routes/_casino/index'
+import { Route as GuestRegisterRouteImport } from './routes/_guest/register'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
-const IndexRoute = IndexRouteImport.update({
+const CasinoRouteRoute = CasinoRouteRouteImport.update({
+  id: '/_casino',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuestRouteRoute = GuestRouteRouteImport.update({
+  id: '/_guest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CasinoIndexRoute = CasinoIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => CasinoRouteRoute,
+} as any)
+const GuestRegisterRoute = GuestRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => GuestRouteRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -24,39 +40,72 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof CasinoIndexRoute
+  '/register': typeof GuestRegisterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/': typeof CasinoIndexRoute
+  '/register': typeof GuestRegisterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_casino': typeof CasinoRouteRouteWithChildren
+  '/_guest': typeof GuestRouteRouteWithChildren
+  '/_guest/register': typeof GuestRegisterRoute
+  '/_casino/': typeof CasinoIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/auth/$'
+  fullPaths: '/' | '/register' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/auth/$'
-  id: '__root__' | '/' | '/api/auth/$'
+  to: '/' | '/register' | '/api/auth/$'
+  id:
+    | '__root__'
+    | '/_casino'
+    | '/_guest'
+    | '/_guest/register'
+    | '/_casino/'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  CasinoRouteRoute: typeof CasinoRouteRouteWithChildren
+  GuestRouteRoute: typeof GuestRouteRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_casino': {
+      id: '/_casino'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof CasinoRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_guest': {
+      id: '/_guest'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof GuestRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_casino/': {
+      id: '/_casino/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof CasinoIndexRouteImport
+      parentRoute: typeof CasinoRouteRoute
+    }
+    '/_guest/register': {
+      id: '/_guest/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof GuestRegisterRouteImport
+      parentRoute: typeof GuestRouteRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -68,8 +117,33 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CasinoRouteRouteChildren {
+  CasinoIndexRoute: typeof CasinoIndexRoute
+}
+
+const CasinoRouteRouteChildren: CasinoRouteRouteChildren = {
+  CasinoIndexRoute: CasinoIndexRoute,
+}
+
+const CasinoRouteRouteWithChildren = CasinoRouteRoute._addFileChildren(
+  CasinoRouteRouteChildren,
+)
+
+interface GuestRouteRouteChildren {
+  GuestRegisterRoute: typeof GuestRegisterRoute
+}
+
+const GuestRouteRouteChildren: GuestRouteRouteChildren = {
+  GuestRegisterRoute: GuestRegisterRoute,
+}
+
+const GuestRouteRouteWithChildren = GuestRouteRoute._addFileChildren(
+  GuestRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  CasinoRouteRoute: CasinoRouteRouteWithChildren,
+  GuestRouteRoute: GuestRouteRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
