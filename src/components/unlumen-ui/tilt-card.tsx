@@ -52,7 +52,7 @@ export function TiltCard({
 				"bg-background border border-border rounded-lg",
 				"flex flex-col gap-4",
 				"h-48 sm:h-52 md:h-56 w-full",
-				"transition-[border-color,transform] duration-300 ease-out hover:border-primary/80 hover:scale-[1.015] motion-reduce:transform-none",
+				"transition-[border-color,transform] duration-300 ease-out hover:border-[#171715] hover:scale-[1.015] motion-reduce:transform-none",
 				className,
 			)}
 		>
