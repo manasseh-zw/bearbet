@@ -25,7 +25,6 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	SidebarSeparator,
 	useSidebar,
 } from "#/components/ui/sidebar";
 
@@ -111,7 +110,7 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
 			className="group-data-[side=left]:border-r-0 group-data-[side=right]:border-l-0"
 			{...props}
 		>
-			<SidebarHeader className="h-18 justify-center border-b border-sidebar-border px-4 py-0">
+			<SidebarHeader className="h-18 justify-center border-b border-sidebar-border px-6 py-0">
 				<div className="flex items-center">
 					<Logo className="text-2xl text-sidebar-foreground" />
 					<MobileCloseButton />
@@ -123,44 +122,48 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
 				<NavigationGroup label="Your account" items={accountNavigation} />
 			</SidebarContent>
 
-			<SidebarFooter className="gap-3 p-4">
-				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton className="h-9 gap-3 rounded-lg px-2 text-sidebar-foreground/65 hover:text-sidebar-foreground">
-							<ShieldCheckIcon className="size-5 text-sidebar-foreground/40" />
-							<span>Responsible play</span>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-					<SidebarMenuItem>
-						<SidebarMenuButton className="h-9 gap-3 rounded-lg px-2 text-sidebar-foreground/65 hover:text-sidebar-foreground">
-							<CircleHelpIcon className="size-5 text-sidebar-foreground/40" />
-							<span>Support</span>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-				</SidebarMenu>
+			<SidebarFooter className="gap-0 p-0">
+				<div className="px-4 py-3">
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<SidebarMenuButton className="h-9 gap-3 rounded-lg px-2 text-sidebar-foreground/65 hover:text-sidebar-foreground">
+								<ShieldCheckIcon className="size-5 text-sidebar-foreground/40" />
+								<span>Responsible play</span>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+						<SidebarMenuItem>
+							<SidebarMenuButton className="h-9 gap-3 rounded-lg px-2 text-sidebar-foreground/65 hover:text-sidebar-foreground">
+								<CircleHelpIcon className="size-5 text-sidebar-foreground/40" />
+								<span>Support</span>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</div>
 
-				<SidebarSeparator className="-mx-4 my-1 w-[calc(100%+2rem)]" />
+				<div aria-hidden="true" className="h-px w-full bg-sidebar-border" />
 
-				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton
-							size="lg"
-							className="h-auto gap-3 rounded-lg px-2 py-2.5 hover:bg-sidebar-accent"
-						>
-							<span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-accent text-sidebar-foreground">
-								<UserRoundIcon className="size-4" />
-							</span>
-							<span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-								<span className="truncate font-medium text-sidebar-foreground">
-									Player account
+				<div className="p-4">
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<SidebarMenuButton
+								size="lg"
+								className="h-auto gap-3 rounded-lg px-2 py-2.5 hover:bg-sidebar-accent"
+							>
+								<span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-accent text-sidebar-foreground">
+									<UserRoundIcon className="size-4" />
 								</span>
-								<span className="truncate text-xs text-sidebar-foreground/45">
-									Sign in to play
+								<span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+									<span className="truncate font-medium text-sidebar-foreground">
+										Player account
+									</span>
+									<span className="truncate text-xs text-sidebar-foreground/45">
+										Sign in to play
+									</span>
 								</span>
-							</span>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-				</SidebarMenu>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</div>
 			</SidebarFooter>
 		</Sidebar>
 	);
