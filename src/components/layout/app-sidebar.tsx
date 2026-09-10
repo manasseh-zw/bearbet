@@ -25,6 +25,7 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	SidebarSeparator,
 	useSidebar,
 } from "#/components/ui/sidebar";
 
@@ -110,9 +111,9 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
 			className="group-data-[side=left]:border-r-0 group-data-[side=right]:border-l-0"
 			{...props}
 		>
-			<SidebarHeader className="h-24 justify-center border-b border-sidebar-border px-6 py-0">
+			<SidebarHeader className="h-18 justify-center border-b border-sidebar-border px-4 py-0">
 				<div className="flex items-center">
-					<Logo className="text-[2rem] text-sidebar-foreground" />
+					<Logo className="text-2xl text-sidebar-foreground" />
 					<MobileCloseButton />
 				</div>
 			</SidebarHeader>
@@ -122,7 +123,7 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
 				<NavigationGroup label="Your account" items={accountNavigation} />
 			</SidebarContent>
 
-			<SidebarFooter className="gap-4 border-t border-sidebar-border p-4">
+			<SidebarFooter className="gap-3 p-4">
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton className="h-9 gap-3 rounded-lg px-2 text-sidebar-foreground/65 hover:text-sidebar-foreground">
@@ -137,6 +138,8 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>
+
+				<SidebarSeparator className="-mx-4 my-1 w-[calc(100%+2rem)]" />
 
 				<SidebarMenu>
 					<SidebarMenuItem>
