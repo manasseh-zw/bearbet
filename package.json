@@ -10,6 +10,7 @@
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "tsx --env-file=.env.local --test src/**/*.test.ts",
     "format": "biome format",
     "lint": "biome lint",
     "check": "biome check",

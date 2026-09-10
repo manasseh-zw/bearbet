@@ -71,6 +71,8 @@ src/
     domains/
       user/
         user.service.ts
+      player/
+        player.service.ts
       wallet/
         wallet.service.ts
       game/
@@ -139,16 +141,17 @@ Services use domain names such as `server/domains/wallet/wallet.service.ts`. The
 
 ### Identity
 
-Better Auth owns credentials, accounts, sessions, verification records, and the base user table. Bearbet extends its supported user schema with the profile fields required by the product.
+Better Auth owns credentials, accounts, sessions, verification records, and the base user table. Bearbet keeps casino profile data in a separate one-to-one player record.
 
 Initial model:
 
 - `user`, `session`, `account`, and `verification` from Better Auth.
 - Better Auth's username plugin for normalized unique usernames.
-- First name, last name, date of birth, country, and currency as supported additional user fields.
 - Better Auth's admin plugin for the `user` and `admin` roles plus banned state. Bearbet presents banned users as suspended.
+- `player` for first name, last name, date of birth, and country. Its `userId` is both its primary key and foreign key.
+- `wallet` owns the player's selected currency and balances.
 
-The first admin comes from a seed script or an explicit environment-controlled bootstrap. Public registration can never request the admin role.
+The first admin comes from a seed script or an explicit environment-controlled bootstrap. Public registration can never request the admin role. An administrator needs a player record only when the administrator also participates as a player.
 
 ### Money
 

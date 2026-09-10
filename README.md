@@ -14,6 +14,15 @@ npm run dev
 The local database runs on port `5432` and persists in a Docker volume. Stop it
 with `npm run db:down`. This does not delete the volume.
 
+Create and apply database migrations with:
+
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
+Run the database-backed domain tests with `npm test` while local PostgreSQL is running.
+
 # Building For Production
 
 To build this application for production:

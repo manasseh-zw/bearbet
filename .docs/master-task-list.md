@@ -11,9 +11,9 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 ## 0. Planning and foundation
 
 - [ ] **F01. Lock the six domain decisions in `architecture.md`.** Record stake allocation, reported balance, bonus conversion, currency scope, admin bootstrap, and withdrawal reservation. Verify with worked bet, win, refund, bonus, and withdrawal examples.
-- [ ] **F02. Establish the source structure.** Move database and auth modules under `src/server`, keep UI under `src/components`, add folders only when needed, and enforce server-only imports. Verify with a production build.
+- [x] **F02. Establish the source structure.** Move database and auth modules under `src/server`, keep UI under `src/components`, add folders only when needed, and enforce server-only imports. Verify with a production build.
 - [ ] **F03. Repair the quality baseline.** Add `typecheck` and `test` scripts, align Biome's schema version, clear current lint failures, and keep build, check, and tests green.
-- [ ] **F04. Validate environment configuration.** Parse required server variables once, fail with useful messages, add a secret-free example file, and keep provider credentials out of browser bundles.
+- [x] **F04. Validate environment configuration.** Parse required server variables once, fail with useful messages, add a secret-free example file, and keep provider credentials out of browser bundles.
 - [ ] **F05. Define seed and reset behavior.** Create repeatable user, admin, wallet, bonus, and catalogue seed data. Document how a reviewer starts from a known state.
 
 ## 1. Brand and product shell
@@ -28,7 +28,7 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 ## 2. Identity and access
 
 - [ ] **A01. Persist Better Auth data in Postgres.** Add auth tables and migrations, secure cookies, trusted origins, and session expiry. Verify registration, login, refresh, and logout across a server restart.
-- [ ] **A02. Model the Bearbet profile.** Store username, name, date of birth, country, currency, status, role, and registration date with correct uniqueness and validation.
+- [x] **A02. Model the Bearbet profile.** Store username, name, date of birth, country, currency, status, role, and registration date with correct uniqueness and validation.
 - [ ] **A03. Complete registration.** Validate all brief fields, block underage dates by the chosen policy, create the profile and initial cash credit atomically, and prevent duplicate credit on retries.
 - [ ] **A04. Complete account access.** Build login, logout, forgot-password, reset-password, and change-password flows. A local email preview or clearly simulated delivery is acceptable for the demo.
 - [ ] **A05. Enforce route and use-case authorization.** Protect player and admin route groups, reject suspended users, scope reads by user ID, and repeat admin checks on the server.
@@ -37,9 +37,9 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 
 ## 3. Wallet and ledger
 
-- [ ] **W01. Implement the persistent money model.** Add cash and bonus wallets, immutable ledger entries, constraints, indexes, and integer minor-unit helpers.
+- [x] **W01. Implement the persistent money model.** Add cash and bonus wallets, immutable ledger entries, constraints, indexes, and integer minor-unit helpers.
 - [ ] **W02. Implement atomic wallet movements.** Lock or atomically update wallet rows, insert ledger evidence in the same transaction, and reject negative or overflowed balances.
-- [ ] **W03. Credit the welcome balance once.** Every new user receives exactly `$1,000.00` cash, including under registration retries and concurrent requests.
+- [x] **W03. Credit the welcome balance once.** Every new user receives exactly `$1,000.00` cash, including under registration retries and concurrent requests.
 - [ ] **W04. Add demo top-ups.** Support `$100`, `$500`, `$1,000`, and `$10,000` completed demo deposits with visible ledger entries.
 - [ ] **W05. Add simulated withdrawals.** Validate withdrawable cash, reserve it on request, and support pending, approved, and rejected outcomes without double spending.
 - [ ] **W06. Add admin adjustments.** Admins can add or remove funds only with a reason. Record actor, target, amount, before and after balances.

@@ -8,7 +8,7 @@ Status: initial proposal for review before the first migration.
 
 The visitor registers with username, email, password, first name, last name, date of birth, country, and currency.
 
-Better Auth creates the user, credential account, and session records. Bearbet provisions one wallet and records the `$1,000.00` welcome credit exactly once.
+Better Auth creates the user, credential account, and session records. Bearbet then provisions the player, wallet, and `$1,000.00` welcome credit in one retry-safe database transaction.
 
 ### 2. Sign in and manage the account
 
@@ -54,7 +54,7 @@ Admin is an application area, not a standalone data entity. Admin actions operat
 
 ## Better Auth ownership
 
-Use the Better Auth `user` table as the Bearbet user record. Do not add a separate `user_profile` table for the MVP.
+Better Auth owns identity. Bearbet stores casino participation in a separate one-to-one `player` table. Do not call the Bearbet table `account`, because Better Auth already uses that name for credential and OAuth provider accounts.
 
 Better Auth core owns:
 
@@ -70,15 +70,14 @@ The username plugin can own normalized unique usernames. The admin plugin can ow
 - `banReason`
 - `banExpires`
 
-Bearbet adds these fields to the Better Auth user model:
+The Better Auth user model contains:
 
-- `firstName`
-- `lastName`
-- `dateOfBirth`
-- `country`, stored as an ISO country code
-- `currency`, stored as an ISO currency code
+- email and email-verification state
+- required display name
+- normalized unique username and display username from the username plugin
+- role and banned state from the admin plugin
 
-Better Auth's required `name` field can be derived from first and last name. In product language, `banned` maps to the account status `suspended`; an unbanned user is `active`.
+The Bearbet player model contains first name, last name, date of birth, and ISO country code. The wallet owns the selected ISO currency code because currency constrains every balance. Better Auth's required `name` is derived from first and last name during registration. In product language, `banned` maps to `suspended`; an unbanned user is `active`.
 
 Public registration must never accept role, banned state, wallet balance, or email-verification status from the browser.
 
@@ -86,11 +85,19 @@ Public registration must never accept role, banned state, wallet balance, or ema
 
 ### User
 
-Identity, profile, role, status, and registration metadata. Better Auth owns the table and Bearbet extends its supported user schema.
+Authentication identity, role, status, and registration metadata. Better Auth owns the table and its generated schema.
+
+### Account
+
+Better Auth's credential or OAuth-provider link. An email/password user has a credential account containing the password hash. This is not the Bearbet player profile.
+
+### Player
+
+The casino-domain extension of a Better Auth user. Its `userId` is both its primary key and foreign key, which enforces the one-to-one relationship without another identifier. Administrators do not need a player record unless they also participate as players.
 
 ### Wallet
 
-One wallet per user and currency for the MVP. Proposed fields include:
+One wallet per player for the MVP. It contains:
 
 - `cashBalanceMinor`
 - `bonusBalanceMinor`
@@ -150,17 +157,18 @@ Records non-financial administrative actions such as suspending a user, changing
 
 ```text
 Better Auth user
-  ├── sessions and accounts
-  ├── 1 wallet
+  ├── sessions and credential accounts
+  └── 0 or 1 player
+        ├── 1 wallet
   │     └── many ledger entries
-  ├── many game sessions
+        ├── many game sessions
   │     └── many game rounds
   │           └── many provider operations
   │                 └── related ledger entries
-  ├── many bonus awards
+        ├── many bonus awards
   │     └── related ledger entries
-  └── many withdrawals
-        └── related ledger entries
+        └── many withdrawals
+              └── related ledger entries
 
 game provider ──< games ──< game sessions
 bonus definition ──< bonus awards
@@ -169,7 +177,7 @@ admin user ──< admin audit entries
 
 ## Models we should not duplicate
 
-- No separate profile table unless Better Auth additional fields become limiting.
+- No second profile or domain account table beside `player`.
 - No transaction-history table. Query the ledger.
 - No bet-history table. Query rounds and provider operations.
 - No balance-history table. The ledger already records before and after balances.
@@ -191,16 +199,17 @@ admin user ──< admin audit entries
 
 Do not model every P0 table at once. The first migration should prove account creation and ownership with:
 
-1. Better Auth `user`, `session`, `account`, and `verification` tables.
+1. Better Auth `user`, `session`, `account`, `verification`, and database-backed `rate_limit` tables.
 2. Better Auth username and admin plugin fields.
-3. Bearbet user fields on the Better Auth user table.
+3. Bearbet `player`.
 4. `wallet`.
 5. `ledger_entry`.
 
 The first verified flow is:
 
 ```text
-Register → user created → wallet provisioned → welcome ledger entry inserted
+Register → user and credential account created → player and wallet provisioned
+→ welcome ledger entry inserted
 → session survives restart → profile and balances load → suspended user is rejected
 ```
 
