@@ -136,11 +136,11 @@
   }
 
   html {
-    @apply font-sans;
+    @apply bg-sidebar font-sans;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-sidebar text-foreground;
     margin: 0;
   }
 }
