@@ -1,0 +1,170 @@
+[
+	{
+		"id": "2000",
+		"name": "Zodiac Adventure",
+		"provider": "Macaw",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Zodiac-Adventure.webp"
+	},
+	{
+		"id": "2108",
+		"name": "Pinata Wildz",
+		"provider": "Booming",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Pinata-Wildz.webp"
+	},
+	{
+		"id": "6300",
+		"name": "Fortune Dragon",
+		"provider": "Onegame",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Fortune-Dragon.webp"
+	},
+	{
+		"id": "9011",
+		"name": "Rise of Ra",
+		"provider": "EGT Digital",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Rise-of-Ra.webp"
+	},
+	{
+		"id": "14300",
+		"name": "Madame Luck",
+		"provider": "Rubyplay",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Madame-Luck.webp"
+	},
+	{
+		"id": "17000",
+		"name": "Egypt Gods",
+		"provider": "Evoplay",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Egypt-Gods.webp"
+	},
+	{
+		"id": "27000",
+		"name": "8 Tigers Gold Megaways",
+		"provider": "Skywind",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/8-Tigers-Gold-Megaways.webp"
+	},
+	{
+		"id": "36001",
+		"name": "Buffalo Trail",
+		"provider": "BF Games",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Buffalo-Trail.webp"
+	},
+	{
+		"id": "37109",
+		"name": "Lord Venom",
+		"provider": "Backseat",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Lord-Venom.webp"
+	},
+	{
+		"id": "42000",
+		"name": "Lord of the Sun",
+		"provider": "Platipus",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Lord-of-the-Sun.webp"
+	},
+	{
+		"id": "45000",
+		"name": "Forest of Wealth",
+		"provider": "Retrogames",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Forest-Of-Wealth.webp"
+	},
+	{
+		"id": "57027",
+		"name": "Buffalo Coin",
+		"provider": "Gamzix",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Buffalo-Coin.webp"
+	},
+	{
+		"id": "63000",
+		"name": "15 Dragon Pearls",
+		"provider": "3 Oaks",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/15-Dragon-Pearls.webp"
+	},
+	{
+		"id": "64002",
+		"name": "Treasures of Fire",
+		"provider": "Playson",
+		"type": "Slots",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Treasures-of-Fire-Scatter-Pays.webp"
+	},
+	{
+		"id": "15000",
+		"name": "Aviator",
+		"provider": "Aviator",
+		"type": "Crash",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Aviator.webp"
+	},
+	{
+		"id": "47100",
+		"name": "JetX",
+		"provider": "JetX",
+		"type": "Crash",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/JetX.webp"
+	},
+	{
+		"id": "57500",
+		"name": "Aviatrix",
+		"provider": "Aviatrix",
+		"type": "Crash",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Aviatrix.webp"
+	},
+	{
+		"id": "7601",
+		"name": "Lucky Coin",
+		"provider": "Onlyplay",
+		"type": "Instant",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Lucky-Coin.webp"
+	},
+	{
+		"id": "51500",
+		"name": "Jungle Conquest",
+		"provider": "7777",
+		"type": "Instant",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Jungle-Conquest.webp"
+	},
+	{
+		"id": "701",
+		"name": "Galactic VIP Roulette",
+		"provider": "Vivo",
+		"type": "Roulette",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Galactic-VIP-Roulette.webp"
+	},
+	{
+		"id": "27001",
+		"name": "Atom Roulette",
+		"provider": "Skywind Live",
+		"type": "Roulette",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Atom-Roulette.webp"
+	},
+	{
+		"id": "460",
+		"name": "Live Baccarat 1",
+		"provider": "Iconic21",
+		"type": "Baccarat",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Live-Baccarat-1-NC.webp"
+	},
+	{
+		"id": "23229",
+		"name": "Blackjack 14",
+		"provider": "Pragmatic Play",
+		"type": "Blackjack",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Blackjack-14.webp"
+	},
+	{
+		"id": "46001",
+		"name": "Wheelbet",
+		"provider": "TVBet",
+		"type": "Game show",
+		"imageUrl": "https://gator.drakon.casino/storage/drakon/Wheelbet.webp"
+	}
+]

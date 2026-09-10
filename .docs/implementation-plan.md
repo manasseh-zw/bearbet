@@ -16,6 +16,7 @@ The repository now has:
 - A provider-neutral casino contract with live Drakon and captured-fixture adapters. The live adapter authenticates, refreshes one expired token, normalizes the catalogue and launch response, and rejects unsupported demo games and Drakon's unavailable-game URL.
 - A Drakon webhook boundary that limits request size, compares callback secrets safely, validates each supported method, identifies authenticated dashboard probes, and converts provider amounts to integer minor units before domain services receive them.
 - A game-domain catalogue service and TanStack server function backed by the selected provider, with React Query loader caching on the casino route. Casino remains `/`; Promotions, Bonuses, and VIP use sibling routes with URL-derived navigation state.
+- A first-pass public casino lobby with a registration hero, two restrained tilt collections, and a static 24-game editorial selection. The lobby makes no catalogue request while this guest presentation is the default for both signed-in and signed-out visitors.
 - A dark-first Bearbet theme, local logo font, favicon package, fixed desktop sidebar, mobile drawer, and inset content panel.
 
 The registration tests prove that valid email or username credentials resolve the same player identity, provisioning stays idempotent, and invalid age input creates no identity.
