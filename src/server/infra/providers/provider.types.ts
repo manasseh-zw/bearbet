@@ -38,3 +38,26 @@ export type CasinoProvider = {
 	syncCatalogue: () => Promise<NormalizedCatalogue>;
 	launchGame: (input: LaunchGameInput) => Promise<LaunchGameResult>;
 };
+
+type CallbackIdentity = {
+	userId: string;
+	isDashboardProbe: boolean;
+};
+
+type CallbackOperation = CallbackIdentity & {
+	transactionId: string;
+	sessionId: string;
+	roundId: string;
+	gameId: string;
+};
+
+export type NormalizedProviderCallback =
+	| (CallbackIdentity & { kind: "accountDetails" })
+	| (CallbackIdentity & { kind: "balance" })
+	| (CallbackOperation & { kind: "bet"; amountMinor: number })
+	| (CallbackOperation & {
+			kind: "win";
+			betAmountMinor: number;
+			winAmountMinor: number;
+	  })
+	| (CallbackOperation & { kind: "refund"; amountMinor: number });

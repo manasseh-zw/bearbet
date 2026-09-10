@@ -42,7 +42,44 @@ export const drakonLaunchSchema = z.object({
 	game_url: z.string().min(1),
 });
 
+const callbackIdentitySchema = z.object({
+	user_id: z.union([z.string(), z.number()]),
+	agent_code: z.string().optional(),
+	agent_token: z.string().optional(),
+	agent_secret_key: z.string().optional(),
+});
+
+const callbackOperationSchema = callbackIdentitySchema.extend({
+	transaction_id: z.union([z.string(), z.number()]),
+	session_id: z.union([z.string(), z.number()]),
+	round_id: z.union([z.string(), z.number()]),
+	game: z.union([z.string(), z.number()]),
+});
+
+const amountSchema = z.union([z.string(), z.number()]);
+
+export const drakonWebhookSchema = z.discriminatedUnion("method", [
+	callbackIdentitySchema
+		.extend({ method: z.literal("account_details") })
+		.loose(),
+	callbackIdentitySchema.extend({ method: z.literal("user_balance") }).loose(),
+	callbackOperationSchema
+		.extend({ method: z.literal("transaction_bet"), bet: amountSchema })
+		.loose(),
+	callbackOperationSchema
+		.extend({
+			method: z.literal("transaction_win"),
+			bet: amountSchema,
+			win: amountSchema,
+		})
+		.loose(),
+	callbackOperationSchema
+		.extend({ method: z.literal("refund"), amount: amountSchema })
+		.loose(),
+]);
+
 export type DrakonGame = z.infer<typeof drakonGameSchema>;
+export type DrakonWebhookBody = z.infer<typeof drakonWebhookSchema>;
 
 export type DrakonConfig = {
 	baseUrl: string;

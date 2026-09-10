@@ -14,6 +14,7 @@ The repository now has:
 - A responsive registration screen using TanStack Form, shared Zod validation, and the typed Better Auth client. It reports field and server errors and disables repeated submissions while registration is pending.
 - A responsive email-or-username login screen and a session-aware player menu. Guests can open the login or registration routes; signed-in players can log out, while Settings remains unavailable until its route exists.
 - A provider-neutral casino contract with live Drakon and captured-fixture adapters. The live adapter authenticates, refreshes one expired token, normalizes the catalogue and launch response, and rejects unsupported demo games and Drakon's unavailable-game URL.
+- A Drakon webhook boundary that limits request size, compares callback secrets safely, validates each supported method, identifies authenticated dashboard probes, and converts provider amounts to integer minor units before domain services receive them.
 - A dark-first Bearbet theme, local logo font, favicon package, fixed desktop sidebar, mobile drawer, and inset content panel.
 
 The registration tests prove that valid email or username credentials resolve the same player identity, provisioning stays idempotent, and invalid age input creates no identity.

@@ -71,9 +71,14 @@ src/
         auth.middleware.ts
       providers/
         provider.types.ts
-        drakon.provider.ts
-        drakon.webhook.ts
-        simulated.provider.ts
+        drakon/
+          drakon.types.ts
+          drakon.provider.ts
+          drakon.webhook.ts
+        fixture/
+          fixture.types.ts
+          fixture.provider.ts
+          games.json
     domains/
       user/
         user.service.ts
