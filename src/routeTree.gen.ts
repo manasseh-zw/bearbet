@@ -12,6 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as CasinoRouteRouteImport } from './routes/_casino/route'
 import { Route as GuestRouteRouteImport } from './routes/_guest/route'
 import { Route as CasinoIndexRouteImport } from './routes/_casino/index'
+import { Route as CasinoBonusesRouteImport } from './routes/_casino/bonuses'
+import { Route as CasinoPromotionsRouteImport } from './routes/_casino/promotions'
+import { Route as CasinoVipRouteImport } from './routes/_casino/vip'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
 import { Route as GuestRegisterRouteImport } from './routes/_guest/register'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -27,6 +30,21 @@ const GuestRouteRoute = GuestRouteRouteImport.update({
 const CasinoIndexRoute = CasinoIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => CasinoRouteRoute,
+} as any)
+const CasinoBonusesRoute = CasinoBonusesRouteImport.update({
+  id: '/bonuses',
+  path: '/bonuses',
+  getParentRoute: () => CasinoRouteRoute,
+} as any)
+const CasinoPromotionsRoute = CasinoPromotionsRouteImport.update({
+  id: '/promotions',
+  path: '/promotions',
+  getParentRoute: () => CasinoRouteRoute,
+} as any)
+const CasinoVipRoute = CasinoVipRouteImport.update({
+  id: '/vip',
+  path: '/vip',
   getParentRoute: () => CasinoRouteRoute,
 } as any)
 const GuestLoginRoute = GuestLoginRouteImport.update({
@@ -47,12 +65,18 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof CasinoIndexRoute
+  '/bonuses': typeof CasinoBonusesRoute
+  '/promotions': typeof CasinoPromotionsRoute
+  '/vip': typeof CasinoVipRoute
   '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof CasinoIndexRoute
+  '/bonuses': typeof CasinoBonusesRoute
+  '/promotions': typeof CasinoPromotionsRoute
+  '/vip': typeof CasinoVipRoute
   '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -61,6 +85,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_casino': typeof CasinoRouteRouteWithChildren
   '/_guest': typeof GuestRouteRouteWithChildren
+  '/_casino/bonuses': typeof CasinoBonusesRoute
+  '/_casino/promotions': typeof CasinoPromotionsRoute
+  '/_casino/vip': typeof CasinoVipRoute
   '/_guest/login': typeof GuestLoginRoute
   '/_guest/register': typeof GuestRegisterRoute
   '/_casino/': typeof CasinoIndexRoute
@@ -68,13 +95,30 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/bonuses'
+    | '/promotions'
+    | '/vip'
+    | '/login'
+    | '/register'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/api/auth/$'
+  to:
+    | '/'
+    | '/bonuses'
+    | '/promotions'
+    | '/vip'
+    | '/login'
+    | '/register'
+    | '/api/auth/$'
   id:
     | '__root__'
     | '/_casino'
     | '/_guest'
+    | '/_casino/bonuses'
+    | '/_casino/promotions'
+    | '/_casino/vip'
     | '/_guest/login'
     | '/_guest/register'
     | '/_casino/'
@@ -110,6 +154,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CasinoIndexRouteImport
       parentRoute: typeof CasinoRouteRoute
     }
+    '/_casino/bonuses': {
+      id: '/_casino/bonuses'
+      path: '/bonuses'
+      fullPath: '/bonuses'
+      preLoaderRoute: typeof CasinoBonusesRouteImport
+      parentRoute: typeof CasinoRouteRoute
+    }
+    '/_casino/promotions': {
+      id: '/_casino/promotions'
+      path: '/promotions'
+      fullPath: '/promotions'
+      preLoaderRoute: typeof CasinoPromotionsRouteImport
+      parentRoute: typeof CasinoRouteRoute
+    }
+    '/_casino/vip': {
+      id: '/_casino/vip'
+      path: '/vip'
+      fullPath: '/vip'
+      preLoaderRoute: typeof CasinoVipRouteImport
+      parentRoute: typeof CasinoRouteRoute
+    }
     '/_guest/login': {
       id: '/_guest/login'
       path: '/login'
@@ -135,10 +200,16 @@ declare module '@tanstack/react-router' {
 }
 
 interface CasinoRouteRouteChildren {
+  CasinoBonusesRoute: typeof CasinoBonusesRoute
+  CasinoPromotionsRoute: typeof CasinoPromotionsRoute
+  CasinoVipRoute: typeof CasinoVipRoute
   CasinoIndexRoute: typeof CasinoIndexRoute
 }
 
 const CasinoRouteRouteChildren: CasinoRouteRouteChildren = {
+  CasinoBonusesRoute: CasinoBonusesRoute,
+  CasinoPromotionsRoute: CasinoPromotionsRoute,
+  CasinoVipRoute: CasinoVipRoute,
   CasinoIndexRoute: CasinoIndexRoute,
 }
 

@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import {
 	BadgePercentIcon,
@@ -48,14 +48,14 @@ import { authClient, signOutPlayer } from "#/lib/auth-client";
 type NavigationItem = {
 	label: string;
 	icon: LucideIcon;
-	isActive?: boolean;
+	to?: "/" | "/promotions" | "/bonuses" | "/vip";
 };
 
 const casinoNavigation: NavigationItem[] = [
-	{ label: "Casino", icon: DicesIcon, isActive: true },
-	{ label: "Promotions", icon: GiftIcon },
-	{ label: "Bonuses", icon: BadgePercentIcon },
-	{ label: "VIP club", icon: CrownIcon },
+	{ label: "Casino", icon: DicesIcon, to: "/" },
+	{ label: "Promotions", icon: GiftIcon, to: "/promotions" },
+	{ label: "Bonuses", icon: BadgePercentIcon, to: "/bonuses" },
+	{ label: "VIP club", icon: CrownIcon, to: "/vip" },
 ];
 
 const accountNavigation: NavigationItem[] = [
@@ -87,6 +87,9 @@ function NavigationGroup({
 	items: NavigationItem[];
 	label?: string;
 }) {
+	const { pathname } = useLocation();
+	const { setOpenMobile } = useSidebar();
+
 	return (
 		<SidebarGroup className="p-0">
 			{label ? (
@@ -96,24 +99,40 @@ function NavigationGroup({
 			) : null}
 			<SidebarGroupContent>
 				<SidebarMenu>
-					{items.map(({ icon: Icon, isActive, label: itemLabel }) => (
-						<SidebarMenuItem key={itemLabel}>
-							{isActive ? (
-								<span
-									aria-hidden="true"
-									className="absolute top-1/2 -left-4 h-6 w-[3px] -translate-y-1/2 rounded-full bg-primary"
-								/>
-							) : null}
-							<SidebarMenuButton
-								isActive={isActive}
-								tooltip={itemLabel}
-								className="h-10 gap-3 rounded-lg px-2 text-sm font-medium text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-active:bg-transparent data-active:text-sidebar-foreground data-active:[&_svg]:text-primary"
-							>
+					{items.map(({ icon: Icon, label: itemLabel, to }) => {
+						const isActive = to === pathname;
+						const content = (
+							<>
 								<Icon className="size-5 text-sidebar-foreground/45" />
 								<span>{itemLabel}</span>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-					))}
+							</>
+						);
+
+						return (
+							<SidebarMenuItem key={itemLabel}>
+								{isActive ? (
+									<span
+										aria-hidden="true"
+										className="absolute top-1/2 -left-4 h-6 w-[3px] -translate-y-1/2 rounded-full bg-primary"
+									/>
+								) : null}
+								<SidebarMenuButton
+									isActive={isActive}
+									tooltip={itemLabel}
+									asChild={Boolean(to)}
+									className="h-10 gap-3 rounded-lg px-2 text-sm font-medium text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-active:bg-transparent data-active:text-sidebar-foreground data-active:[&_svg]:text-primary"
+								>
+									{to ? (
+										<Link to={to} onClick={() => setOpenMobile(false)}>
+											{content}
+										</Link>
+									) : (
+										content
+									)}
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+						);
+					})}
 				</SidebarMenu>
 			</SidebarGroupContent>
 		</SidebarGroup>
