@@ -2,12 +2,17 @@ Welcome to your new TanStack Start app!
 
 # Getting Started
 
-To run this application:
+Create a local environment file, start PostgreSQL, then run the application:
 
 ```bash
 npm install
+cp .env.example .env.local
+npm run db:up
 npm run dev
 ```
+
+The local database runs on port `5432` and persists in a Docker volume. Stop it
+with `npm run db:down`. This does not delete the volume.
 
 # Building For Production
 

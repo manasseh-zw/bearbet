@@ -1,0 +1,252 @@
+# Bearbet architecture
+
+## Direction
+
+Bearbet will use a small conventional TypeScript structure with a clear server boundary.
+
+- `src/routes` owns URLs, route guards, loaders, and page composition. Route files stay thin.
+- `src/components` owns generic controls and product UI.
+- `src/server` is the source of truth for domain behavior, persistence, authentication, and provider integration.
+- `src/lib` stays small. It contains client utilities and the few input types or schemas that the browser and server share.
+
+The application does not need a separate DTO layer or a file for every operation. TypeScript, Drizzle, Better Auth, and TanStack already infer most shapes. Server code remains grouped by domain.
+
+## Target source tree
+
+```text
+src/
+  components/
+    ui/
+    layout/
+    auth/
+    casino/
+    wallet/
+    bonus/
+    admin/
+  lib/
+    types/
+      auth.ts                   # shared schemas and inferred input types
+      wallet.ts
+      game.ts
+      bonus.ts
+    auth-client.ts
+    utils.ts
+    format.ts
+  routes/
+    __root.tsx
+    index.tsx                    # public casino lobby
+    _guest/
+      route.tsx                 # signed-in users leave guest flows
+      login.tsx
+      register.tsx
+      forgot-password.tsx
+      reset-password.tsx
+    _auth/
+      route.tsx                 # active-session navigation boundary
+      account/
+      wallet/
+      transactions/
+      bonuses/
+      _admin/
+        route.tsx               # active admin navigation boundary
+        admin/
+    api/
+      auth/$
+      drakon/$key.ts
+  server/
+    env.ts
+    infra/
+      db/
+        index.ts
+        schema.ts               # keep one file until size becomes a problem
+        seed.ts
+      auth/
+        auth.ts
+        auth.middleware.ts
+      providers/
+        provider.types.ts
+        drakon.provider.ts
+        drakon.webhook.ts
+        simulated.provider.ts
+    domains/
+      user/
+        user.service.ts
+      wallet/
+        wallet.service.ts
+      game/
+        game.service.ts
+      gameplay/
+        gameplay.service.ts
+      bonus/
+        bonus.service.ts
+      withdrawal/
+        withdrawal.service.ts
+      admin/
+        admin.service.ts
+```
+
+Tests stay beside the code as `*.test.ts`. Domain folders are the organizational boundary, even when the first version contains one service. They give tests, helpers, and future files a stable home. Create a domain folder when its service is implemented, not before. Split `infra/db/schema.ts` only when its size becomes a problem.
+
+## Dependency rules
+
+```text
+routes and components → server/domains/<domain>/*.service.ts
+          │                              │
+          └────────→ lib/types ←─────────┤
+                                         ↓
+                                server/infra/db
+
+provider callbacks → gameplay service → server/infra/db
+```
+
+1. Routes contain TanStack wiring and page composition, not wallet, bonus, or provider rules.
+2. Components call exported TanStack server functions. They never import the database or provider modules.
+3. Services own business rules and call Drizzle directly. Database transactions begin in the service operation that owns the complete business action.
+4. Shared Zod schemas validate inputs before a service changes state.
+5. Provider payloads stay inside their adapter. The rest of Bearbet uses normalized types.
+6. Database rows do not become public response types by default.
+7. Use `type` declarations unless a library requires an `interface` or declaration merging.
+8. Prefer functions and explicit parameters. Add a class only when a library contract requires one.
+
+## Type placement
+
+`src/server` is the source of truth for database and domain types. `src/lib/types` contains only values shared with browser code, mostly form and mutation inputs.
+
+1. A shared input lives in `src/lib/types/auth.ts`, `wallet.ts`, `game.ts`, or `bonus.ts`. The file exports its Zod schema and inferred type.
+2. A database row type comes from Drizzle's `$inferSelect` or `$inferInsert` in `src/server/infra/db/schema.ts`.
+3. Better Auth supplies its own user and session types.
+4. Server function results stay inferred. Add an explicit result type only when inference stops being clear or the response is a stable external contract.
+5. An internal service or provider type stays in that server file unless several files in the same domain need it. At that point it can move to `wallet.types.ts`, `game.types.ts`, or the matching domain-local file.
+6. Component props stay beside their component.
+
+For example, `src/lib/types/wallet.ts` may contain:
+
+```ts
+export const createWithdrawalInputSchema = z.object({
+  amountMinor: z.number().int().positive(),
+})
+
+export type CreateWithdrawalInput = z.infer<
+  typeof createWithdrawalInputSchema
+>
+```
+
+The schema is the runtime boundary and TypeScript derives the compile-time type. There is no matching handwritten interface.
+
+Services use domain names such as `server/domains/wallet/wallet.service.ts`. They call Drizzle directly. If repeated queries later make a service hard to read, extract plain functions such as `wallet.queries.ts` inside the same domain. Do not introduce repository interfaces or repository classes unless the application develops a concrete need for them.
+
+## Domain ownership
+
+### Identity
+
+Better Auth owns credentials, accounts, sessions, verification records, and the base user table. Bearbet extends its supported user schema with the profile fields required by the product.
+
+Initial model:
+
+- `user`, `session`, `account`, and `verification` from Better Auth.
+- Better Auth's username plugin for normalized unique usernames.
+- First name, last name, date of birth, country, and currency as supported additional user fields.
+- Better Auth's admin plugin for the `user` and `admin` roles plus banned state. Bearbet presents banned users as suspended.
+
+The first admin comes from a seed script or an explicit environment-controlled bootstrap. Public registration can never request the admin role.
+
+### Money
+
+Store money as integer minor units. A USD balance of `$1,000.00` is stored as `100000`.
+
+- `wallet` has one row per user and currency with cash, bonus, and reserved-cash balances.
+- `ledger_entry` is immutable and records one wallet movement with balance before and after.
+- `withdrawal` owns the pending, approved, or rejected request lifecycle.
+- Every top-up, bet, win, refund, withdrawal, bonus credit, conversion, and admin adjustment creates ledger evidence.
+
+Balance columns are the fast current-state projection. The ledger is the audit record. A database transaction must lock or atomically update the affected wallet rows and insert the ledger entry together.
+
+### Catalogue and play
+
+- `game_provider` stores a normalized provider identity and sync state.
+- `game` stores the normalized catalogue plus the provider payload needed to launch.
+- `game_session` ties one user to one game and provider launch attempt.
+- `game_round` groups provider operations by user, session, provider round ID, and game.
+- `provider_operation` stores each bet, win, and refund, its fingerprint, original response, and related ledger entries.
+
+The idempotency key is provider plus operation type plus external transaction ID. A repeated key with the same fingerprint returns the stored response. A repeated key with a different fingerprint is rejected. A refund points to the operation it reverses once Bearbet has resolved it.
+
+### Bonuses
+
+- `bonus_definition` stores reusable rules and eligibility.
+- `bonus_award` stores a user's granted amount, expiry, status, and conversion state.
+- `bonus_award` stores required and completed wagering for the MVP.
+- Qualifying provider bets advance progress in the same database transaction as the bet.
+
+The exact cash-versus-bonus stake allocation and conversion policy must be fixed with examples before migrations are committed. Those rules affect wallet movements, refunds, withdrawal eligibility, and the callback balance Bearbet reports.
+
+## Provider boundary
+
+The application depends on a small functional contract, not on Drakon:
+
+```ts
+type CasinoProvider = {
+  syncCatalogue: () => Promise<NormalizedCatalogue>
+  launchGame: (input: LaunchGameInput) => Promise<LaunchGameResult>
+}
+```
+
+Callbacks use a provider-specific adapter that authenticates and normalizes the payload before calling the shared gameplay use cases. The `simulated` provider must produce the same normalized bet, win, and refund commands as Drakon. It is a development and demo dependency, not a separate fake wallet implementation.
+
+The Greenbear V0 at `/Users/manasseh/Projects/work/greenbear-v0` is the behavioral reference for Drakon authentication, catalogue normalization, launch errors, callback probes, and refund edge cases.
+
+## Route and authorization pattern
+
+- `/` is the product, not a separate brochure site. Guests can browse the branded shell, catalogue, collections, search, and game details.
+- Sign in and registration live under a pathless `_guest` layout. Its `beforeLoad` sends an existing user back to the requested destination or the lobby.
+- Account, wallet, transaction, bonus, and game-launch routes live under a pathless `_auth` layout. Its `beforeLoad` sends guests to sign in with the intended destination preserved.
+- Guest actions such as Play, Favourite, Top Up, Withdraw, or Activate Bonus open the authentication flow. Browsing does not require authentication.
+- Admin pages live below a nested `_admin` layout so they inherit the session check and add a role check.
+- Route `beforeLoad` checks are navigation behavior, not the security boundary. Every protected server function uses authentication middleware and still checks ownership or role.
+- Provider callbacks authenticate independently of browser sessions.
+- Client-side hiding is presentation, not authorization.
+
+Use TanStack loaders for page-critical reads and server functions for typed mutations. Use TanStack Query only where background refresh, optimistic updates, or shared cache behavior pays for the extra moving parts.
+
+Borrow the session-query and middleware split from `/Users/manasseh/Projects/work/tanstarter`, but keep Bearbet's domain services under `src/server`. Generate Better Auth's schema from Bearbet's final auth configuration rather than copying the starter's generated tables.
+
+## Runtime and deployment
+
+- Local development uses the pinned PostgreSQL image in `docker-compose.yml`.
+- The first hosted deployment targets Vercel through the existing Nitro integration and a managed Supabase PostgreSQL database.
+- Serverless database connections use Supabase's transaction pooler rather than opening unbounded direct connections.
+- Drakon callbacks remain short request-response functions: authenticate, validate, execute one database transaction, persist the idempotent result, and respond.
+- Catalogue synchronization is chunked and resumable. It is triggered manually for the first demo and may later run as a scheduled job.
+- Better Auth rate limiting uses database-backed storage in production because in-memory state is not shared across serverless instances.
+- Bearbet does not require a WebSocket server for the MVP.
+
+## Design system boundary
+
+Brand tokens live in `src/styles.css`. Generic controls live in `src/components/ui`; Bearbet-specific components live in the matching folder under `src/components`.
+
+The visual base is near-black charcoal, raised graphite surfaces, warm honey and amber for primary actions, restrained cream text, and clear red, green, and blue semantic colors. The wordmark should use a heavy rounded display face. Nunito is a strong body and UI candidate, but typography is not locked until the supplied logo assets and a small type specimen are reviewed.
+
+The design pass must cover focus, hover, disabled, loading, empty, error, and unavailable states. A polished happy path with unstyled failure states does not pass the eye test.
+
+## Decisions to lock before the first migration
+
+1. Whether gameplay spends cash first, bonus first, or uses a configurable allocation rule.
+2. Whether Drakon's reported balance is cash only or total playable funds.
+3. The initial bonus conversion rule and whether converted funds become cash.
+4. Currency scope. The recommended MVP choice is one wallet currency selected at registration and no conversion.
+5. Admin bootstrap method and demo-account credentials.
+6. Whether withdrawals reserve cash when requested or debit only when approved. Reserving on request is safer and avoids double spending.
+
+## First proving slice
+
+```text
+Register or log in
+→ receive persistent $1,000 cash credit exactly once
+→ browse a normalized simulated catalogue
+→ launch a simulated game
+→ place a bet and settle a win or loss
+→ retry the callback without moving money twice
+→ view the same ledger as the player and as an admin
+```
+
+This is the first implementation target. It proves the boundaries and gives the UI enough real behavior to look like a product rather than a collection of screens.

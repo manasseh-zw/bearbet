@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: bearbet
+      POSTGRES_USER: bearbet
+      POSTGRES_PASSWORD: bearbet_local
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bearbet -d bearbet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - bearbet_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  bearbet_postgres_data:
