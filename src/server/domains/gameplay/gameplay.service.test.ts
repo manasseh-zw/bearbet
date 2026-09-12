@@ -324,6 +324,7 @@ test("the simulator validates a winning request before recording its bet", async
 	const playerId = await createTestPlayer(context, 10_000);
 	const runId = crypto.randomUUID();
 	await assert.rejects(
+		// @ts-expect-error Exercise the runtime boundary with an invalid win command.
 		simulateGameRound({
 			playerId,
 			gameId: "fixture-game",

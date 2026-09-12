@@ -73,7 +73,8 @@ after(async () => {
 test("bonus activation snapshots rules, credits once, and blocks competing awards", async () => {
 	const definition = await createBonusDefinition({
 		code: `promo_${crypto.randomUUID().slice(0, 8)}`,
-		name: "Slots starter",
+		name: "  Slots starter  ",
+		description: "  ",
 		type: "promotional",
 		amountMinor: 10_000,
 		maximumAwardMinor: 8_000,
@@ -82,6 +83,9 @@ test("bonus activation snapshots rules, credits once, and blocks competing award
 		eligibleCategories: ["slots", "slots", ""],
 	});
 	definitionIds.push(definition.id);
+	assert.match(definition.code, /^PROMO_/);
+	assert.equal(definition.name, "Slots starter");
+	assert.equal(definition.description, null);
 	const idempotencyKey = `${playerId}:starter-award`;
 	const first = await activateBonusAward({
 		playerId,
@@ -158,6 +162,22 @@ test("bonus activation snapshots rules, credits once, and blocks competing award
 		awardId: concurrent[0].award.id,
 		reason: "cancel",
 	});
+});
+
+test("bonus definition validation rejects invalid values before insertion", async () => {
+	await assert.rejects(
+		createBonusDefinition({
+			code: "NO_MAX",
+			name: "Invalid maximum",
+			type: "promotional",
+			amountMinor: 1_000,
+			maximumAwardMinor: 0,
+			wageringMultiplier: 2,
+			expiresAfterDays: 7,
+		}),
+		(error) =>
+			error instanceof BonusServiceError && error.code === "INVALID_BONUS",
+	);
 });
 
 test("deposit awards verify persisted top-ups and completed awards convert once", async () => {

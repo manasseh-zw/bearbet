@@ -6,6 +6,11 @@ import {
 	calculateRequiredWager,
 	determineActiveAwardOutcome,
 } from "#/server/domains/bonus/bonus.policy";
+import {
+	type CreateBonusDefinitionCommand,
+	type CreateBonusDefinitionInput,
+	createBonusDefinitionSchema,
+} from "#/server/domains/bonus/bonus.schema";
 import { countUnsettledAwardBets } from "#/server/domains/gameplay/gameplay.settlement";
 import {
 	applyWalletOperationInTransaction,
@@ -20,22 +25,7 @@ import {
 	walletOperation,
 } from "#/server/infra/db/schema";
 
-type BonusDefinitionType = (typeof bonusDefinition.type.enumValues)[number];
-
-export type CreateBonusDefinitionInput = {
-	code: string;
-	name: string;
-	description?: string;
-	type: BonusDefinitionType;
-	amountMinor: number;
-	wageringMultiplier: number;
-	expiresAfterDays: number;
-	minimumDepositMinor?: number;
-	maximumAwardMinor?: number;
-	eligibleGameIds?: string[];
-	eligibleCategories?: string[];
-	eligibleProviders?: string[];
-};
+export type { CreateBonusDefinitionInput } from "#/server/domains/bonus/bonus.schema";
 
 export class BonusServiceError extends Error {
 	constructor(
@@ -56,7 +46,7 @@ export class BonusServiceError extends Error {
 }
 
 export async function createBonusDefinition(input: CreateBonusDefinitionInput) {
-	const values = validateDefinition(input);
+	const values = parseBonusDefinition(input);
 	const [definition] = await db
 		.insert(bonusDefinition)
 		.values(values)
@@ -407,52 +397,15 @@ async function validateQualifyingDeposit(
 	}
 }
 
-function validateDefinition(input: CreateBonusDefinitionInput) {
-	const code = input.code.trim().toUpperCase();
-	const name = input.name.trim();
-	if (!/^[A-Z0-9_-]{3,64}$/.test(code) || !name || name.length > 120) {
+function parseBonusDefinition(
+	input: CreateBonusDefinitionInput,
+): CreateBonusDefinitionCommand {
+	const result = createBonusDefinitionSchema.safeParse(input);
+	if (!result.success) {
 		throw new BonusServiceError(
-			"Bonus code or name is invalid",
+			result.error.issues[0]?.message ?? "Bonus definition is invalid",
 			"INVALID_BONUS",
 		);
 	}
-	calculateRequiredWager(input.amountMinor, input.wageringMultiplier);
-	if (
-		!Number.isSafeInteger(input.expiresAfterDays) ||
-		input.expiresAfterDays < 1
-	) {
-		throw new BonusServiceError(
-			"Bonus expiry must be at least one day",
-			"INVALID_BONUS",
-		);
-	}
-	for (const amount of [input.minimumDepositMinor, input.maximumAwardMinor]) {
-		if (amount !== undefined && (!Number.isSafeInteger(amount) || amount < 0)) {
-			throw new BonusServiceError(
-				"Bonus money values are invalid",
-				"INVALID_BONUS",
-			);
-		}
-	}
-	if (input.maximumAwardMinor === 0) {
-		throw new BonusServiceError(
-			"Maximum award must be positive",
-			"INVALID_BONUS",
-		);
-	}
-	return {
-		...input,
-		code,
-		name,
-		description: input.description?.trim() || undefined,
-		eligibleGameIds: normalizeRules(input.eligibleGameIds),
-		eligibleCategories: normalizeRules(input.eligibleCategories),
-		eligibleProviders: normalizeRules(input.eligibleProviders),
-	};
-}
-
-function normalizeRules(values: string[] | undefined) {
-	return [
-		...new Set((values ?? []).map((value) => value.trim()).filter(Boolean)),
-	];
+	return result.data;
 }

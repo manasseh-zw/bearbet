@@ -19,7 +19,7 @@ import { registerPlayer } from "#/lib/auth-client";
 import {
 	type RegistrationFormInput,
 	registrationFormSchema,
-} from "#/lib/types/auth";
+} from "#/lib/contracts/auth.contract";
 
 const countries = [
 	{ code: "ZW", name: "Zimbabwe", currencyCode: "USD" },

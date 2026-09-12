@@ -52,10 +52,11 @@ export const loginFormSchema = z.object({
 	password: z.string().min(1, "Enter your password"),
 });
 
-export type PlayerProfileInput = z.infer<typeof playerProfileInputSchema>;
-export type RegisterPlayerInput = z.infer<typeof registerPlayerInputSchema>;
-export type RegistrationFormInput = z.infer<typeof registrationFormSchema>;
-export type LoginFormInput = z.infer<typeof loginFormSchema>;
+export type PlayerProfileInput = z.input<typeof playerProfileInputSchema>;
+export type PlayerProfile = z.output<typeof playerProfileInputSchema>;
+export type RegisterPlayerInput = z.input<typeof registerPlayerInputSchema>;
+export type RegistrationFormInput = z.input<typeof registrationFormSchema>;
+export type LoginFormInput = z.input<typeof loginFormSchema>;
 
 function isAtLeastAge(
 	dateOfBirth: string,

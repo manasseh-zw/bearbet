@@ -2,8 +2,15 @@ import "@tanstack/react-start/server-only";
 
 import { eq } from "drizzle-orm";
 
-import { assertPositiveMinorUnits } from "#/server/domains/wallet/wallet.policy";
 import { applyWalletOperationInTransaction } from "#/server/domains/wallet/wallet.service";
+import {
+	type RequestWithdrawalCommand,
+	type RequestWithdrawalInput,
+	type ReviewWithdrawalCommand,
+	type ReviewWithdrawalInput,
+	requestWithdrawalSchema,
+	reviewWithdrawalSchema,
+} from "#/server/domains/withdrawal/withdrawal.schema";
 import { db } from "#/server/infra/db";
 import { user, wallet, withdrawal } from "#/server/infra/db/schema";
 
@@ -22,18 +29,8 @@ export class WithdrawalServiceError extends Error {
 	}
 }
 
-export async function requestWithdrawal(input: {
-	playerId: string;
-	amountMinor: number;
-	idempotencyKey: string;
-}) {
-	assertPositiveMinorUnits(input.amountMinor, "Withdrawal amount");
-	if (!input.playerId.trim() || !input.idempotencyKey.trim()) {
-		throw new WithdrawalServiceError(
-			"Player and idempotency key are required",
-			"INVALID_WITHDRAWAL",
-		);
-	}
+export async function requestWithdrawal(input: RequestWithdrawalInput) {
+	const command = parseWithdrawalRequest(input);
 
 	return db.transaction(async (transaction) => {
 		const [currentWallet] = await transaction
@@ -42,7 +39,7 @@ export async function requestWithdrawal(input: {
 				currencyCode: wallet.currencyCode,
 			})
 			.from(wallet)
-			.where(eq(wallet.playerId, input.playerId))
+			.where(eq(wallet.playerId, command.playerId))
 			.for("update");
 		if (!currentWallet) {
 			throw new WithdrawalServiceError(
@@ -54,11 +51,11 @@ export async function requestWithdrawal(input: {
 		const [existing] = await transaction
 			.select()
 			.from(withdrawal)
-			.where(eq(withdrawal.idempotencyKey, input.idempotencyKey));
+			.where(eq(withdrawal.idempotencyKey, command.idempotencyKey));
 		if (existing) {
 			if (
-				existing.playerId !== input.playerId ||
-				existing.requestedAmountMinor !== input.amountMinor
+				existing.playerId !== command.playerId ||
+				existing.requestedAmountMinor !== command.amountMinor
 			) {
 				throw new WithdrawalServiceError(
 					"Idempotency key was used for another withdrawal",
@@ -70,12 +67,12 @@ export async function requestWithdrawal(input: {
 
 		const withdrawalId = crypto.randomUUID();
 		await applyWalletOperationInTransaction(transaction, {
-			playerId: input.playerId,
+			playerId: command.playerId,
 			type: "withdrawal_reserve",
 			idempotencyKey: `withdrawal:${withdrawalId}:reserve`,
 			movements: [
-				{ bucket: "cash", amountMinor: -input.amountMinor },
-				{ bucket: "reserved_cash", amountMinor: input.amountMinor },
+				{ bucket: "cash", amountMinor: -command.amountMinor },
+				{ bucket: "reserved_cash", amountMinor: command.amountMinor },
 			],
 			sourceType: "withdrawal",
 			sourceId: withdrawalId,
@@ -85,11 +82,11 @@ export async function requestWithdrawal(input: {
 			.insert(withdrawal)
 			.values({
 				id: withdrawalId,
-				playerId: input.playerId,
+				playerId: command.playerId,
 				currencyCode: currentWallet.currencyCode,
-				requestedAmountMinor: input.amountMinor,
-				reservedAmountMinor: input.amountMinor,
-				idempotencyKey: input.idempotencyKey,
+				requestedAmountMinor: command.amountMinor,
+				reservedAmountMinor: command.amountMinor,
+				idempotencyKey: command.idempotencyKey,
 			})
 			.returning();
 		if (!created) {
@@ -102,26 +99,14 @@ export async function requestWithdrawal(input: {
 	});
 }
 
-export async function reviewWithdrawal(input: {
-	withdrawalId: string;
-	reviewerUserId: string;
-	decision: "approve" | "reject";
-	reason: string;
-	now?: Date;
-}) {
-	const reason = input.reason.trim();
-	if (!reason) {
-		throw new WithdrawalServiceError(
-			"A review reason is required",
-			"INVALID_WITHDRAWAL",
-		);
-	}
+export async function reviewWithdrawal(input: ReviewWithdrawalInput) {
+	const command = parseWithdrawalReview(input);
 
 	return db.transaction(async (transaction) => {
 		const [reviewer] = await transaction
 			.select({ role: user.role, banned: user.banned })
 			.from(user)
-			.where(eq(user.id, input.reviewerUserId));
+			.where(eq(user.id, command.reviewerUserId));
 		if (!reviewer || reviewer.role !== "admin" || reviewer.banned) {
 			throw new WithdrawalServiceError(
 				"An active administrator must review withdrawals",
@@ -132,7 +117,7 @@ export async function reviewWithdrawal(input: {
 		const [current] = await transaction
 			.select()
 			.from(withdrawal)
-			.where(eq(withdrawal.id, input.withdrawalId))
+			.where(eq(withdrawal.id, command.withdrawalId))
 			.for("update");
 		if (!current) {
 			throw new WithdrawalServiceError(
@@ -141,7 +126,7 @@ export async function reviewWithdrawal(input: {
 			);
 		}
 
-		const nextStatus = input.decision === "approve" ? "approved" : "rejected";
+		const nextStatus = command.decision === "approve" ? "approved" : "rejected";
 		if (current.status !== "pending") {
 			if (current.status === nextStatus) {
 				return { withdrawal: current, isDuplicate: true };
@@ -155,12 +140,12 @@ export async function reviewWithdrawal(input: {
 		await applyWalletOperationInTransaction(transaction, {
 			playerId: current.playerId,
 			type:
-				input.decision === "approve"
+				command.decision === "approve"
 					? "withdrawal_debit"
 					: "withdrawal_release",
-			idempotencyKey: `withdrawal:${current.id}:${input.decision}`,
+			idempotencyKey: `withdrawal:${current.id}:${command.decision}`,
 			movements:
-				input.decision === "approve"
+				command.decision === "approve"
 					? [
 							{
 								bucket: "reserved_cash",
@@ -176,16 +161,16 @@ export async function reviewWithdrawal(input: {
 						],
 			sourceType: "withdrawal",
 			sourceId: current.id,
-			actorUserId: input.reviewerUserId,
+			actorUserId: command.reviewerUserId,
 		});
 
 		const [reviewed] = await transaction
 			.update(withdrawal)
 			.set({
 				status: nextStatus,
-				reviewerUserId: input.reviewerUserId,
-				reviewReason: reason,
-				reviewedAt: input.now ?? new Date(),
+				reviewerUserId: command.reviewerUserId,
+				reviewReason: command.reason,
+				reviewedAt: command.now ?? new Date(),
 			})
 			.where(eq(withdrawal.id, current.id))
 			.returning();
@@ -197,4 +182,30 @@ export async function reviewWithdrawal(input: {
 		}
 		return { withdrawal: reviewed, isDuplicate: false };
 	});
+}
+
+function parseWithdrawalRequest(
+	input: RequestWithdrawalInput,
+): RequestWithdrawalCommand {
+	const result = requestWithdrawalSchema.safeParse(input);
+	if (!result.success) {
+		throw new WithdrawalServiceError(
+			result.error.issues[0]?.message ?? "Withdrawal request is invalid",
+			"INVALID_WITHDRAWAL",
+		);
+	}
+	return result.data;
+}
+
+function parseWithdrawalReview(
+	input: ReviewWithdrawalInput,
+): ReviewWithdrawalCommand {
+	const result = reviewWithdrawalSchema.safeParse(input);
+	if (!result.success) {
+		throw new WithdrawalServiceError(
+			result.error.issues[0]?.message ?? "Withdrawal review is invalid",
+			"INVALID_WITHDRAWAL",
+		);
+	}
+	return result.data;
 }

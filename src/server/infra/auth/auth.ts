@@ -7,7 +7,7 @@ import { admin } from "better-auth/plugins/admin";
 import { username } from "better-auth/plugins/username";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 
-import { registerPlayerInputSchema } from "#/lib/types/auth";
+import { registerPlayerInputSchema } from "#/lib/contracts/auth.contract";
 import { registerPlayer } from "#/server/domains/player/player.service";
 import { env } from "#/server/env";
 import { db } from "#/server/infra/db";

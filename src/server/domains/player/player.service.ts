@@ -3,15 +3,15 @@ import "@tanstack/react-start/server-only";
 import { and, eq } from "drizzle-orm";
 
 import {
-	type PlayerProfileInput,
+	type PlayerProfile,
 	playerProfileInputSchema,
-} from "#/lib/types/auth";
+} from "#/lib/contracts/auth.contract";
 import { db } from "#/server/infra/db";
 import { ledgerEntry, player, user, wallet } from "#/server/infra/db/schema";
 
 export const WELCOME_CREDIT_MINOR = 100_000;
 
-export type RegisterPlayerInput = PlayerProfileInput & {
+export type RegisterPlayerInput = PlayerProfile & {
 	userId: string;
 };
 

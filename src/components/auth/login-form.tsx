@@ -9,7 +9,10 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { signInPlayer } from "#/lib/auth-client";
-import { type LoginFormInput, loginFormSchema } from "#/lib/types/auth";
+import {
+	type LoginFormInput,
+	loginFormSchema,
+} from "#/lib/contracts/auth.contract";
 
 const defaultValues: LoginFormInput = {
 	identifier: "",

@@ -5,45 +5,37 @@ import { eq } from "drizzle-orm";
 
 import {
 	assertMinorUnits,
-	assertPositiveMinorUnits,
 	checkedAdd,
 	playableBalance,
 	type WalletBalances,
 } from "#/server/domains/wallet/wallet.policy";
+import {
+	type ApplyWalletOperationCommand,
+	type ApplyWalletOperationInput,
+	applyWalletOperationSchema,
+	type DemoTopUpInput,
+	demoTopUpSchema,
+	type WalletMovement,
+} from "#/server/domains/wallet/wallet.schema";
 import { db } from "#/server/infra/db";
 import {
 	ledgerEntry,
-	type ledgerEntryType,
 	user,
 	wallet,
-	type walletBucket,
 	walletOperation,
 } from "#/server/infra/db/schema";
 
-export const DEMO_TOP_UP_AMOUNTS_MINOR = [
-	10_000, 50_000, 100_000, 1_000_000,
-] as const;
+export { DEMO_TOP_UP_AMOUNTS_MINOR } from "#/server/domains/wallet/wallet.schema";
 
-type WalletBucket = (typeof walletBucket.enumValues)[number];
-type LedgerEntryType = (typeof ledgerEntryType.enumValues)[number];
+type WalletBucket = WalletMovement["bucket"];
 export type DatabaseTransaction = Parameters<
 	Parameters<typeof db.transaction>[0]
 >[0];
 
-export type WalletMovement = {
-	bucket: WalletBucket;
-	amountMinor: number;
-};
-
-export type ApplyWalletOperationInput = {
-	playerId: string;
-	type: LedgerEntryType;
-	idempotencyKey: string;
-	movements: readonly WalletMovement[];
-	sourceType?: string;
-	sourceId?: string;
-	actorUserId?: string;
-};
+export type {
+	ApplyWalletOperationInput,
+	WalletMovement,
+} from "#/server/domains/wallet/wallet.schema";
 
 export class WalletOperationError extends Error {
 	constructor(
@@ -92,13 +84,13 @@ export async function applyWalletOperationInTransaction(
 	transaction: DatabaseTransaction,
 	input: ApplyWalletOperationInput,
 ) {
-	validateOperation(input);
-	const fingerprint = operationFingerprint(input);
+	const command = parseWalletOperation(input);
+	const fingerprint = operationFingerprint(command);
 
 	const [currentWallet] = await transaction
 		.select()
 		.from(wallet)
-		.where(eq(wallet.playerId, input.playerId))
+		.where(eq(wallet.playerId, command.playerId))
 		.for("update");
 
 	if (!currentWallet) {
@@ -111,7 +103,7 @@ export async function applyWalletOperationInTransaction(
 	const [existing] = await transaction
 		.select()
 		.from(walletOperation)
-		.where(eq(walletOperation.idempotencyKey, input.idempotencyKey));
+		.where(eq(walletOperation.idempotencyKey, command.idempotencyKey));
 
 	if (existing) {
 		if (
@@ -131,7 +123,7 @@ export async function applyWalletOperationInTransaction(
 		bonusBalanceMinor: currentWallet.bonusBalanceMinor,
 		reservedCashMinor: currentWallet.reservedCashMinor,
 	};
-	const entries = input.movements.map((movement, movementIndex) => {
+	const entries = command.movements.map((movement, movementIndex) => {
 		const balanceBeforeMinor = balanceForBucket(balances, movement.bucket);
 		const balanceAfterMinor = checkedAdd(
 			balanceBeforeMinor,
@@ -155,12 +147,12 @@ export async function applyWalletOperationInTransaction(
 		.insert(walletOperation)
 		.values({
 			walletId: currentWallet.id,
-			type: input.type,
-			idempotencyKey: input.idempotencyKey,
+			type: command.type,
+			idempotencyKey: command.idempotencyKey,
 			fingerprint,
-			sourceType: input.sourceType,
-			sourceId: input.sourceId,
-			actorUserId: input.actorUserId,
+			sourceType: command.sourceType,
+			sourceId: command.sourceId,
+			actorUserId: command.actorUserId,
 			resultCashBalanceMinor: balances.cashBalanceMinor,
 			resultBonusBalanceMinor: balances.bonusBalanceMinor,
 			resultReservedCashMinor: balances.reservedCashMinor,
@@ -179,11 +171,11 @@ export async function applyWalletOperationInTransaction(
 			...entry,
 			walletId: currentWallet.id,
 			operationId: createdOperation.id,
-			type: input.type,
-			idempotencyKey: `${input.idempotencyKey}:${entry.movementIndex}`,
-			sourceType: input.sourceType,
-			sourceId: input.sourceId,
-			actorUserId: input.actorUserId,
+			type: command.type,
+			idempotencyKey: `${command.idempotencyKey}:${entry.movementIndex}`,
+			sourceType: command.sourceType,
+			sourceId: command.sourceId,
+			actorUserId: command.actorUserId,
 		})),
 	);
 
@@ -195,55 +187,37 @@ export async function applyWalletOperationInTransaction(
 	return operationResult(createdOperation, false);
 }
 
-export async function demoTopUp(input: {
-	playerId: string;
-	amountMinor: number;
-	idempotencyKey: string;
-}) {
-	if (
-		!DEMO_TOP_UP_AMOUNTS_MINOR.includes(
-			input.amountMinor as (typeof DEMO_TOP_UP_AMOUNTS_MINOR)[number],
-		)
-	) {
+export async function demoTopUp(input: DemoTopUpInput) {
+	const result = demoTopUpSchema.safeParse(input);
+	if (!result.success) {
 		throw new WalletOperationError(
-			"Choose a supported demo top-up amount",
+			result.error.issues[0]?.message ?? "Demo top-up is invalid",
 			"INVALID_OPERATION",
 		);
 	}
 	return applyWalletOperation({
-		...input,
+		...result.data,
 		type: "demo_top_up",
-		movements: [{ bucket: "cash", amountMinor: input.amountMinor }],
+		movements: [{ bucket: "cash", amountMinor: result.data.amountMinor }],
 		sourceType: "demo_top_up",
-		sourceId: input.idempotencyKey,
+		sourceId: result.data.idempotencyKey,
 	});
 }
 
-function validateOperation(input: ApplyWalletOperationInput) {
-	if (!input.playerId.trim() || !input.idempotencyKey.trim()) {
+function parseWalletOperation(
+	input: ApplyWalletOperationInput,
+): ApplyWalletOperationCommand {
+	const result = applyWalletOperationSchema.safeParse(input);
+	if (!result.success) {
 		throw new WalletOperationError(
-			"Player and idempotency key are required",
+			result.error.issues[0]?.message ?? "Wallet operation is invalid",
 			"INVALID_OPERATION",
 		);
 	}
-	if (input.movements.length === 0) {
-		throw new WalletOperationError(
-			"A wallet operation needs at least one movement",
-			"INVALID_OPERATION",
-		);
-	}
-	for (const movement of input.movements) {
-		assertPositiveMinorUnits(Math.abs(movement.amountMinor), "Movement");
-		if (!Number.isSafeInteger(movement.amountMinor)) {
-			throw new WalletOperationError(
-				"Movement must be a safe integer",
-				"INVALID_OPERATION",
-			);
-		}
-	}
+	return result.data;
 }
 
-function operationFingerprint(input: ApplyWalletOperationInput) {
+function operationFingerprint(input: ApplyWalletOperationCommand) {
 	return createHash("sha256")
 		.update(
 			JSON.stringify({

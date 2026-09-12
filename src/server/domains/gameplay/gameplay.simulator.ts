@@ -1,48 +1,52 @@
 import "@tanstack/react-start/server-only";
 
 import { recordBet, recordRefund, recordWin } from "./gameplay.service";
+import {
+	type SimulateGameRoundInput,
+	simulateGameRoundSchema,
+} from "./gameplay.simulator.schema";
 
-export async function simulateGameRound(input: {
-	playerId: string;
-	gameId: string;
-	runId: string;
-	stakeMinor: number;
-	outcome: "loss" | "refund" | "win";
-	winAmountMinor?: number;
-	gameCategory?: string;
-	contentProvider?: string;
-}) {
-	if (input.outcome === "win" && input.winAmountMinor === undefined) {
-		throw new Error("A winning simulation needs a win amount");
+export async function simulateGameRound(input: SimulateGameRoundInput) {
+	const parsed = simulateGameRoundSchema.safeParse(input);
+	if (!parsed.success) {
+		const missingWinAmount = parsed.error.issues.some(
+			(issue) => issue.path[0] === "winAmountMinor",
+		);
+		throw new Error(
+			missingWinAmount
+				? "A winning simulation needs a win amount"
+				: (parsed.error.issues[0]?.message ?? "Simulation input is invalid"),
+		);
 	}
+	const command = parsed.data;
 	const identity = {
 		integrationProvider: "fixture",
-		playerId: input.playerId,
-		externalSessionId: `fixture-session:${input.runId}`,
-		externalRoundId: `fixture-round:${input.runId}`,
-		gameId: input.gameId,
+		playerId: command.playerId,
+		externalSessionId: `fixture-session:${command.runId}`,
+		externalRoundId: `fixture-round:${command.runId}`,
+		gameId: command.gameId,
 	};
 	const bet = await recordBet({
 		...identity,
-		externalTransactionId: `fixture-bet:${input.runId}`,
-		amountMinor: input.stakeMinor,
-		gameCategory: input.gameCategory,
-		contentProvider: input.contentProvider,
+		externalTransactionId: `fixture-bet:${command.runId}`,
+		amountMinor: command.stakeMinor,
+		gameCategory: command.gameCategory,
+		contentProvider: command.contentProvider,
 	});
 
-	if (input.outcome === "refund") {
-		const result = await recordRefund({
+	if (command.outcome === "refund") {
+		const settlement = await recordRefund({
 			...identity,
-			externalTransactionId: `fixture-refund:${input.runId}`,
-			amountMinor: input.stakeMinor,
+			externalTransactionId: `fixture-refund:${command.runId}`,
+			amountMinor: command.stakeMinor,
 		});
-		return { bet, settlement: result };
+		return { bet, settlement };
 	}
-	const result = await recordWin({
+	const settlement = await recordWin({
 		...identity,
-		externalTransactionId: `fixture-win:${input.runId}`,
-		betAmountMinor: input.stakeMinor,
-		winAmountMinor: input.outcome === "loss" ? 0 : (input.winAmountMinor ?? 0),
+		externalTransactionId: `fixture-win:${command.runId}`,
+		betAmountMinor: command.stakeMinor,
+		winAmountMinor: command.outcome === "loss" ? 0 : command.winAmountMinor,
 	});
-	return { bet, settlement: result };
+	return { bet, settlement };
 }
