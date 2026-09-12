@@ -1,108 +1,160 @@
 # Bearbet implementation plan
 
-Build complete slices. Each phase must end with a visible user or admin outcome and automated proof for its risky rules. `master-task-list.md` tracks individual requirements.
+Bearbet has finished its main domain-engine phase. The next phase turns those services into complete player and administrator journeys. New work should ship as vertical slices that connect a route, browser-safe contract, authenticated server function, domain service, persistence, interface states, and focused proof.
 
-## Current state
+`master-task-list.md` is the active checklist. This file records delivery order, dependencies, and checkpoints.
 
-The repository now has:
+## Where the project stands
 
-- A conventional TanStack Start layout with server code under `src/server`, shared browser inputs under `src/lib`, and product UI under `src/components`.
-- PostgreSQL through Docker Compose, Drizzle schemas, validated server environment variables, and working build, typecheck, lint, and test commands.
-- Better Auth backed by PostgreSQL with username and admin plugins, database rate limits, TanStack cookies, and server middleware.
-- One-to-one player and wallet records, separate cash, bonus, and reserved balances, an immutable ledger schema, and retry-safe `$1,000.00` welcome credit provisioning.
-- Idempotent wallet-operation records, bonus definitions and awards, and withdrawal lifecycle records with database constraints for active awards, exact money, and review state.
-- One atomic wallet service used for credits, debits, multi-bucket transfers, and four allowed demo top-ups. It locks the wallet, rejects underflow and unsafe integers, fingerprints idempotency keys, and writes ordered ledger evidence in the same database transaction.
-- Bonus services now create validated definitions, verify persisted qualifying top-ups, allow one active award, snapshot rules, and handle idempotent conversion, forfeiture, expiry, exhaustion, and cancellation. Withdrawal services reserve cash on request and require an active administrator for one-way approval or rejection.
-- Gameplay persistence now records provider sessions, rounds, operations, fingerprints, original-operation links, cash and bonus allocations, wagering contributions, refund totals, stored responses, and wallet-operation links.
-- The gameplay service now handles atomic bets, wins, losses, partial and full refunds, callback retries, conflicting fingerprints, mixed cash and bonus settlement, wagering progress, terminal bonus refunds, and delayed expiry while a bonus-funded bet remains unsettled. A deterministic fixture runner calls these same services, and the authenticated Drakon callback route is wired to the normalized callback processor.
-- A validated Better Auth registration endpoint that uses the user lifecycle hook to provision the player, wallet, and welcome credit. Email and username sign-in both resolve the persisted player identity.
-- A responsive registration screen using TanStack Form, shared Zod validation, and the typed Better Auth client. It reports field and server errors and disables repeated submissions while registration is pending.
-- A responsive email-or-username login screen and a session-aware player menu. Guests can open the login or registration routes; signed-in players can log out, while Settings remains unavailable until its route exists.
-- A provider-neutral casino contract with live Drakon and captured-fixture adapters. The live adapter authenticates, refreshes one expired token, normalizes the catalogue and launch response, and rejects unsupported demo games and Drakon's unavailable-game URL.
-- A Drakon webhook boundary that limits request size, compares callback secrets safely, validates each supported method, identifies authenticated dashboard probes, converts provider amounts to integer minor units, and dispatches account, balance, and financial callbacks directly to their owning domain services.
-- A game-domain catalogue service backed by Postgres, an explicit provider sync script, and an admin-protected sync function ready for the admin panel. The casino server function reads the persisted catalogue, with React Query caching on the casino route. Casino remains `/`; Promotions, Bonuses, and VIP use sibling routes with URL-derived navigation state.
-- A session-aware casino lobby. Guests see a registration hero, two restrained tilt collections, and a static 24-game editorial selection. Signed-in players see catalogue-backed top picks, search, category filters, and an animated responsive game grid.
-- A dark-first Bearbet theme, local logo font, favicon package, fixed desktop sidebar, mobile drawer, and inset content panel.
+### Working product pieces
 
-The registration tests prove that valid email or username credentials resolve the same player identity, provisioning stays idempotent, and invalid age input creates no identity.
+- Guests can browse a branded casino lobby and open registration or login.
+- Players can register with the required profile fields, receive `$1,000.00` in virtual cash once, sign in with email or username, retain a database-backed session, and sign out.
+- Signed-in players can browse the synchronized catalogue with client-side search and category filters.
+- The responsive shell has desktop navigation, a mobile drawer, account controls, loading states, catalogue error recovery, and artwork fallbacks.
+- PostgreSQL stores Better Auth identity, player profiles, wallets, wallet operations, immutable ledger entries, withdrawals, bonus definitions and awards, games, sessions, rounds, and provider operations.
+- The wallet engine performs exact, atomic, retry-safe movements across cash, bonus, and reserved cash.
+- The bonus engine handles activation, eligibility, wagering progress, completion, conversion, refund effects, expiry, exhaustion, and cancellation.
+- The gameplay engine handles bets, wins, losses, and refunds through the same wallet and bonus services used by the rest of the application.
+- The deterministic fixture runner exercises production gameplay logic. The Drakon adapter and callback boundary have contract tests.
+- Catalogue synchronization persists provider data and preserves Bearbet-owned availability and curation fields.
 
-## Next slice: session ownership
+### The current gap
 
-Finish the identity flow before expanding the interface.
+The browser can call the catalogue boundary, but it cannot yet call wallet, withdrawal, bonus, simulator, or history use cases. Game cards do not launch a session. Wallet and Transactions have no routes. Bonuses, Promotions, and VIP are placeholders.
 
-1. Add the authenticated route layout and complete the guest-route session guard.
-2. Test duplicate username and email, suspension, session persistence, logout, and ownership boundaries.
+This means the hard money rules exist, but a reviewer cannot see or drive them. The next work should expose those rules without duplicating them in components or server functions.
 
-Checkpoint:
+## Delivery rules
 
-```text
-Register -> one player -> one wallet -> $1,000.00 cash
-Refresh and restart -> session and balance persist
-Guest routes reject signed-in users -> protected routes reject guests
-Suspended user -> protected server action denied
-```
+1. Build one visible journey at a time. A backend-only addition is incomplete when the task promises a player or administrator outcome.
+2. Browser request schemas contain only caller-controlled fields. Server functions add player IDs, roles, balances, and audit data from trusted state.
+3. Every protected server function authenticates the session and checks player status, ownership, or administrator role. Route guards only manage navigation.
+4. Components call TanStack server functions. Domain services keep business rules and call Drizzle directly.
+5. The wallet and immutable ledger remain the only money record. History screens read those records instead of introducing presentation-specific transaction tables.
+6. The fixture provider and Drakon use the same launch, gameplay, wallet, bonus, and history paths after provider normalization.
+7. Each slice includes loading, empty, error, disabled, unavailable, keyboard, mobile, and reduced-motion behavior that applies to it.
+8. Finish the focused tests first, then run the full repository checks, inspect the diff, commit, and push the atomic task.
 
-## Wallet operations
+## Stage 1: authenticated wallet experience
 
-After identity is stable, implement wallet movements as the first reusable business service.
+This is the next feature.
 
-1. Lock cash and bonus stake allocation and withdrawal reservation rules with worked examples.
-2. Add atomic credit, debit, reserve, release, and reversal operations.
-3. Add demo top-ups and simulated withdrawal requests.
-4. Test concurrent debits, insufficient funds, idempotent requests, exact minor-unit arithmetic, and immutable history.
+Add the `_auth` route boundary and finish the guest-route redirect. Create browser-safe top-up and withdrawal schemas, then authenticated server functions for the current wallet, demo top-up, withdrawal request, and recent ledger entries. The server derives the player ID from the session.
 
-The UI checkpoint is a real wallet balance and transaction list in the player shell. Do not build a second transaction table.
-
-## Simulator and casino slice
-
-1. Define normalized catalogue, launch, bet, win, and refund inputs.
-2. Add a deterministic simulated provider that calls the production wallet service.
-3. Persist a representative catalogue, game sessions, rounds, and provider operations.
-4. Build the lobby, game launch state, player history, and a small admin inspection view.
-5. Prove that callback retries do not move money twice and conflicting fingerprints fail.
+Put cash, bonus, and playable balance in the app shell. Build `/wallet` with the four virtual top-up amounts, withdrawal reservation, mutation feedback, and recent activity. Build `/transactions` from ledger data with pagination and basic filters. Share React Query keys so successful mutations refresh every visible balance and history view.
 
 Checkpoint:
 
 ```text
-Sign in -> browse catalogue -> launch simulated game
--> bet -> settle or refund -> wallet and history update once
--> admin sees the same persisted activity
+Register -> receive $1,000.00 -> refresh and retain the balance
+-> top up once under duplicate clicks -> see the ledger entry
+-> request a withdrawal -> cash becomes reserved
+-> another user cannot read or mutate the wallet
 ```
 
-## Player MVP
+This stage delivers tasks P01 through P10 in `master-task-list.md`.
 
-Complete profile, account recovery, lobby search and filters, game-player behavior, wallet controls, transaction history, bet history, and simulated withdrawals. Add loading, empty, error, unavailable, keyboard, and responsive states as each route lands.
+## Stage 2: catalogue reads and simulator gameplay
 
-The catalogue must remain usable with roughly 15,000 records. Broken artwork, provider timeouts, empty history, and unavailable games need explicit recovery states.
+Replace the full client-side catalogue read with indexed, paginated PostgreSQL queries. Support name, content provider, category, availability, and curation filters. Keep filter state in the URL where returning to a result set matters.
 
-## Bonuses and admin
+Implement launch orchestration around the provider contract. It must authenticate an active player, resolve a persisted enabled game, check playable balance, record the launch attempt, call the configured provider, and return a safe result. Wire game cards to the player interface.
 
-Implement one complete bonus path before adding broad configuration.
+Expose the deterministic fixture runner through authenticated browser functions. The demo controls must say that they simulate an outcome. A simulated bet, win, loss, or refund must use the existing gameplay service and trigger wallet and history refreshes.
+
+Build bet history from game rounds and provider operations. Do not derive financial truth from UI state.
+
+Checkpoint:
 
 ```text
-Admin creates offer -> player receives it -> eligible bet advances progress
--> excluded bet does not -> completion converts once -> ledger explains the result
+Sign in -> search a persisted catalogue -> launch a fixture game
+-> place a deterministic bet -> settle as win, loss, or refund
+-> wallet, transaction history, and bet history update once
+-> retrying the same operation changes nothing
 ```
 
-Then complete user, game, bonus, transaction, adjustment, and withdrawal controls. Every admin mutation must check the role on the server and record its actor and reason.
+This stage delivers tasks P11 through P18.
 
-## Drakon proof
+## Stage 3: visible bonus journey
 
-Port the verified Greenbear V0 behavior behind the same provider contract used by the simulator. Keep token caching, one refresh after authorization failure, `only_demo` handling, launch-error detection, request limits, callback authentication, and dashboard probe compatibility.
+Expose available bonus definitions, the current award, and activation through authenticated server functions. Build the bonus page around the persisted award snapshot. Show required, completed, and remaining wagering, percentage, expiry, status, and eligibility failures.
 
-Live completion requires an approved agent and this exact proof:
+The fixture game player should make bonus behavior visible. Eligible bonus-funded bets advance progress. Excluded bets use cash and leave progress unchanged. Completion converts the remaining bonus once and transaction history explains the conversion.
+
+Checkpoint:
 
 ```text
-Drakon auth -> catalogue sync -> supported game launch -> Bearbet player identity
--> provider bet and settlement callback -> persistent wallet and history update
+Seed a known offer -> player activates it
+-> eligible fixture bet advances progress -> excluded bet does not
+-> completion converts once -> wallet and ledger agree
 ```
 
-A successful catalogue request or a URL ending at `/game-error` does not complete this phase.
+This stage delivers tasks P19 through P21. It depends on wallet and gameplay. Administrator-authored offers join the same flow in Stage 4.
 
-## Delivery
+## Stage 4: account and administration
 
-Add targeted rate limits, structured redacted logs, secure headers, readiness checks, repeatable seeds, clean-install release checks, deployment, screenshots, and reviewer instructions. Finish with a visual and accessibility pass after layouts stop changing.
+Complete player profile and password recovery. Profile edits must exclude role, status, balances, and audit fields. Password changes require a fresh session.
 
-## Current blocker
+Add a nested administrator route group with a server-side role check on every function. Build operations in this order:
 
-The approved Drakon agent credentials have not arrived. This blocks only the live provider proof. The simulator keeps identity, wallet, catalogue, gameplay, bonus, admin, and interface work moving.
+1. User search, inspection, suspension, activation, and bonus assignment.
+2. Audited balance adjustments through the wallet engine.
+3. Game sync, availability, categories, and collection curation.
+4. Bonus definition management.
+5. Wallet and gameplay inspection plus withdrawal review.
+6. A persistent audit trail for every administrator mutation.
+
+The overview comes from those operational reads. It should report useful counts and recent events, not invented gambling revenue.
+
+Checkpoint:
+
+```text
+Admin finds a player -> changes status or balance with a reason
+-> manages one game and one bonus -> reviews a withdrawal
+-> audit records identify actor, target, action, reason, and time
+-> a normal player cannot call any of the same mutations
+```
+
+This stage delivers tasks P22 through P24 and A01 through A07.
+
+## Stage 5: live Drakon proof
+
+The Drakon adapter and callback normalization already have focused tests. Live completion still requires an approved agent and provider-originated evidence.
+
+Use the same launch orchestration and player UI built for the fixture provider. Preserve token caching, one refresh after authorization failure, request timeouts, fun-mode enforcement, unavailable-game detection, callback authentication, request-size limits, and dashboard probe compatibility.
+
+Checkpoint:
+
+```text
+Drakon authentication -> catalogue sync -> supported game launch
+-> Bearbet player identity -> provider bet and settlement callback
+-> persistent wallet, transaction history, and bet history update once
+```
+
+A catalogue response or a URL that ends at Drakon's game-error page does not pass. Approved Drakon credentials remain the only external blocker. This stage delivers D01 through D04.
+
+## Stage 6: release and handover
+
+Add repeatable seed and reset commands before writing end-to-end tests so every reviewer journey starts from known data. Finish targeted rate limits, structured redacted logs, browser and response hardening, and separate health and readiness checks.
+
+Run critical player and administrator journeys from a clean install. Then complete responsive, keyboard, focus, contrast, reduced-motion, layout-shift, and artwork-failure checks. Deploy against persistent PostgreSQL, verify restart behavior, and capture the review evidence.
+
+Checkpoint:
+
+```text
+Clean install -> migrate -> seed -> run repository checks
+-> complete player and admin journeys on desktop and mobile
+-> restart without losing identity, wallet, gameplay, or bonus state
+-> follow the handover without private setup knowledge
+```
+
+This stage delivers R01 through R10.
+
+## Scope kept out of the MVP
+
+Favourites, recently played games, notifications, advanced filters, two-factor authentication, player limits, VIP, cashback, referrals, loyalty, multi-currency conversion, and broad analytics remain deferred. Promotions and VIP may keep honest unavailable states until a later scope explicitly brings them in.
+
+## Immediate task
+
+Start with P01 through P04 as one identity-boundary commit if they can be completed and verified together. Then implement P05 through P07 as the first wallet commit: browser-safe wallet contracts, authenticated wallet reads, and the shell balance. The `/wallet` mutations and transaction screen should follow as separate focused commits.
