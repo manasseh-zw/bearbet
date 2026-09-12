@@ -12,7 +12,7 @@ import { signInPlayer } from "#/lib/auth-client";
 import {
 	type LoginFormInput,
 	loginFormSchema,
-} from "#/lib/contracts/auth.contract";
+} from "#/lib/schemas/auth.schema";
 
 const defaultValues: LoginFormInput = {
 	identifier: "",

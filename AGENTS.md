@@ -33,6 +33,17 @@
 - Validate every untrusted input at its boundary.
 - Keep the code simple enough to read without tracing unnecessary wrappers or abstractions.
 
+## Validation and type boundaries
+
+- Put portable Zod schemas used by both browser and server code in `src/lib/schemas`. These files may import Zod, plain constants, and other browser-safe modules. They must not import `server-only`, Drizzle, environment configuration, Node APIs, or server services.
+- Treat client-side schema validation as user feedback only. Every TanStack server function that accepts input must validate it again with its shared schema before calling a service.
+- Do not create a second contract wrapper or duplicate a schema for the client. The shared Zod schema is the request contract; derive its types with `z.input` and `z.output`.
+- Keep schemas for server-only runtime inputs beside their domain as `*.schema.ts`. Use these when data can be invalid at runtime or when a sensitive operation needs defensive validation.
+- Use ordinary TypeScript types for trusted internal values that do not need runtime parsing. Keep them beside the function, service, or policy that owns them and extract a domain-local `*.types.ts` file only after several files need the same type.
+- Keep server-controlled fields such as authenticated user IDs, roles, balances, and audit data out of browser request schemas. Server functions add those values from trusted session or application state.
+- Infer database row and insert types from Drizzle. Do not use a Drizzle table schema as a public request schema; persistence shapes and caller-controlled inputs are different boundaries.
+- Add shared schemas and server functions only for operations with a known browser caller. Do not expose speculative endpoints for internal services.
+
 ## Authentication and authorization
 
 - Better Auth owns credentials, accounts, sessions, verification records, and the base user identity.

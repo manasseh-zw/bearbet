@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test, { after } from "node:test";
 
 import { count, eq } from "drizzle-orm";
-import type { RegisterPlayerInput } from "#/lib/contracts/auth.contract";
+import type { RegisterPlayerInput } from "#/lib/schemas/auth.schema";
 import { auth } from "#/server/infra/auth/auth";
 import { db, pool } from "#/server/infra/db";
 import {

@@ -115,7 +115,7 @@ provider callbacks → gameplay service → server/infra/db
 1. Routes contain TanStack wiring and page composition, not wallet, bonus, or provider rules.
 2. Components call exported TanStack server functions. They never import the database or provider modules.
 3. Services own business rules and call Drizzle directly. Database transactions begin in the service operation that owns the complete business action.
-4. Every untrusted entry point validates input with Zod before a service changes state. Browser-facing operations share portable request contracts; server-only operations keep their schemas in the domain that owns them.
+4. Every untrusted entry point validates input with Zod before a service changes state. Browser-facing operations share portable schemas; server-only operations keep their schemas in the domain that owns them.
 5. Provider payloads stay inside their adapter. The rest of Bearbet uses normalized types.
 6. Database rows do not become public response types by default.
 7. Use `type` declarations unless a library requires an `interface` or declaration merging.
@@ -124,17 +124,19 @@ provider callbacks → gameplay service → server/infra/db
 
 ## Type placement
 
-`src/server` is the source of truth for database and domain types. `src/lib/contracts` contains portable request contracts shared by browser and server code. A contract exports its Zod schema and derives TypeScript input and output types from that schema.
+`src/server` is the source of truth for database and domain types. `src/lib/schemas` contains portable Zod schemas shared by browser and server code. The schema is the request contract, and its TypeScript input and output types are derived rather than declared again.
 
-1. A browser-facing input lives in a matching `*.contract.ts` file under `src/lib/contracts`. Contract files cannot import database schemas, server-only modules, environment configuration, Node APIs, or domain services.
-2. A database row type comes from Drizzle's `$inferSelect` or `$inferInsert` in `src/server/infra/db/schema.ts`.
-3. Better Auth supplies its own user and session types.
-4. Server function results stay inferred. Add an explicit result type only when inference stops being clear or the response is a stable external contract.
-5. A server-only runtime input schema stays beside its domain as `bonus.schema.ts`, `wallet.schema.ts`, or the matching domain-local file. Its TypeScript types are inferred with `z.input` and `z.output`.
-6. An internal type stays in the server file that owns it unless several files in the same domain need it. At that point it can move to `wallet.types.ts`, `game.types.ts`, or the matching domain-local file.
-7. Component props stay beside their component.
+1. A browser-facing input lives in a matching `*.schema.ts` file under `src/lib/schemas`. Shared schema files cannot import database schemas, server-only modules, environment configuration, Node APIs, or domain services.
+2. Components may use a shared schema for form feedback, but client validation is never trusted. Every TanStack server function with input validates it again with the same schema before calling a service.
+3. Server functions add authenticated identities, roles, and other server-controlled values after parsing the browser request. Those fields do not belong in shared request schemas.
+4. A database row type comes from Drizzle's `$inferSelect` or `$inferInsert` in `src/server/infra/db/schema.ts`. A Drizzle table is not a public request schema.
+5. Better Auth supplies its own user and session types.
+6. Server function results stay inferred. Add an explicit result type only when inference stops being clear or the response is a stable external contract.
+7. A server-only runtime input schema stays beside its domain as `bonus.schema.ts`, `wallet.schema.ts`, or the matching domain-local file. Its TypeScript types are inferred with `z.input` and `z.output`.
+8. A trusted internal type stays in the server file that owns it unless several files in the same domain need it. At that point it can move to `wallet.types.ts`, `game.types.ts`, or the matching domain-local file.
+9. Component props stay beside their component.
 
-For example, `src/lib/contracts/wallet.contract.ts` may contain:
+For example, `src/lib/schemas/wallet.schema.ts` may contain:
 
 ```ts
 export const createWithdrawalInputSchema = z.object({

@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import {
 	type PlayerProfile,
 	playerProfileInputSchema,
-} from "#/lib/contracts/auth.contract";
+} from "#/lib/schemas/auth.schema";
 import { db } from "#/server/infra/db";
 import { ledgerEntry, player, user, wallet } from "#/server/infra/db/schema";
 

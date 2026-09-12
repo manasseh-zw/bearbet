@@ -3,7 +3,7 @@ import { createAuthClient } from "better-auth/react";
 import type {
 	LoginFormInput,
 	RegisterPlayerInput,
-} from "#/lib/contracts/auth.contract";
+} from "#/lib/schemas/auth.schema";
 
 export const authClient = createAuthClient({
 	plugins: [usernameClient(), adminClient()],
