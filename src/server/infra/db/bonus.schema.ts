@@ -16,6 +16,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { player } from "./player.schema";
+import { walletOperation } from "./wallet.schema";
 
 export const bonusDefinitionType = pgEnum("bonus_definition_type", [
 	"welcome",
@@ -99,6 +100,9 @@ export const bonusAward = pgTable(
 		playerId: text("player_id")
 			.notNull()
 			.references(() => player.userId, { onDelete: "restrict" }),
+		qualifyingDepositOperationId: uuid(
+			"qualifying_deposit_operation_id",
+		).references(() => walletOperation.id, { onDelete: "restrict" }),
 		status: bonusAwardStatus("status").default("active").notNull(),
 		awardedAmountMinor: bigint("awarded_amount_minor", {
 			mode: "number",
@@ -141,6 +145,9 @@ export const bonusAward = pgTable(
 		uniqueIndex("bonus_award_player_definition_unique").on(
 			table.playerId,
 			table.definitionId,
+		),
+		uniqueIndex("bonus_award_qualifying_deposit_unique").on(
+			table.qualifyingDepositOperationId,
 		),
 		uniqueIndex("bonus_award_one_active_per_player")
 			.on(table.playerId)

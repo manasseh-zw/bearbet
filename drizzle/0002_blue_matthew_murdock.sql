@@ -1,0 +1,3 @@
+ALTER TABLE "bonus_award" ADD COLUMN "qualifying_deposit_operation_id" uuid;--> statement-breakpoint
+ALTER TABLE "bonus_award" ADD CONSTRAINT "bonus_award_qualifying_deposit_operation_id_wallet_operation_id_fk" FOREIGN KEY ("qualifying_deposit_operation_id") REFERENCES "public"."wallet_operation"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "bonus_award_qualifying_deposit_unique" ON "bonus_award" USING btree ("qualifying_deposit_operation_id");

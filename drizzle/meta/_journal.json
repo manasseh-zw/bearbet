@@ -15,6 +15,13 @@
       "when": 1789220077188,
       "tag": "0001_young_black_bolt",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789220562607,
+      "tag": "0002_blue_matthew_murdock",
+      "breakpoints": true
     }
   ]
 }

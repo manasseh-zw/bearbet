@@ -41,7 +41,7 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 - [x] **W02. Implement atomic wallet movements.** Lock or atomically update wallet rows, insert ledger evidence in the same transaction, and reject negative or overflowed balances.
 - [x] **W03. Credit the welcome balance once.** Every new user receives exactly `$1,000.00` cash, including under registration retries and concurrent requests.
 - [x] **W04. Add demo top-ups.** Support `$100`, `$500`, `$1,000`, and `$10,000` completed demo deposits with visible ledger entries.
-- [ ] **W05. Add simulated withdrawals.** Validate withdrawable cash, reserve it on request, and support pending, approved, and rejected outcomes without double spending.
+- [x] **W05. Add simulated withdrawals.** Validate withdrawable cash, reserve it on request, and support pending, approved, and rejected outcomes without double spending.
 - [ ] **W06. Add admin adjustments.** Admins can add or remove funds only with a reason. Record actor, target, amount, before and after balances.
 - [ ] **W07. Prove wallet invariants.** Test concurrent debits, insufficient funds, duplicate requests, exact cent precision, reversal, and immutable history.
 
@@ -71,7 +71,7 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 ## 6. Bonuses and wagering
 
 - [x] **O01. Model bonus definitions and awards.** Support welcome, simulated deposit, and promotional types, amounts, multiplier, required wager, expiry, eligibility, minimum deposit, maximum award, and active state.
-- [ ] **O02. Implement award eligibility and activation.** Prevent duplicate or ineligible awards and record bonus credits in the ledger.
+- [x] **O02. Implement award eligibility and activation.** Prevent duplicate or ineligible awards and record bonus credits in the ledger.
 - [ ] **O03. Advance wagering on qualifying bets.** Apply eligible-game rules and the locked stake-allocation policy in the same transaction as the bet.
 - [ ] **O04. Complete, expire, and convert awards.** Make each transition idempotent and create ledger entries for conversion or forfeiture.
 - [ ] **O05. Build bonus UI.** Show available offers, active awards, required, completed, remaining, percentage, expiry, status, and plain-language eligibility errors.
