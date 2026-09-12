@@ -18,6 +18,7 @@ import { Route as CasinoVipRouteImport } from './routes/_casino/vip'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
 import { Route as GuestRegisterRouteImport } from './routes/_guest/register'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiDrakonKeyRouteImport } from './routes/api/drakon/$key'
 
 const CasinoRouteRoute = CasinoRouteRouteImport.update({
   id: '/_casino',
@@ -62,6 +63,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDrakonKeyRoute = ApiDrakonKeyRouteImport.update({
+  id: '/api/drakon/$key',
+  path: '/api/drakon/$key',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof CasinoIndexRoute
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/drakon/$key': typeof ApiDrakonKeyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof CasinoIndexRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/drakon/$key': typeof ApiDrakonKeyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/_guest/register': typeof GuestRegisterRoute
   '/_casino/': typeof CasinoIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/drakon/$key': typeof ApiDrakonKeyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/api/auth/$'
+    | '/api/drakon/$key'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -112,6 +122,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/api/auth/$'
+    | '/api/drakon/$key'
   id:
     | '__root__'
     | '/_casino'
@@ -123,12 +134,14 @@ export interface FileRouteTypes {
     | '/_guest/register'
     | '/_casino/'
     | '/api/auth/$'
+    | '/api/drakon/$key'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   CasinoRouteRoute: typeof CasinoRouteRouteWithChildren
   GuestRouteRoute: typeof GuestRouteRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiDrakonKeyRoute: typeof ApiDrakonKeyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -196,6 +209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/drakon/$key': {
+      id: '/api/drakon/$key'
+      path: '/api/drakon/$key'
+      fullPath: '/api/drakon/$key'
+      preLoaderRoute: typeof ApiDrakonKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -235,6 +255,7 @@ const rootRouteChildren: RootRouteChildren = {
   CasinoRouteRoute: CasinoRouteRouteWithChildren,
   GuestRouteRoute: GuestRouteRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiDrakonKeyRoute: ApiDrakonKeyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

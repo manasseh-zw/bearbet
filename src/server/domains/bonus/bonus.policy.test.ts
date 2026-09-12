@@ -72,6 +72,20 @@ describe("bonus policy", () => {
 		);
 	});
 
+	test("an expired award waits for its last unsettled operation", () => {
+		assert.equal(
+			determineActiveAwardOutcome({
+				completedWagerMinor: 1_000,
+				requiredWagerMinor: 5_000,
+				bonusBalanceMinor: 2_000,
+				unsettledOperationCount: 1,
+				expiresAt: new Date("2030-01-01T00:00:00Z"),
+				now: new Date("2030-01-02T00:00:00Z"),
+			}),
+			"active",
+		);
+	});
+
 	test("accepts unrestricted awards and matches any configured eligibility rule", () => {
 		assert.equal(
 			isGameEligible({

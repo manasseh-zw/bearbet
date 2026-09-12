@@ -1,6 +1,6 @@
 # Bearbet domain model
 
-Status: identity, player, wallet, welcome credit, wallet operation, bonus, withdrawal, game-session, round, and provider-operation persistence models are implemented. Money, wagering, and withdrawal rules are locked. Catalogue and admin-audit entities remain planned. Gameplay services are the next implementation step.
+Status: identity, player, wallet, welcome credit, wallet operation, bonus, withdrawal, game-session, round, and provider-operation models and services are implemented. Money, wagering, gameplay, and withdrawal rules are enforced by pure policy tests and PostgreSQL integration tests. Catalogue persistence and admin-audit entities remain planned.
 
 ## Required player journey
 
@@ -199,7 +199,7 @@ admin user ──< admin audit entries
 - Eligible bets spend bonus before cash. Ineligible bets spend cash only.
 - Only the bonus-funded portion of an eligible bet advances wagering.
 - Wins return to their funding buckets. Mixed wins use the original stake ratio, rounded down for bonus with the remainder assigned to cash.
-- Refunds restore the original stake buckets and reverse the matching wagering contribution.
+- Refunds restore the original stake buckets and reverse the matching wagering contribution while an award is active. After conversion they use cash without reopening the award. After forfeiture they do not recreate or remove bonus funds.
 - Completed awards convert remaining bonus funds to cash once. Expired or cancelled awards forfeit the remainder. Empty awards become exhausted.
 - One player may have one active bonus award in the MVP.
 - Playable and provider-reported balance is cash plus bonus. Reserved cash is excluded.

@@ -79,7 +79,9 @@ export function determineActiveAwardOutcome(input: {
 		throw new Error("Unsettled operation count must be a non-negative integer");
 	}
 
-	if (input.now >= input.expiresAt) return "expired";
+	if (input.now >= input.expiresAt && input.unsettledOperationCount === 0) {
+		return "expired";
+	}
 	if (
 		input.completedWagerMinor >= input.requiredWagerMinor &&
 		input.unsettledOperationCount === 0

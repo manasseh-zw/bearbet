@@ -202,7 +202,6 @@ test("deposit awards verify persisted top-ups and completed awards convert once"
 	const completed = await settleBonusAward({
 		awardId: activated.award.id,
 		reason: "evaluate",
-		unsettledOperationCount: 0,
 		now: new Date("2030-02-02T00:00:00Z"),
 	});
 	assert.equal(completed.award.status, "completed");

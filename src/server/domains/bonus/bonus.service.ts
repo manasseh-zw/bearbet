@@ -1,6 +1,6 @@
 import "@tanstack/react-start/server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import {
 	calculateRequiredWager,
@@ -15,6 +15,7 @@ import {
 	bonusAward,
 	bonusDefinition,
 	ledgerEntry,
+	providerOperation,
 	wallet,
 	walletOperation,
 } from "#/server/infra/db/schema";
@@ -207,101 +208,116 @@ export async function activateBonusAward(input: {
 export async function settleBonusAward(input: {
 	awardId: string;
 	reason: "evaluate" | "expire" | "cancel";
-	unsettledOperationCount?: number;
 	now?: Date;
 }) {
 	return db.transaction(async (transaction) => {
-		const [award] = await transaction
-			.select()
-			.from(bonusAward)
-			.where(eq(bonusAward.id, input.awardId))
-			.for("update");
-		if (!award) {
-			throw new BonusServiceError(
-				"Bonus award was not found",
-				"BONUS_NOT_FOUND",
-			);
-		}
-		if (award.status !== "active") {
-			return { award, isDuplicate: true };
-		}
-
-		const now = input.now ?? new Date();
-		const outcome =
-			input.reason === "cancel"
-				? "cancelled"
-				: determineActiveAwardOutcome({
-						completedWagerMinor: award.completedWagerMinor,
-						requiredWagerMinor: award.requiredWagerMinor,
-						bonusBalanceMinor: award.bonusBalanceMinor,
-						unsettledOperationCount: input.unsettledOperationCount ?? 0,
-						expiresAt: award.expiresAt,
-						now,
-					});
-
-		if (input.reason === "expire" && outcome !== "expired") {
-			throw new BonusServiceError(
-				"Bonus has not reached its expiry time",
-				"INVALID_TRANSITION",
-			);
-		}
-		if (input.reason === "evaluate" && outcome === "expired") {
-			throw new BonusServiceError(
-				"Use the expiry transition for an expired bonus",
-				"INVALID_TRANSITION",
-			);
-		}
-		if (outcome === "active") return { award, isDuplicate: false };
-
-		if (award.bonusBalanceMinor > 0) {
-			const movements =
-				outcome === "completed"
-					? [
-							{
-								bucket: "bonus" as const,
-								amountMinor: -award.bonusBalanceMinor,
-							},
-							{ bucket: "cash" as const, amountMinor: award.bonusBalanceMinor },
-						]
-					: [
-							{
-								bucket: "bonus" as const,
-								amountMinor: -award.bonusBalanceMinor,
-							},
-						];
-			await applyWalletOperationInTransaction(transaction, {
-				playerId: award.playerId,
-				type: outcome === "completed" ? "bonus_conversion" : "bonus_forfeit",
-				idempotencyKey: `bonus-award:${award.id}:${outcome}`,
-				movements,
-				sourceType: "bonus_award",
-				sourceId: award.id,
-			});
-		}
-
-		const transitionTime = {
-			completed: { completedAt: now },
-			exhausted: { exhaustedAt: now },
-			expired: { expiredAt: now },
-			cancelled: { cancelledAt: now },
-		}[outcome];
-		const [updated] = await transaction
-			.update(bonusAward)
-			.set({
-				status: outcome,
-				bonusBalanceMinor: 0,
-				...transitionTime,
-			})
-			.where(eq(bonusAward.id, award.id))
-			.returning();
-		if (!updated) {
-			throw new BonusServiceError(
-				"Bonus transition failed",
-				"INVALID_TRANSITION",
-			);
-		}
-		return { award: updated, isDuplicate: false };
+		const unsettledOperationCount = await countUnsettledAwardBets(
+			transaction,
+			input.awardId,
+		);
+		return settleBonusAwardInTransaction(transaction, {
+			...input,
+			unsettledOperationCount,
+		});
 	});
+}
+
+export async function settleBonusAwardInTransaction(
+	transaction: DatabaseTransaction,
+	input: {
+		awardId: string;
+		reason: "evaluate" | "expire" | "cancel";
+		unsettledOperationCount?: number;
+		now?: Date;
+	},
+) {
+	const [award] = await transaction
+		.select()
+		.from(bonusAward)
+		.where(eq(bonusAward.id, input.awardId))
+		.for("update");
+	if (!award) {
+		throw new BonusServiceError("Bonus award was not found", "BONUS_NOT_FOUND");
+	}
+	if (award.status !== "active") {
+		return { award, isDuplicate: true };
+	}
+
+	const now = input.now ?? new Date();
+	const outcome =
+		input.reason === "cancel"
+			? "cancelled"
+			: determineActiveAwardOutcome({
+					completedWagerMinor: award.completedWagerMinor,
+					requiredWagerMinor: award.requiredWagerMinor,
+					bonusBalanceMinor: award.bonusBalanceMinor,
+					unsettledOperationCount: input.unsettledOperationCount ?? 0,
+					expiresAt: award.expiresAt,
+					now,
+				});
+
+	if (input.reason === "expire" && outcome !== "expired") {
+		throw new BonusServiceError(
+			"Bonus has not reached its expiry time",
+			"INVALID_TRANSITION",
+		);
+	}
+	if (input.reason === "evaluate" && outcome === "expired") {
+		throw new BonusServiceError(
+			"Use the expiry transition for an expired bonus",
+			"INVALID_TRANSITION",
+		);
+	}
+	if (outcome === "active") return { award, isDuplicate: false };
+
+	if (award.bonusBalanceMinor > 0) {
+		const movements =
+			outcome === "completed"
+				? [
+						{
+							bucket: "bonus" as const,
+							amountMinor: -award.bonusBalanceMinor,
+						},
+						{ bucket: "cash" as const, amountMinor: award.bonusBalanceMinor },
+					]
+				: [
+						{
+							bucket: "bonus" as const,
+							amountMinor: -award.bonusBalanceMinor,
+						},
+					];
+		await applyWalletOperationInTransaction(transaction, {
+			playerId: award.playerId,
+			type: outcome === "completed" ? "bonus_conversion" : "bonus_forfeit",
+			idempotencyKey: `bonus-award:${award.id}:${outcome}`,
+			movements,
+			sourceType: "bonus_award",
+			sourceId: award.id,
+		});
+	}
+
+	const transitionTime = {
+		completed: { completedAt: now },
+		exhausted: { exhaustedAt: now },
+		expired: { expiredAt: now },
+		cancelled: { cancelledAt: now },
+	}[outcome];
+	const [updated] = await transaction
+		.update(bonusAward)
+		.set({
+			status: outcome,
+			bonusBalanceMinor: 0,
+			...transitionTime,
+		})
+		.where(eq(bonusAward.id, award.id))
+		.returning();
+	if (!updated) {
+		throw new BonusServiceError(
+			"Bonus transition failed",
+			"INVALID_TRANSITION",
+		);
+	}
+	return { award: updated, isDuplicate: false };
 }
 
 async function validateQualifyingDeposit(
@@ -418,4 +434,47 @@ function normalizeRules(values: string[] | undefined) {
 	return [
 		...new Set((values ?? []).map((value) => value.trim()).filter(Boolean)),
 	];
+}
+
+async function countUnsettledAwardBets(
+	transaction: DatabaseTransaction,
+	awardId: string,
+) {
+	const bets = await transaction
+		.select({
+			id: providerOperation.id,
+			amountMinor: providerOperation.amountMinor,
+			refundedCashMinor: providerOperation.refundedCashMinor,
+			refundedBonusMinor: providerOperation.refundedBonusMinor,
+		})
+		.from(providerOperation)
+		.where(
+			and(
+				eq(providerOperation.type, "bet"),
+				eq(providerOperation.bonusAwardId, awardId),
+			),
+		);
+	if (bets.length === 0) return 0;
+	const children = await transaction
+		.select({ originalOperationId: providerOperation.originalOperationId })
+		.from(providerOperation)
+		.where(
+			and(
+				inArray(
+					providerOperation.originalOperationId,
+					bets.map((bet) => bet.id),
+				),
+				eq(providerOperation.type, "win"),
+			),
+		);
+	const settledIds = new Set(
+		children.flatMap((row) =>
+			row.originalOperationId ? [row.originalOperationId] : [],
+		),
+	);
+	return bets.filter(
+		(bet) =>
+			bet.refundedCashMinor + bet.refundedBonusMinor < bet.amountMinor &&
+			!settledIds.has(bet.id),
+	).length;
 }

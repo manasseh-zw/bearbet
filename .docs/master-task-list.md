@@ -43,19 +43,19 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 - [x] **W04. Add demo top-ups.** Support `$100`, `$500`, `$1,000`, and `$10,000` completed demo deposits with visible ledger entries.
 - [x] **W05. Add simulated withdrawals.** Validate withdrawable cash, reserve it on request, and support pending, approved, and rejected outcomes without double spending.
 - [ ] **W06. Add admin adjustments.** Admins can add or remove funds only with a reason. Record actor, target, amount, before and after balances.
-- [ ] **W07. Prove wallet invariants.** Test concurrent debits, insufficient funds, duplicate requests, exact cent precision, reversal, and immutable history.
+- [x] **W07. Prove wallet invariants.** Test concurrent debits, insufficient funds, duplicate requests, exact cent precision, reversal, and immutable history.
 
 ## 4. Provider, catalogue, and gameplay
 
-- [ ] **G01. Define normalized provider contracts.** Cover catalogue sync, launch, bet, win, refund, errors, and callback responses without leaking Drakon shapes.
-- [ ] **G02. Build the simulated provider.** Supply representative games and deterministic bet, loss, win, and refund controls that call the production wallet use cases.
+- [x] **G01. Define normalized provider contracts.** Cover catalogue sync, launch, bet, win, refund, errors, and callback responses without leaking Drakon shapes.
+- [x] **G02. Build the simulated provider.** Supply representative games and deterministic bet, loss, win, and refund controls that call the production wallet use cases.
 - [ ] **G03. Model and synchronize the catalogue.** Upsert providers and games, retain local status and curation, mark missing games unavailable, and record sync results.
 - [ ] **G04. Build catalogue reads.** Add indexed search by name and provider, category filtering, featured, popular, and new collections with useful empty states.
 - [ ] **G05. Build launch and session persistence.** Require an active user, validate game status and balance, record launch attempts, and expose a safe session result or useful error.
-- [ ] **G06. Implement gameplay operations.** Persist rounds, bets, wins, and refunds; update wallets atomically; store the original response; and reject fingerprint conflicts.
+- [x] **G06. Implement gameplay operations.** Persist rounds, bets, wins, and refunds; update wallets atomically; store the original response; and reject fingerprint conflicts.
 - [ ] **G07. Port Drakon adapter behavior from V0.** Preserve token caching, one refresh after authorization failure, timeouts, `only_demo`, safe errors, and `/game-error` detection.
 - [ ] **G08. Build the authenticated Drakon callback route.** Enforce request-size limits, callback credentials, probe compatibility, indexed lookups, low-latency replies, and redacted logging.
-- [ ] **G09. Verify callback idempotency and refunds.** Cover identical retries, cross-type transaction IDs, ambiguous originals, double refunds, orphan wins, and dashboard probes.
+- [x] **G09. Verify callback idempotency and refunds.** Cover identical retries, cross-type transaction IDs, ambiguous originals, double refunds, orphan wins, and dashboard probes.
 - [ ] **G10. Complete live Drakon proof.** Authenticate, sync, launch an enabled game, identify the Bearbet player, receive a real bet and settlement, update the persistent wallet, and retain redacted evidence.
 
 ## 5. Player experience and history
@@ -72,10 +72,10 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 
 - [x] **O01. Model bonus definitions and awards.** Support welcome, simulated deposit, and promotional types, amounts, multiplier, required wager, expiry, eligibility, minimum deposit, maximum award, and active state.
 - [x] **O02. Implement award eligibility and activation.** Prevent duplicate or ineligible awards and record bonus credits in the ledger.
-- [ ] **O03. Advance wagering on qualifying bets.** Apply eligible-game rules and the locked stake-allocation policy in the same transaction as the bet.
-- [ ] **O04. Complete, expire, and convert awards.** Make each transition idempotent and create ledger entries for conversion or forfeiture.
+- [x] **O03. Advance wagering on qualifying bets.** Apply eligible-game rules and the locked stake-allocation policy in the same transaction as the bet.
+- [x] **O04. Complete, expire, and convert awards.** Make each transition idempotent and create ledger entries for conversion or forfeiture.
 - [ ] **O05. Build bonus UI.** Show available offers, active awards, required, completed, remaining, percentage, expiry, status, and plain-language eligibility errors.
-- [ ] **O06. Prove bonus rules.** Test partial progress, excluded games, refunds, expiry, duplicate callbacks, concurrent bets, maximum awards, and exact conversion.
+- [x] **O06. Prove bonus rules.** Test partial progress, excluded games, refunds, expiry, duplicate callbacks, concurrent bets, maximum awards, and exact conversion.
 
 ## 7. Admin
 
