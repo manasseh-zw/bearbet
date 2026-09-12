@@ -27,14 +27,19 @@ export const Route = createFileRoute("/api/drakon/$key")({
 						return json({ status: true, balance: 1000 });
 					}
 					if (callback.kind === "accountDetails") {
-						if (!("email" in result) || !("name" in result)) {
+						if (
+							!("email" in result) ||
+							!("name" in result) ||
+							!("createdAt" in result) ||
+							!(result.createdAt instanceof Date)
+						) {
 							return json({ status: false, error: "INVALID_USER" });
 						}
 						return json({
 							status: true,
 							email: result.email,
 							name_jogador: result.name,
-							date: new Date().toISOString(),
+							date: result.createdAt.toISOString(),
 						});
 					}
 					return json({

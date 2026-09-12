@@ -121,18 +121,19 @@ export async function processProviderCallback(
 
 export async function getPlayableWalletBalance(playerId: string) {
 	const [current] = await db
-		.select()
+		.select({ wallet, banned: user.banned })
 		.from(wallet)
+		.innerJoin(user, eq(user.id, wallet.playerId))
 		.where(eq(wallet.playerId, playerId));
-	if (!current)
+	if (!current || current.banned)
 		throw new GameplayServiceError(
-			"Player wallet was not found",
+			"Active player wallet was not found",
 			"INVALID_USER",
 		);
 	return {
-		currencyCode: current.currencyCode,
-		balances: walletBalances(current),
-		balanceMinor: playableBalance(walletBalances(current)),
+		currencyCode: current.wallet.currencyCode,
+		balances: walletBalances(current.wallet),
+		balanceMinor: playableBalance(walletBalances(current.wallet)),
 	};
 }
 
@@ -141,6 +142,7 @@ export async function getPlayerAccountDetails(playerId: string) {
 		.select({
 			email: user.email,
 			name: user.name,
+			createdAt: user.createdAt,
 			currencyCode: wallet.currencyCode,
 			cashBalanceMinor: wallet.cashBalanceMinor,
 			bonusBalanceMinor: wallet.bonusBalanceMinor,
@@ -159,6 +161,7 @@ export async function getPlayerAccountDetails(playerId: string) {
 	return {
 		email: account.email,
 		name: account.name,
+		createdAt: account.createdAt,
 		currencyCode: account.currencyCode,
 		balances,
 		balanceMinor: playableBalance(balances),
@@ -480,16 +483,17 @@ export async function recordRefund(input: RecordRefundInput) {
 
 async function lockWallet(transaction: DatabaseTransaction, playerId: string) {
 	const [current] = await transaction
-		.select()
+		.select({ wallet, banned: user.banned })
 		.from(wallet)
+		.innerJoin(user, eq(user.id, wallet.playerId))
 		.where(eq(wallet.playerId, playerId))
-		.for("update");
-	if (!current)
+		.for("update", { of: wallet });
+	if (!current || current.banned)
 		throw new GameplayServiceError(
-			"Player wallet was not found",
+			"Active player wallet was not found",
 			"INVALID_USER",
 		);
-	return current;
+	return current.wallet;
 }
 
 async function lockActiveAward(

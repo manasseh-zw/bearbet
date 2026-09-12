@@ -344,6 +344,24 @@ test("concurrent qualifying bets cannot lose wagering progress", async (context)
 	assert.equal(award?.bonusBalanceMinor, 6_000);
 });
 
+test("suspended players cannot read or move gameplay funds", async (context) => {
+	const playerId = await createTestPlayer(context, 10_000);
+	await db.update(user).set({ banned: true }).where(eq(user.id, playerId));
+	await assert.rejects(
+		getPlayableWalletBalance(playerId),
+		(error) =>
+			error instanceof GameplayServiceError && error.code === "INVALID_USER",
+	);
+	await assert.rejects(
+		recordBet({
+			...gameIdentity(playerId, "suspended-bet", "suspended-round"),
+			amountMinor: 1_000,
+		}),
+		(error) =>
+			error instanceof GameplayServiceError && error.code === "INVALID_USER",
+	);
+});
+
 async function createTestPlayer(
 	context: TestContext,
 	cashBalanceMinor: number,
