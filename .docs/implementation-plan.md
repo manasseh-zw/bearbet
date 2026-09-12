@@ -10,6 +10,7 @@ The repository now has:
 - PostgreSQL through Docker Compose, Drizzle schemas, validated server environment variables, and working build, typecheck, lint, and test commands.
 - Better Auth backed by PostgreSQL with username and admin plugins, database rate limits, TanStack cookies, and server middleware.
 - One-to-one player and wallet records, separate cash, bonus, and reserved balances, an immutable ledger schema, and retry-safe `$1,000.00` welcome credit provisioning.
+- Idempotent wallet-operation records, bonus definitions and awards, and withdrawal lifecycle records with database constraints for active awards, exact money, and review state.
 - A validated Better Auth registration endpoint that uses the user lifecycle hook to provision the player, wallet, and welcome credit. Email and username sign-in both resolve the persisted player identity.
 - A responsive registration screen using TanStack Form, shared Zod validation, and the typed Better Auth client. It reports field and server errors and disables repeated submissions while registration is pending.
 - A responsive email-or-username login screen and a session-aware player menu. Guests can open the login or registration routes; signed-in players can log out, while Settings remains unavailable until its route exists.

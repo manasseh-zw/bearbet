@@ -70,7 +70,7 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 
 ## 6. Bonuses and wagering
 
-- [ ] **O01. Model bonus definitions and awards.** Support welcome, simulated deposit, and promotional types, amounts, multiplier, required wager, expiry, eligibility, minimum deposit, maximum award, and active state.
+- [x] **O01. Model bonus definitions and awards.** Support welcome, simulated deposit, and promotional types, amounts, multiplier, required wager, expiry, eligibility, minimum deposit, maximum award, and active state.
 - [ ] **O02. Implement award eligibility and activation.** Prevent duplicate or ineligible awards and record bonus credits in the ledger.
 - [ ] **O03. Advance wagering on qualifying bets.** Apply eligible-game rules and the locked stake-allocation policy in the same transaction as the bet.
 - [ ] **O04. Complete, expire, and convert awards.** Make each transition idempotent and create ledger entries for conversion or forfeiture.

@@ -3,6 +3,7 @@ import {
 	bigint,
 	check,
 	index,
+	integer,
 	pgEnum,
 	pgTable,
 	text,
@@ -32,6 +33,7 @@ export const ledgerEntryType = pgEnum("ledger_entry_type", [
 	"withdrawal_debit",
 	"bonus_credit",
 	"bonus_conversion",
+	"bonus_forfeit",
 	"admin_adjustment",
 ]);
 
@@ -77,6 +79,49 @@ export const wallet = pgTable(
 	],
 );
 
+export const walletOperation = pgTable(
+	"wallet_operation",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		walletId: uuid("wallet_id")
+			.notNull()
+			.references(() => wallet.id, { onDelete: "restrict" }),
+		type: ledgerEntryType("type").notNull(),
+		idempotencyKey: text("idempotency_key").notNull(),
+		fingerprint: text("fingerprint").notNull(),
+		sourceType: text("source_type"),
+		sourceId: text("source_id"),
+		actorUserId: text("actor_user_id").references(() => user.id, {
+			onDelete: "restrict",
+		}),
+		resultCashBalanceMinor: bigint("result_cash_balance_minor", {
+			mode: "number",
+		}).notNull(),
+		resultBonusBalanceMinor: bigint("result_bonus_balance_minor", {
+			mode: "number",
+		}).notNull(),
+		resultReservedCashMinor: bigint("result_reserved_cash_minor", {
+			mode: "number",
+		}).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("wallet_operation_idempotency_key_unique").on(
+			table.idempotencyKey,
+		),
+		index("wallet_operation_wallet_created_at_idx").on(
+			table.walletId,
+			table.createdAt,
+		),
+		check(
+			"wallet_operation_result_balances_non_negative",
+			sql`${table.resultCashBalanceMinor} >= 0 AND ${table.resultBonusBalanceMinor} >= 0 AND ${table.resultReservedCashMinor} >= 0`,
+		),
+	],
+);
+
 export const ledgerEntry = pgTable(
 	"ledger_entry",
 	{
@@ -84,6 +129,10 @@ export const ledgerEntry = pgTable(
 		walletId: uuid("wallet_id")
 			.notNull()
 			.references(() => wallet.id, { onDelete: "restrict" }),
+		operationId: uuid("operation_id").references(() => walletOperation.id, {
+			onDelete: "restrict",
+		}),
+		movementIndex: integer("movement_index"),
 		bucket: walletBucket("bucket").notNull(),
 		type: ledgerEntryType("type").notNull(),
 		amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
@@ -105,6 +154,10 @@ export const ledgerEntry = pgTable(
 	},
 	(table) => [
 		uniqueIndex("ledger_entry_idempotency_key_unique").on(table.idempotencyKey),
+		uniqueIndex("ledger_entry_operation_movement_unique").on(
+			table.operationId,
+			table.movementIndex,
+		),
 		index("ledger_entry_wallet_created_at_idx").on(
 			table.walletId,
 			table.createdAt,
@@ -130,7 +183,23 @@ export const walletRelations = relations(wallet, ({ many, one }) => ({
 		references: [player.userId],
 	}),
 	ledgerEntries: many(ledgerEntry),
+	operations: many(walletOperation),
 }));
+
+export const walletOperationRelations = relations(
+	walletOperation,
+	({ many, one }) => ({
+		wallet: one(wallet, {
+			fields: [walletOperation.walletId],
+			references: [wallet.id],
+		}),
+		actor: one(user, {
+			fields: [walletOperation.actorUserId],
+			references: [user.id],
+		}),
+		ledgerEntries: many(ledgerEntry),
+	}),
+);
 
 export const ledgerEntryRelations = relations(ledgerEntry, ({ one }) => ({
 	wallet: one(wallet, {
@@ -141,7 +210,12 @@ export const ledgerEntryRelations = relations(ledgerEntry, ({ one }) => ({
 		fields: [ledgerEntry.actorUserId],
 		references: [user.id],
 	}),
+	operation: one(walletOperation, {
+		fields: [ledgerEntry.operationId],
+		references: [walletOperation.id],
+	}),
 }));
 
 export type Wallet = typeof wallet.$inferSelect;
+export type WalletOperation = typeof walletOperation.$inferSelect;
 export type LedgerEntry = typeof ledgerEntry.$inferSelect;
