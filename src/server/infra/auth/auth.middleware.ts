@@ -26,3 +26,20 @@ export const freshAuthMiddleware = createMiddleware().server(
 		return next({ context: { session } });
 	},
 );
+
+export const adminAuthMiddleware = createMiddleware().server(
+	async ({ next }) => {
+		const session = await getCurrentSession();
+
+		if (!session) {
+			setResponseStatus(401);
+			throw new Error("Unauthorized");
+		}
+		if (session.user.role !== "admin" || session.user.banned) {
+			setResponseStatus(403);
+			throw new Error("Forbidden");
+		}
+
+		return next({ context: { session } });
+	},
+);

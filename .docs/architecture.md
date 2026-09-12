@@ -186,6 +186,8 @@ Balance columns are the fast current-state projection. The ledger is the audit r
 - `game_round` groups provider operations by user, session, provider round ID, and game.
 - `provider_operation` stores each bet, win, and refund, its fingerprint, original response, and related ledger entries.
 
+The MVP catalogue import is explicit. An operator runs `npm run catalogue:sync`, or a future admin screen calls the protected `syncGames` server function. Both call the same game-domain sync operation. Public catalogue reads use Postgres and never fetch the upstream provider. A sync upserts the current provider response and marks missing games unavailable while preserving local enabled and featured flags. No scheduled sync runs in the MVP.
+
 The idempotency key is provider plus operation type plus external transaction ID. A repeated key with the same fingerprint returns the stored response. A repeated key with a different fingerprint is rejected. A refund points to the operation it reverses once Bearbet has resolved it.
 
 ### Bonuses
@@ -213,7 +215,7 @@ type CasinoProvider = {
 }
 ```
 
-Callbacks use a provider-specific adapter that authenticates and normalizes the payload before calling the shared gameplay use cases. The `simulated` provider must produce the same normalized bet, win, and refund commands as Drakon. It is a development and demo dependency, not a separate fake wallet implementation.
+Callbacks use a provider-specific adapter that authenticates and normalizes the payload before calling the shared gameplay use cases. The gameplay service resolves trusted category and content-provider metadata from the persisted catalogue before checking bonus eligibility. Catalogue metadata is excluded from financial callback fingerprints. The `simulated` provider must produce the same normalized bet, win, and refund commands as Drakon. It is a development and demo dependency, not a separate fake wallet implementation.
 
 The Greenbear V0 at `/Users/manasseh/Projects/work/greenbear-v0` is the behavioral reference for Drakon authentication, catalogue normalization, launch errors, callback probes, and refund edge cases.
 

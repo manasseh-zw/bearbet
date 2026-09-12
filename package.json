@@ -23,6 +23,7 @@
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio",
+    "catalogue:sync": "tsx --env-file=.env.local scripts/sync-game-catalogue.ts",
     "provider:capture": "tsx scripts/capture-drakon-catalogue.ts"
   },
   "dependencies": {

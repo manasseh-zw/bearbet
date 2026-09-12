@@ -5,6 +5,7 @@ import { and, eq, inArray } from "drizzle-orm";
 
 import { isGameEligible } from "#/server/domains/bonus/bonus.policy";
 import { settleBonusAwardInTransaction } from "#/server/domains/bonus/bonus.service";
+import { findGame } from "#/server/domains/game/game.service";
 import {
 	calculateAwardWageringProgress,
 	countUnsettledAwardBets,
@@ -101,13 +102,18 @@ export async function processProviderCallback(
 		gameId: callback.gameId,
 	};
 	switch (callback.kind) {
-		case "bet":
+		case "bet": {
+			const storedGame = await findGame(
+				options.integrationProvider,
+				callback.gameId,
+			);
 			return recordBet({
 				...identity,
 				amountMinor: callback.amountMinor,
-				gameCategory: options.gameCategory,
-				contentProvider: options.contentProvider,
+				gameCategory: storedGame?.type ?? options.gameCategory,
+				contentProvider: storedGame?.provider ?? options.contentProvider,
 			});
+		}
 		case "win":
 			return recordWin({
 				...identity,

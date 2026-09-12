@@ -8,10 +8,13 @@ import {
 	createBonusDefinition,
 	settleBonusAward,
 } from "#/server/domains/bonus/bonus.service";
+import { syncGameCatalogue } from "#/server/domains/game/game.service";
 import { db, pool } from "#/server/infra/db";
 import {
 	bonusAward,
 	bonusDefinition,
+	game,
+	gameProvider,
 	gameRound,
 	gameSession,
 	ledgerEntry,
@@ -25,6 +28,7 @@ import {
 import {
 	GameplayServiceError,
 	getPlayableWalletBalance,
+	processProviderCallback,
 	recordBet,
 	recordRefund,
 	recordWin,
@@ -207,6 +211,78 @@ test("excluded bets use cash and bonus bet refunds restore progress exactly", as
 			error instanceof GameplayServiceError &&
 			error.code === "INVALID_TRANSACTION",
 	);
+});
+
+test("provider callbacks use persisted catalogue metadata for bonus eligibility", async (context) => {
+	const playerId = await createTestPlayer(context, 10_000);
+	const integrationProvider = `callback_${crypto.randomUUID().replaceAll("-", "").slice(0, 20)}`;
+	context.after(async () => {
+		await db.delete(game).where(eq(game.providerId, integrationProvider));
+		await db
+			.delete(gameProvider)
+			.where(eq(gameProvider.id, integrationProvider));
+	});
+	await syncGameCatalogue({
+		integrationProvider,
+		provider: {
+			async syncCatalogue() {
+				return {
+					games: [
+						{
+							id: "catalogue-game",
+							name: "Catalogue game",
+							provider: "trusted-studio",
+							type: "slots",
+							supportsFun: true,
+							isAvailable: true,
+							isMobile: true,
+							hasFreeSpins: false,
+							hasLobby: false,
+							hasTables: false,
+						},
+					],
+				};
+			},
+			async launchGame() {
+				throw new Error("Not used by this test");
+			},
+		},
+	});
+	const definition = await createTestBonus(context, {
+		playerId,
+		amountMinor: 5_000,
+		wageringMultiplier: 2,
+		eligibleCategories: ["slots"],
+	});
+	const { award } = await activateBonusAward({
+		playerId,
+		definitionId: definition.id,
+		idempotencyKey: `${playerId}:award`,
+	});
+	const callback = {
+		kind: "bet" as const,
+		userId: playerId,
+		isDashboardProbe: false,
+		transactionId: `${playerId}:catalogue-bet`,
+		sessionId: `${playerId}:catalogue-session`,
+		roundId: `${playerId}:catalogue-round`,
+		gameId: "catalogue-game",
+		amountMinor: 2_000,
+	};
+	await processProviderCallback(callback, { integrationProvider });
+	const retry = await processProviderCallback(callback, {
+		integrationProvider,
+		gameCategory: "changed-after-the-fact",
+		contentProvider: "changed-after-the-fact",
+	});
+	assert.ok("isDuplicate" in retry);
+	assert.equal(retry.isDuplicate, true);
+	const [storedAward] = await db
+		.select()
+		.from(bonusAward)
+		.where(eq(bonusAward.id, award.id));
+	assert.equal(storedAward?.bonusBalanceMinor, 3_000);
+	assert.equal(storedAward?.completedWagerMinor, 2_000);
 });
 
 test("orphan and ambiguous settlements are rejected without moving funds", async (context) => {

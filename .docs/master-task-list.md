@@ -49,7 +49,7 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 
 - [x] **G01. Define normalized provider contracts.** Cover catalogue sync, launch, bet, win, refund, errors, and callback responses without leaking Drakon shapes.
 - [x] **G02. Build the simulated provider.** Supply representative games and deterministic bet, loss, win, and refund controls that call the production wallet use cases.
-- [ ] **G03. Model and synchronize the catalogue.** Upsert providers and games, retain local status and curation, mark missing games unavailable, and record sync results.
+- [x] **G03. Model and synchronize the catalogue.** Upsert providers and games, retain local status and curation, mark missing games unavailable, and record sync results.
 - [ ] **G04. Build catalogue reads.** Add indexed search by name and provider, category filtering, featured, popular, and new collections with useful empty states.
 - [ ] **G05. Build launch and session persistence.** Require an active user, validate game status and balance, record launch attempts, and expose a safe session result or useful error.
 - [x] **G06. Implement gameplay operations.** Persist rounds, bets, wins, and refunds; update wallets atomically; store the original response; and reject fingerprint conflicts.

@@ -119,7 +119,7 @@ The content vendor reported by the casino integration, such as Evolution. It sup
 
 ### Game
 
-The normalized catalogue item. It stores the external game ID, integration provider, content provider, name, category, artwork, launch metadata, provider availability, local enabled state, featured state, and sync timestamps.
+The normalized catalogue item. It stores the external game ID, integration provider, content provider, name, category, artwork, capabilities, provider availability, local enabled state, featured state, and sync timestamps. The MVP imports this data through one explicit operator action. Missing upstream games become unavailable rather than being deleted.
 
 ### Game session
 
