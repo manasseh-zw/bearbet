@@ -38,9 +38,9 @@ The simulator keeps development and the demo deterministic. It must be clearly l
 ## 3. Wallet and ledger
 
 - [x] **W01. Implement the persistent money model.** Add cash and bonus wallets, immutable ledger entries, constraints, indexes, and integer minor-unit helpers.
-- [ ] **W02. Implement atomic wallet movements.** Lock or atomically update wallet rows, insert ledger evidence in the same transaction, and reject negative or overflowed balances.
+- [x] **W02. Implement atomic wallet movements.** Lock or atomically update wallet rows, insert ledger evidence in the same transaction, and reject negative or overflowed balances.
 - [x] **W03. Credit the welcome balance once.** Every new user receives exactly `$1,000.00` cash, including under registration retries and concurrent requests.
-- [ ] **W04. Add demo top-ups.** Support `$100`, `$500`, `$1,000`, and `$10,000` completed demo deposits with visible ledger entries.
+- [x] **W04. Add demo top-ups.** Support `$100`, `$500`, `$1,000`, and `$10,000` completed demo deposits with visible ledger entries.
 - [ ] **W05. Add simulated withdrawals.** Validate withdrawable cash, reserve it on request, and support pending, approved, and rejected outcomes without double spending.
 - [ ] **W06. Add admin adjustments.** Admins can add or remove funds only with a reason. Record actor, target, amount, before and after balances.
 - [ ] **W07. Prove wallet invariants.** Test concurrent debits, insufficient funds, duplicate requests, exact cent precision, reversal, and immutable history.
