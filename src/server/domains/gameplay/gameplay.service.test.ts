@@ -362,6 +362,84 @@ test("suspended players cannot read or move gameplay funds", async (context) => 
 	);
 });
 
+test("review: a late win cannot recreate a cancelled bonus", {
+	todo: "Known bug: late wins recreate forfeited bonus funds; see .docs/money-engine-review.md",
+}, async (context) => {
+	const playerId = await createTestPlayer(context, 10_000);
+	const definition = await createTestBonus(context, {
+		playerId,
+		amountMinor: 10_000,
+		wageringMultiplier: 5,
+		eligibleCategories: [],
+	});
+	const { award } = await activateBonusAward({
+		playerId,
+		definitionId: definition.id,
+		idempotencyKey: `${playerId}:award`,
+	});
+	await recordBet({
+		...gameIdentity(playerId, `${playerId}:bet`, "late-win"),
+		amountMinor: 4_000,
+	});
+	await settleBonusAward({ awardId: award.id, reason: "cancel" });
+	const result = await recordWin({
+		...gameIdentity(playerId, `${playerId}:win`, "late-win"),
+		betAmountMinor: 4_000,
+		winAmountMinor: 8_000,
+	});
+	assert.equal(result.balances.bonusBalanceMinor, 0);
+	const [stored] = await db
+		.select()
+		.from(bonusAward)
+		.where(eq(bonusAward.id, award.id));
+	assert.equal(stored?.status, "cancelled");
+	assert.equal(stored?.bonusBalanceMinor, 0);
+});
+
+test("review: refunds preserve wagering earned above the target", {
+	todo: "Known bug: capped progress loses excess wagering before refunds; see .docs/money-engine-review.md",
+}, async (context) => {
+	const playerId = await createTestPlayer(context, 10_000);
+	const definition = await createTestBonus(context, {
+		playerId,
+		amountMinor: 10_000,
+		wageringMultiplier: 2,
+		eligibleCategories: [],
+	});
+	const { award } = await activateBonusAward({
+		playerId,
+		definitionId: definition.id,
+		idempotencyKey: `${playerId}:award`,
+	});
+	await recordBet({
+		...gameIdentity(playerId, `${playerId}:a`, "a"),
+		amountMinor: 8_000,
+	});
+	await recordWin({
+		...gameIdentity(playerId, `${playerId}:aw`, "a"),
+		betAmountMinor: 8_000,
+		winAmountMinor: 20_000,
+	});
+	await recordBet({
+		...gameIdentity(playerId, `${playerId}:b`, "b"),
+		amountMinor: 8_000,
+	});
+	await recordBet({
+		...gameIdentity(playerId, `${playerId}:c`, "c"),
+		amountMinor: 8_000,
+	});
+	// Net qualifying stakes are 8,000 + 8,000 + 8,000 - 2,000 = 22,000.
+	await recordRefund({
+		...gameIdentity(playerId, `${playerId}:refund`, "c"),
+		amountMinor: 2_000,
+	});
+	const [stored] = await db
+		.select()
+		.from(bonusAward)
+		.where(eq(bonusAward.id, award.id));
+	assert.equal(stored?.completedWagerMinor, 20_000);
+});
+
 async function createTestPlayer(
 	context: TestContext,
 	cashBalanceMinor: number,
