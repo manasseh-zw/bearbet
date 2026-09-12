@@ -230,7 +230,7 @@ export function FilterGrid<T>({
 							tabIndex={on ? 0 : -1}
 							onClick={() => choose(filter.id)}
 							onKeyDown={(e) => onKeyDown(e, i)}
-							className="group relative inline-grid h-11 shrink-0 select-none place-items-center rounded-full px-5 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+							className="group relative inline-grid h-9 shrink-0 select-none place-items-center rounded-2xl px-4 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 							style={{ touchAction: "manipulation" }}
 						>
 							{on ? (
@@ -238,13 +238,13 @@ export function FilterGrid<T>({
 									aria-hidden
 									layoutId={reduced ? undefined : `${uid}-thumb`}
 									transition={CELL}
-									className="absolute inset-0 rounded-full bg-primary"
+									className="absolute inset-0 rounded-2xl bg-primary"
 								/>
 							) : null}
 
 							<span
 								aria-hidden
-								className={`pointer-events-none absolute inset-0 rounded-full border ${
+								className={`pointer-events-none absolute inset-0 rounded-2xl border ${
 									on ? "border-transparent" : "border-white/8 bg-card"
 								}`}
 							/>

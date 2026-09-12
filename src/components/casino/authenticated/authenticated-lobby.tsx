@@ -170,7 +170,7 @@ export function AuthenticatedLobby() {
 						value={search}
 						onChange={(event) => setSearch(event.target.value)}
 						placeholder="Search games..."
-						className="h-14 rounded-xl border-white/8 bg-card pr-5 pl-13 text-base shadow-none placeholder:text-muted-foreground/65"
+						className="h-12 rounded-xl border-white/8 bg-card pr-4 pl-12 text-sm shadow-none placeholder:text-muted-foreground/65"
 					/>
 				</label>
 
