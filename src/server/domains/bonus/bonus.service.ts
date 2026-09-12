@@ -1,11 +1,12 @@
 import "@tanstack/react-start/server-only";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import {
 	calculateRequiredWager,
 	determineActiveAwardOutcome,
 } from "#/server/domains/bonus/bonus.policy";
+import { countUnsettledAwardBets } from "#/server/domains/gameplay/gameplay.settlement";
 import {
 	applyWalletOperationInTransaction,
 	type DatabaseTransaction,
@@ -15,7 +16,6 @@ import {
 	bonusAward,
 	bonusDefinition,
 	ledgerEntry,
-	providerOperation,
 	wallet,
 	walletOperation,
 } from "#/server/infra/db/schema";
@@ -211,6 +211,21 @@ export async function settleBonusAward(input: {
 	now?: Date;
 }) {
 	return db.transaction(async (transaction) => {
+		const [awardIdentity] = await transaction
+			.select({ playerId: bonusAward.playerId })
+			.from(bonusAward)
+			.where(eq(bonusAward.id, input.awardId));
+		if (!awardIdentity) {
+			throw new BonusServiceError(
+				"Bonus award was not found",
+				"BONUS_NOT_FOUND",
+			);
+		}
+		await transaction
+			.select({ id: wallet.id })
+			.from(wallet)
+			.where(eq(wallet.playerId, awardIdentity.playerId))
+			.for("update");
 		const unsettledOperationCount = await countUnsettledAwardBets(
 			transaction,
 			input.awardId,
@@ -241,6 +256,12 @@ export async function settleBonusAwardInTransaction(
 	}
 	if (award.status !== "active") {
 		return { award, isDuplicate: true };
+	}
+	if (input.reason === "cancel" && (input.unsettledOperationCount ?? 0) > 0) {
+		throw new BonusServiceError(
+			"Bonus cannot be cancelled while gameplay is unsettled",
+			"INVALID_TRANSITION",
+		);
 	}
 
 	const now = input.now ?? new Date();
@@ -434,47 +455,4 @@ function normalizeRules(values: string[] | undefined) {
 	return [
 		...new Set((values ?? []).map((value) => value.trim()).filter(Boolean)),
 	];
-}
-
-async function countUnsettledAwardBets(
-	transaction: DatabaseTransaction,
-	awardId: string,
-) {
-	const bets = await transaction
-		.select({
-			id: providerOperation.id,
-			amountMinor: providerOperation.amountMinor,
-			refundedCashMinor: providerOperation.refundedCashMinor,
-			refundedBonusMinor: providerOperation.refundedBonusMinor,
-		})
-		.from(providerOperation)
-		.where(
-			and(
-				eq(providerOperation.type, "bet"),
-				eq(providerOperation.bonusAwardId, awardId),
-			),
-		);
-	if (bets.length === 0) return 0;
-	const children = await transaction
-		.select({ originalOperationId: providerOperation.originalOperationId })
-		.from(providerOperation)
-		.where(
-			and(
-				inArray(
-					providerOperation.originalOperationId,
-					bets.map((bet) => bet.id),
-				),
-				eq(providerOperation.type, "win"),
-			),
-		);
-	const settledIds = new Set(
-		children.flatMap((row) =>
-			row.originalOperationId ? [row.originalOperationId] : [],
-		),
-	);
-	return bets.filter(
-		(bet) =>
-			bet.refundedCashMinor + bet.refundedBonusMinor < bet.amountMinor &&
-			!settledIds.has(bet.id),
-	).length;
 }

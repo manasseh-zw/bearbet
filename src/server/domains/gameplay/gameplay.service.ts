@@ -3,12 +3,12 @@ import "@tanstack/react-start/server-only";
 import { createHash } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 
-import {
-	advanceWagering,
-	isGameEligible,
-	reverseWagering,
-} from "#/server/domains/bonus/bonus.policy";
+import { isGameEligible } from "#/server/domains/bonus/bonus.policy";
 import { settleBonusAwardInTransaction } from "#/server/domains/bonus/bonus.service";
+import {
+	calculateAwardWageringProgress,
+	countUnsettledAwardBets,
+} from "#/server/domains/gameplay/gameplay.settlement";
 import {
 	allocateRefund,
 	allocateStake,
@@ -192,7 +192,7 @@ export async function recordBet(input: RecordBetInput) {
 		if (award) {
 			const now = input.now ?? new Date();
 			if (now >= award.expiresAt) {
-				const unsettled = await countUnsettledBonusBets(transaction, award.id);
+				const unsettled = await countUnsettledAwardBets(transaction, award.id);
 				if (unsettled === 0) {
 					await settleBonusAwardInTransaction(transaction, {
 						awardId: award.id,
@@ -244,16 +244,10 @@ export async function recordBet(input: RecordBetInput) {
 		});
 
 		if (award && allocation.bonusStakeMinor > 0) {
-			const completedWagerMinor = advanceWagering({
-				completedWagerMinor: award.completedWagerMinor,
-				requiredWagerMinor: award.requiredWagerMinor,
-				contributionMinor: allocation.wageringContributionMinor,
-			});
 			await transaction
 				.update(bonusAward)
 				.set({
 					bonusBalanceMinor: walletResult.balances.bonusBalanceMinor,
-					completedWagerMinor,
 				})
 				.where(eq(bonusAward.id, award.id));
 		}
@@ -273,6 +267,9 @@ export async function recordBet(input: RecordBetInput) {
 			walletOperationId: walletResult.operationId,
 			response,
 		});
+		if (award && allocation.bonusStakeMinor > 0) {
+			await updateAwardWageringProgress(transaction, award);
+		}
 		return { operationId, isDuplicate: false, ...response };
 	});
 }
@@ -301,6 +298,9 @@ export async function recordWin(input: RecordWinInput) {
 			context.round.id,
 			input.betAmountMinor,
 		);
+		const award = original.bonusAwardId
+			? await lockAward(transaction, original.bonusAwardId)
+			: undefined;
 		const allocation = allocateWin({
 			winMinor: input.winAmountMinor,
 			cashStakeMinor: original.cashAmountMinor,
@@ -308,8 +308,16 @@ export async function recordWin(input: RecordWinInput) {
 		});
 		const operationId = crypto.randomUUID();
 		const movements = compactMovements([
-			{ bucket: "cash", amountMinor: allocation.cashWinMinor },
-			{ bucket: "bonus", amountMinor: allocation.bonusWinMinor },
+			{
+				bucket: "cash",
+				amountMinor:
+					allocation.cashWinMinor +
+					(award?.status === "completed" ? allocation.bonusWinMinor : 0),
+			},
+			{
+				bucket: "bonus",
+				amountMinor: award?.status === "active" ? allocation.bonusWinMinor : 0,
+			},
 		]);
 		const walletResult =
 			movements.length > 0
@@ -323,11 +331,11 @@ export async function recordWin(input: RecordWinInput) {
 					})
 				: { operationId: undefined, balances: walletBalances(currentWallet) };
 
-		if (original.bonusAwardId && allocation.bonusWinMinor > 0) {
+		if (award?.status === "active" && allocation.bonusWinMinor > 0) {
 			await transaction
 				.update(bonusAward)
 				.set({ bonusBalanceMinor: walletResult.balances.bonusBalanceMinor })
-				.where(eq(bonusAward.id, original.bonusAwardId));
+				.where(eq(bonusAward.id, award.id));
 		}
 
 		await insertProviderOperation(transaction, {
@@ -428,13 +436,6 @@ export async function recordRefund(input: RecordRefundInput) {
 				.update(bonusAward)
 				.set({
 					bonusBalanceMinor: walletResult.balances.bonusBalanceMinor,
-					completedWagerMinor:
-						original.type === "bet"
-							? reverseWagering({
-									completedWagerMinor: award.completedWagerMinor,
-									reversalMinor: allocation.bonusRefundMinor,
-								})
-							: award.completedWagerMinor,
 				})
 				.where(eq(bonusAward.id, award.id));
 		}
@@ -451,6 +452,9 @@ export async function recordRefund(input: RecordRefundInput) {
 			.update(providerOperation)
 			.set({ refundedCashMinor, refundedBonusMinor, status: originalStatus })
 			.where(eq(providerOperation.id, original.id));
+		if (award?.status === "active" && allocation.bonusRefundMinor > 0) {
+			await updateAwardWageringProgress(transaction, award);
+		}
 
 		await insertProviderOperation(transaction, {
 			id: operationId,
@@ -477,6 +481,11 @@ export async function recordRefund(input: RecordRefundInput) {
 			.update(providerOperation)
 			.set({ response })
 			.where(eq(providerOperation.id, operationId));
+		await markRoundResolved(
+			transaction,
+			context.round.id,
+			input.now ?? new Date(),
+		);
 		return { operationId, isDuplicate: false, ...response };
 	});
 }
@@ -689,30 +698,6 @@ async function childOperationIds(
 	);
 }
 
-async function countUnsettledBonusBets(
-	transaction: DatabaseTransaction,
-	awardId: string,
-) {
-	const bets = await transaction
-		.select()
-		.from(providerOperation)
-		.where(
-			and(
-				eq(providerOperation.type, "bet"),
-				eq(providerOperation.bonusAwardId, awardId),
-			),
-		);
-	const children = await childOperationIds(
-		transaction,
-		bets.map((bet) => bet.id),
-	);
-	return bets.filter(
-		(bet) =>
-			bet.refundedCashMinor + bet.refundedBonusMinor < bet.amountMinor &&
-			!children.has(bet.id),
-	).length;
-}
-
 async function finalizeAwardAfterOperation(
 	transaction: DatabaseTransaction,
 	awardId: string | null,
@@ -720,7 +705,7 @@ async function finalizeAwardAfterOperation(
 	fallback: WalletBalances,
 ) {
 	if (!awardId) return fallback;
-	const unsettledOperationCount = await countUnsettledBonusBets(
+	const unsettledOperationCount = await countUnsettledAwardBets(
 		transaction,
 		awardId,
 	);
@@ -771,6 +756,58 @@ async function markRoundSettled(
 	}
 }
 
+async function markRoundResolved(
+	transaction: DatabaseTransaction,
+	roundId: string,
+	now: Date,
+) {
+	const bets = await transaction
+		.select()
+		.from(providerOperation)
+		.where(
+			and(
+				eq(providerOperation.roundId, roundId),
+				eq(providerOperation.type, "bet"),
+			),
+		);
+	if (bets.length === 0) return;
+	const wins = await childOperationIds(
+		transaction,
+		bets.map((bet) => bet.id),
+	);
+	const fullyRefunded = bets.every(
+		(bet) => bet.refundedCashMinor + bet.refundedBonusMinor === bet.amountMinor,
+	);
+	const resolved = bets.every(
+		(bet) =>
+			wins.has(bet.id) ||
+			bet.refundedCashMinor + bet.refundedBonusMinor === bet.amountMinor,
+	);
+	if (!resolved) return;
+	await transaction
+		.update(gameRound)
+		.set({
+			status: fullyRefunded && wins.size === 0 ? "refunded" : "settled",
+			settledAt: now,
+		})
+		.where(eq(gameRound.id, roundId));
+}
+
+async function updateAwardWageringProgress(
+	transaction: DatabaseTransaction,
+	award: typeof bonusAward.$inferSelect,
+) {
+	const completedWagerMinor = await calculateAwardWageringProgress(
+		transaction,
+		award.id,
+		award.requiredWagerMinor,
+	);
+	await transaction
+		.update(bonusAward)
+		.set({ completedWagerMinor })
+		.where(eq(bonusAward.id, award.id));
+}
+
 function refundMovements(
 	originalType: "bet" | "win" | "refund",
 	allocation: { cashRefundMinor: number; bonusRefundMinor: number },
@@ -819,11 +856,27 @@ function responseFor(balances: WalletBalances) {
 }
 
 function callbackFingerprint(
-	type: string,
+	type: "bet" | "win" | "refund",
 	input: GameplayIdentity & Record<string, unknown>,
 ) {
+	const identity = {
+		integrationProvider: input.integrationProvider,
+		playerId: input.playerId,
+		externalTransactionId: input.externalTransactionId,
+		externalSessionId: input.externalSessionId,
+		externalRoundId: input.externalRoundId,
+		gameId: input.gameId,
+	};
+	const payload =
+		type === "win"
+			? {
+					...identity,
+					betAmountMinor: input.betAmountMinor,
+					winAmountMinor: input.winAmountMinor,
+				}
+			: { ...identity, amountMinor: input.amountMinor };
 	return createHash("sha256")
-		.update(JSON.stringify({ type, ...input, now: undefined }))
+		.update(JSON.stringify({ type, ...payload }))
 		.digest("hex");
 }
 

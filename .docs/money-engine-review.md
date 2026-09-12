@@ -2,6 +2,8 @@
 
 Review date: 2026-09-12. Scope: wallet, bonus, gameplay, simulator, withdrawals, Drakon callback wiring, schema constraints, and existing policy and integration tests. Production code was not changed.
 
+Resolution status: the lifecycle, wagering reversal, serialization, round-state, simulator-validation, and fingerprint findings were addressed after this review. Catalogue persistence and trusted Drakon callback enrichment remain open for the catalogue implementation.
+
 ## Findings
 
 ### P1: Late wins recreate cancelled bonus funds

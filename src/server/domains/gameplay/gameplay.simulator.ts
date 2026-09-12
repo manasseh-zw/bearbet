@@ -12,6 +12,9 @@ export async function simulateGameRound(input: {
 	gameCategory?: string;
 	contentProvider?: string;
 }) {
+	if (input.outcome === "win" && input.winAmountMinor === undefined) {
+		throw new Error("A winning simulation needs a win amount");
+	}
 	const identity = {
 		integrationProvider: "fixture",
 		playerId: input.playerId,
@@ -34,9 +37,6 @@ export async function simulateGameRound(input: {
 			amountMinor: input.stakeMinor,
 		});
 		return { bet, settlement: result };
-	}
-	if (input.outcome === "win" && input.winAmountMinor === undefined) {
-		throw new Error("A winning simulation needs a win amount");
 	}
 	const result = await recordWin({
 		...identity,

@@ -4,6 +4,7 @@ import test, { after, type TestContext } from "node:test";
 import { eq, inArray } from "drizzle-orm";
 import {
 	activateBonusAward,
+	BonusServiceError,
 	createBonusDefinition,
 	settleBonusAward,
 } from "#/server/domains/bonus/bonus.service";
@@ -309,6 +310,31 @@ test("the deterministic simulator retries through production gameplay services",
 	assert.equal(retry.bet.isDuplicate, true);
 	assert.equal(retry.settlement.isDuplicate, true);
 	assert.equal(retry.settlement.balanceMinor, 10_000);
+	const [round] = await db
+		.select()
+		.from(gameRound)
+		.where(eq(gameRound.externalRoundId, `fixture-round:${input.runId}`));
+	assert.equal(round?.status, "refunded");
+});
+
+test("the simulator validates a winning request before recording its bet", async (context) => {
+	const playerId = await createTestPlayer(context, 10_000);
+	const runId = crypto.randomUUID();
+	await assert.rejects(
+		simulateGameRound({
+			playerId,
+			gameId: "fixture-game",
+			runId,
+			stakeMinor: 2_500,
+			outcome: "win",
+		}),
+		/A winning simulation needs a win amount/,
+	);
+	const operations = await db
+		.select()
+		.from(providerOperation)
+		.where(eq(providerOperation.externalTransactionId, `fixture-bet:${runId}`));
+	assert.equal(operations.length, 0);
 });
 
 test("concurrent qualifying bets cannot lose wagering progress", async (context) => {
@@ -362,9 +388,7 @@ test("suspended players cannot read or move gameplay funds", async (context) => 
 	);
 });
 
-test("review: a late win cannot recreate a cancelled bonus", {
-	todo: "Known bug: late wins recreate forfeited bonus funds; see .docs/money-engine-review.md",
-}, async (context) => {
+test("cancellation waits until bonus-funded gameplay settles", async (context) => {
 	const playerId = await createTestPlayer(context, 10_000);
 	const definition = await createTestBonus(context, {
 		playerId,
@@ -381,24 +405,26 @@ test("review: a late win cannot recreate a cancelled bonus", {
 		...gameIdentity(playerId, `${playerId}:bet`, "late-win"),
 		amountMinor: 4_000,
 	});
-	await settleBonusAward({ awardId: award.id, reason: "cancel" });
+	await assert.rejects(
+		settleBonusAward({ awardId: award.id, reason: "cancel" }),
+		(error) =>
+			error instanceof BonusServiceError && error.code === "INVALID_TRANSITION",
+	);
 	const result = await recordWin({
 		...gameIdentity(playerId, `${playerId}:win`, "late-win"),
 		betAmountMinor: 4_000,
 		winAmountMinor: 8_000,
 	});
-	assert.equal(result.balances.bonusBalanceMinor, 0);
+	assert.equal(result.balances.bonusBalanceMinor, 14_000);
 	const [stored] = await db
 		.select()
 		.from(bonusAward)
 		.where(eq(bonusAward.id, award.id));
-	assert.equal(stored?.status, "cancelled");
-	assert.equal(stored?.bonusBalanceMinor, 0);
+	assert.equal(stored?.status, "active");
+	assert.equal(stored?.bonusBalanceMinor, 14_000);
 });
 
-test("review: refunds preserve wagering earned above the target", {
-	todo: "Known bug: capped progress loses excess wagering before refunds; see .docs/money-engine-review.md",
-}, async (context) => {
+test("refunds preserve wagering earned above the target", async (context) => {
 	const playerId = await createTestPlayer(context, 10_000);
 	const definition = await createTestBonus(context, {
 		playerId,
