@@ -1,11 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRightIcon, DicesIcon, SpadeIcon } from "lucide-react";
 
-import featuredGames from "#/components/casino/featured-games.json";
+import featuredGames from "#/components/casino/guest/featured-games.json";
+import { GameCard } from "#/components/casino/shared/game-card";
 import { Button } from "#/components/ui/button";
 import { TiltCard } from "#/components/unlumen-ui/tilt-card";
-
-type FeaturedGame = (typeof featuredGames)[number];
 
 const featureCards = [
 	{
@@ -29,38 +28,6 @@ const featureCards = [
 			"bg-[radial-gradient(circle_at_82%_82%,rgba(126,82,204,0.3),transparent_34%),linear-gradient(135deg,#211d2b,#181817_68%)]",
 	},
 ] as const;
-
-function GameCard({ game }: { game: FeaturedGame }) {
-	return (
-		<article className="group min-w-0">
-			<button
-				type="button"
-				aria-label={`Play ${game.name}`}
-				className="block w-full cursor-pointer rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-			>
-				<span className="relative block aspect-[4/5] overflow-hidden rounded-xl border border-white/8 bg-card transition duration-200 ease-out group-hover:-translate-y-1 group-hover:border-primary/80 group-focus-within:-translate-y-1 group-focus-within:border-primary/80 motion-reduce:transform-none">
-					<img
-						src={game.imageUrl}
-						alt=""
-						loading="lazy"
-						decoding="async"
-						className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.035] group-focus-within:scale-[1.035] motion-reduce:transform-none"
-					/>
-					<span className="absolute inset-x-0 bottom-0 h-2/5 bg-linear-to-t from-black/75 to-transparent" />
-					<span className="absolute right-2 bottom-2 flex items-center gap-1 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-						Play <ArrowRightIcon className="size-3.5" />
-					</span>
-				</span>
-				<span className="mt-2 block truncate text-sm font-medium text-foreground">
-					{game.name}
-				</span>
-				<span className="mt-0.5 block truncate text-xs text-muted-foreground">
-					{game.provider} · {game.type}
-				</span>
-			</button>
-		</article>
-	);
-}
 
 export function GuestLobby() {
 	return (
