@@ -1,6 +1,6 @@
 # Bearbet domain model
 
-Status: identity, player, wallet, welcome credit, wallet operation, bonus, and withdrawal persistence models are implemented. Money, wagering, and withdrawal rules are locked. Catalogue, gameplay, and admin-audit entities remain planned; bonus and withdrawal services are the next implementation step.
+Status: identity, player, wallet, welcome credit, wallet operation, bonus, withdrawal, game-session, round, and provider-operation persistence models are implemented. Money, wagering, and withdrawal rules are locked. Catalogue and admin-audit entities remain planned. Gameplay services are the next implementation step.
 
 ## Required player journey
 
