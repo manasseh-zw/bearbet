@@ -1,6 +1,6 @@
 # Bearbet domain model
 
-Status: the identity, player, wallet, and welcome-credit model is implemented. Catalogue, gameplay, bonus, withdrawal, and admin-audit entities remain planned.
+Status: the identity, player, wallet, and welcome-credit model is implemented. Money, wagering, and withdrawal rules are locked. Catalogue, gameplay, bonus, withdrawal, and admin-audit entities remain planned.
 
 ## Required player journey
 
@@ -194,10 +194,15 @@ admin user ──< admin audit entries
 - Better Auth owns identity, sessions, credentials, roles, and banned state. Bearbet owns the player and wallet.
 - Player provisioning and the `$1,000.00` welcome credit are retry-safe and covered by an integration test.
 
-## Open rules before gameplay and bonus implementation
+## Settled gameplay, bonus, and withdrawal rules
 
-1. Which balance funds a bet, and where are wins returned?
-2. Does every eligible bet advance wagering, or only bets funded by bonus balance?
-3. What happens to remaining bonus funds when wagering completes or expires?
-4. What minimum-age policy should registration enforce?
-5. Do withdrawals reserve cash when requested or debit only after approval?
+- Eligible bets spend bonus before cash. Ineligible bets spend cash only.
+- Only the bonus-funded portion of an eligible bet advances wagering.
+- Wins return to their funding buckets. Mixed wins use the original stake ratio, rounded down for bonus with the remainder assigned to cash.
+- Refunds restore the original stake buckets and reverse the matching wagering contribution.
+- Completed awards convert remaining bonus funds to cash once. Expired or cancelled awards forfeit the remainder. Empty awards become exhausted.
+- One player may have one active bonus award in the MVP.
+- Playable and provider-reported balance is cash plus bonus. Reserved cash is excluded.
+- Withdrawals reserve cash on request, consume the reserve on approval, and release it on rejection.
+- Wallet currency is immutable. The MVP accepts USD, ZAR, and GBP and performs no conversion.
+- Registration requires the player to be at least 18 years old.

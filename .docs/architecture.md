@@ -194,8 +194,13 @@ The idempotency key is provider plus operation type plus external transaction ID
 - `bonus_award` stores a user's granted amount, expiry, status, and conversion state.
 - `bonus_award` stores required and completed wagering for the MVP.
 - Qualifying provider bets advance progress in the same database transaction as the bet.
+- A player may have at most one active award. This keeps the wallet's aggregate bonus balance attributable to one rule set.
 
-The exact cash-versus-bonus stake allocation and conversion policy must be fixed with examples before migrations are committed. Those rules affect wallet movements, refunds, withdrawal eligibility, and the callback balance Bearbet reports.
+Eligible gameplay spends bonus funds before cash. Ineligible gameplay spends cash only. Wagering progress increases only by the bonus-funded part of an eligible bet. A mixed bet records its cash and bonus stake portions so settlement and refunds can use the same proportions.
+
+Wins return to the buckets that funded the stake. For a mixed bet, Bearbet allocates the win in proportion to the original stake, rounds the bonus share down to a whole minor unit, and assigns the remainder to cash. A refund restores the exact original stake portions and reverses the matching wagering contribution. Bearbet rejects a refund that exceeds the unrefunded original operation.
+
+When completed wagering reaches the required amount, Bearbet converts the award's remaining bonus funds to cash once. If a refund later moves progress below the requirement, the already completed award does not reopen. The MVP therefore converts only when no refundable gameplay operation remains unsettled. An expired or cancelled award forfeits its remaining bonus funds. An award with no bonus funds and no unsettled operation becomes exhausted; the player never owes the wagering shortfall.
 
 ## Provider boundary
 
@@ -245,13 +250,24 @@ The visual base is near-black charcoal, raised graphite surfaces, warm honey and
 
 The design pass must cover focus, hover, disabled, loading, empty, error, and unavailable states. A polished happy path with unstyled failure states does not pass the eye test.
 
-## Decisions still to lock
+## Locked MVP money decisions
 
-1. Whether gameplay spends cash first, bonus first, or uses a configurable allocation rule.
-2. Whether Drakon's reported balance is cash only or total playable funds.
-3. The initial bonus conversion rule and whether converted funds become cash.
-4. Admin bootstrap method and demo-account credentials.
-5. Whether withdrawals reserve cash when requested or debit only when approved. Reserving on request is safer and avoids double spending.
+1. Eligible gameplay spends bonus first and cash second. Ineligible gameplay spends cash only.
+2. Providers receive the playable balance, `cashBalanceMinor + bonusBalanceMinor`. Reserved cash is not playable and is excluded.
+3. Only the bonus-funded part of an eligible bet advances wagering. Bonus-funded wins return to bonus, with proportional allocation for mixed bets. Completion converts the remaining bonus balance to cash once. Expiry and cancellation forfeit it.
+4. One immutable wallet currency is selected at registration. The MVP supports USD, ZAR, and GBP without conversion. Every command and provider session must match the wallet currency.
+5. An environment-controlled, repeatable seed creates the first admin and reviewer account. Public registration never accepts role or status. Deployment credentials remain outside source control.
+6. A withdrawal moves cash to reserved cash when requested. Approval consumes reserved cash. Rejection returns it to cash. Every transition is idempotent and only a pending request can be reviewed.
+
+## Worked money examples
+
+- Cash bet: a wallet with 1,000.00 cash and no bonus places a 10.00 bet. Cash becomes 990.00. A 25.00 win makes cash 1,015.00. A bet refund restores the original 10.00 cash once.
+- Bonus bet: a wallet with 1,000.00 cash and 100.00 bonus places an eligible 20.00 bet. Bonus becomes 80.00 and wagering progress increases by 20.00. A 50.00 win returns to bonus, making it 130.00.
+- Mixed bet: a wallet with 1,000.00 cash and 4.00 bonus places an eligible 10.00 bet. The stake is 4.00 bonus and 6.00 cash. A 25.00 win credits 10.00 bonus and 15.00 cash. A refund restores 4.00 bonus and 6.00 cash and removes 4.00 of progress.
+- Excluded game: a wallet with 1,000.00 cash and 100.00 bonus places a 10.00 bet on an excluded game. Cash becomes 990.00. Bonus and wagering progress do not change.
+- Completion: a 100.00 award with a 500.00 target has 40.00 remaining when its settled qualifying wagers reach 500.00. Bearbet debits 40.00 from bonus and credits 40.00 to cash in one transaction, then marks the award completed.
+- Expiry: an active award expires with 35.00 remaining. Bearbet debits 35.00 from bonus and marks the award expired. Cash does not change.
+- Withdrawal: a player requests 200.00 with 700.00 cash available. Cash becomes 500.00 and reserved cash becomes 200.00. Approval reduces reserved cash to zero. Rejection would instead move the 200.00 back to cash.
 
 ## First proving slice
 
