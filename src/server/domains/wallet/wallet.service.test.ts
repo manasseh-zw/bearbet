@@ -15,6 +15,7 @@ import {
 import {
 	applyWalletOperation,
 	demoTopUp,
+	getPlayableBalance,
 	WalletOperationError,
 } from "./wallet.service";
 
@@ -60,6 +61,9 @@ after(async () => {
 });
 
 test("wallet operation moves balances and writes ordered immutable evidence", async () => {
+	const playable = await getPlayableBalance(playerId);
+	assert.equal(playable.currencyCode, "USD");
+	assert.equal(playable.balanceMinor, 100_000);
 	const result = await applyWalletOperation({
 		playerId,
 		type: "bet",

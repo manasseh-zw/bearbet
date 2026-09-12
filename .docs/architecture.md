@@ -215,7 +215,7 @@ type CasinoProvider = {
 }
 ```
 
-Callbacks use a provider-specific adapter that authenticates and normalizes the payload before calling the shared gameplay use cases. The gameplay service resolves trusted category and content-provider metadata from the persisted catalogue before checking bonus eligibility. Catalogue metadata is excluded from financial callback fingerprints. The `simulated` provider must produce the same normalized bet, win, and refund commands as Drakon. It is a development and demo dependency, not a separate fake wallet implementation.
+Callbacks use a provider-specific adapter that authenticates and normalizes the payload. The Drakon route dispatches each normalized callback directly to its owning domain: account details to player, balance reads to wallet, and bets, wins, or refunds to gameplay. For bets, the route resolves trusted category and content-provider metadata from the persisted catalogue before calling gameplay. Catalogue metadata is excluded from financial callback fingerprints. The `simulated` provider must produce the same normalized bet, win, and refund commands as Drakon. It is a development and demo dependency, not a separate fake wallet implementation.
 
 The Greenbear V0 at `/Users/manasseh/Projects/work/greenbear-v0` is the behavioral reference for Drakon authentication, catalogue normalization, launch errors, callback probes, and refund edge cases.
 

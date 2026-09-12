@@ -1,19 +1,48 @@
 import "@tanstack/react-start/server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import {
 	type PlayerProfileInput,
 	playerProfileInputSchema,
 } from "#/lib/types/auth";
 import { db } from "#/server/infra/db";
-import { ledgerEntry, player, wallet } from "#/server/infra/db/schema";
+import { ledgerEntry, player, user, wallet } from "#/server/infra/db/schema";
 
 export const WELCOME_CREDIT_MINOR = 100_000;
 
 export type RegisterPlayerInput = PlayerProfileInput & {
 	userId: string;
 };
+
+export class PlayerServiceError extends Error {
+	constructor(
+		message: string,
+		readonly code: "PLAYER_UNAVAILABLE",
+	) {
+		super(message);
+		this.name = "PlayerServiceError";
+	}
+}
+
+export async function getActivePlayerAccountDetails(playerId: string) {
+	const [account] = await db
+		.select({
+			email: user.email,
+			name: user.name,
+			createdAt: user.createdAt,
+		})
+		.from(user)
+		.innerJoin(player, eq(player.userId, user.id))
+		.where(and(eq(user.id, playerId), eq(user.banned, false)));
+	if (!account) {
+		throw new PlayerServiceError(
+			"Active player was not found",
+			"PLAYER_UNAVAILABLE",
+		);
+	}
+	return account;
+}
 
 export async function registerPlayer(input: RegisterPlayerInput) {
 	const profile = playerProfileInputSchema.parse(input);

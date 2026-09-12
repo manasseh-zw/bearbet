@@ -1,9 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { findGame } from "#/server/domains/game/game.service";
 import {
 	GameplayServiceError,
-	processProviderCallback,
+	recordBet,
+	recordRefund,
+	recordWin,
 } from "#/server/domains/gameplay/gameplay.service";
+import {
+	getActivePlayerAccountDetails,
+	PlayerServiceError,
+} from "#/server/domains/player/player.service";
+import {
+	getPlayableBalance,
+	WalletOperationError,
+} from "#/server/domains/wallet/wallet.service";
 import { getDrakonEnv } from "#/server/env";
 import {
 	DrakonWebhookError,
@@ -20,32 +31,54 @@ export const Route = createFileRoute("/api/drakon/$key")({
 						params.key,
 						getDrakonEnv(),
 					);
-					const result = await processProviderCallback(callback, {
-						integrationProvider: "drakon",
-					});
 					if (callback.isDashboardProbe) {
 						return json({ status: true, balance: 1000 });
 					}
-					if (callback.kind === "accountDetails") {
-						if (
-							!("email" in result) ||
-							!("name" in result) ||
-							!("createdAt" in result) ||
-							!(result.createdAt instanceof Date)
-						) {
-							return json({ status: false, error: "INVALID_USER" });
+					switch (callback.kind) {
+						case "accountDetails": {
+							const account = await getActivePlayerAccountDetails(
+								callback.userId,
+							);
+							return json({
+								status: true,
+								email: account.email,
+								name_jogador: account.name,
+								date: account.createdAt.toISOString(),
+							});
 						}
-						return json({
-							status: true,
-							email: result.email,
-							name_jogador: result.name,
-							date: result.createdAt.toISOString(),
-						});
+						case "balance": {
+							const result = await getPlayableBalance(callback.userId);
+							return json({
+								status: 1,
+								balance: minorToMajor(result.balanceMinor),
+							});
+						}
+						case "bet": {
+							const storedGame = await findGame("drakon", callback.gameId);
+							const result = await recordBet({
+								...gameplayIdentity(callback),
+								amountMinor: callback.amountMinor,
+								gameCategory: storedGame?.type,
+								contentProvider: storedGame?.provider,
+							});
+							return transactionResponse(result.balanceMinor);
+						}
+						case "win": {
+							const result = await recordWin({
+								...gameplayIdentity(callback),
+								betAmountMinor: callback.betAmountMinor,
+								winAmountMinor: callback.winAmountMinor,
+							});
+							return transactionResponse(result.balanceMinor);
+						}
+						case "refund": {
+							const result = await recordRefund({
+								...gameplayIdentity(callback),
+								amountMinor: callback.amountMinor,
+							});
+							return transactionResponse(result.balanceMinor);
+						}
 					}
-					return json({
-						status: callback.kind === "balance" ? 1 : true,
-						balance: minorToMajor(result.balanceMinor),
-					});
 				} catch (error) {
 					if (error instanceof DrakonWebhookError) {
 						return json(
@@ -56,6 +89,12 @@ export const Route = createFileRoute("/api/drakon/$key")({
 					if (error instanceof GameplayServiceError) {
 						return json({ status: false, error: error.code });
 					}
+					if (
+						error instanceof PlayerServiceError ||
+						error instanceof WalletOperationError
+					) {
+						return json({ status: false, error: "INVALID_USER" });
+					}
 					return json(
 						{ status: false, error: "INTERNAL_ERROR" },
 						{ status: 500 },
@@ -65,6 +104,27 @@ export const Route = createFileRoute("/api/drakon/$key")({
 		},
 	},
 });
+
+function gameplayIdentity(callback: {
+	userId: string;
+	transactionId: string;
+	sessionId: string;
+	roundId: string;
+	gameId: string;
+}) {
+	return {
+		integrationProvider: "drakon",
+		playerId: callback.userId,
+		externalTransactionId: callback.transactionId,
+		externalSessionId: callback.sessionId,
+		externalRoundId: callback.roundId,
+		gameId: callback.gameId,
+	};
+}
+
+function transactionResponse(balanceMinor: number) {
+	return json({ status: true, balance: minorToMajor(balanceMinor) });
+}
 
 function minorToMajor(amountMinor: number) {
 	return amountMinor / 100;

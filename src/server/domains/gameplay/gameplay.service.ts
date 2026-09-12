@@ -5,7 +5,6 @@ import { and, eq, inArray } from "drizzle-orm";
 
 import { isGameEligible } from "#/server/domains/bonus/bonus.policy";
 import { settleBonusAwardInTransaction } from "#/server/domains/bonus/bonus.service";
-import { findGame } from "#/server/domains/game/game.service";
 import {
 	calculateAwardWageringProgress,
 	countUnsettledAwardBets,
@@ -33,7 +32,6 @@ import {
 	user,
 	wallet,
 } from "#/server/infra/db/schema";
-import type { NormalizedProviderCallback } from "#/server/infra/providers/provider.types";
 
 type GameplayIdentity = {
 	integrationProvider: string;
@@ -74,104 +72,6 @@ export class GameplayServiceError extends Error {
 		super(message);
 		this.name = "GameplayServiceError";
 	}
-}
-
-export async function processProviderCallback(
-	callback: NormalizedProviderCallback,
-	options: {
-		integrationProvider: string;
-		gameCategory?: string;
-		contentProvider?: string;
-	},
-) {
-	if (callback.isDashboardProbe) {
-		return { isDashboardProbe: true, balanceMinor: 100_000 };
-	}
-	if (callback.kind === "accountDetails") {
-		return getPlayerAccountDetails(callback.userId);
-	}
-	if (callback.kind === "balance") {
-		return getPlayableWalletBalance(callback.userId);
-	}
-	const identity = {
-		integrationProvider: options.integrationProvider,
-		playerId: callback.userId,
-		externalTransactionId: callback.transactionId,
-		externalSessionId: callback.sessionId,
-		externalRoundId: callback.roundId,
-		gameId: callback.gameId,
-	};
-	switch (callback.kind) {
-		case "bet": {
-			const storedGame = await findGame(
-				options.integrationProvider,
-				callback.gameId,
-			);
-			return recordBet({
-				...identity,
-				amountMinor: callback.amountMinor,
-				gameCategory: storedGame?.type ?? options.gameCategory,
-				contentProvider: storedGame?.provider ?? options.contentProvider,
-			});
-		}
-		case "win":
-			return recordWin({
-				...identity,
-				betAmountMinor: callback.betAmountMinor,
-				winAmountMinor: callback.winAmountMinor,
-			});
-		case "refund":
-			return recordRefund({ ...identity, amountMinor: callback.amountMinor });
-	}
-}
-
-export async function getPlayableWalletBalance(playerId: string) {
-	const [current] = await db
-		.select({ wallet, banned: user.banned })
-		.from(wallet)
-		.innerJoin(user, eq(user.id, wallet.playerId))
-		.where(eq(wallet.playerId, playerId));
-	if (!current || current.banned)
-		throw new GameplayServiceError(
-			"Active player wallet was not found",
-			"INVALID_USER",
-		);
-	return {
-		currencyCode: current.wallet.currencyCode,
-		balances: walletBalances(current.wallet),
-		balanceMinor: playableBalance(walletBalances(current.wallet)),
-	};
-}
-
-export async function getPlayerAccountDetails(playerId: string) {
-	const [account] = await db
-		.select({
-			email: user.email,
-			name: user.name,
-			createdAt: user.createdAt,
-			currencyCode: wallet.currencyCode,
-			cashBalanceMinor: wallet.cashBalanceMinor,
-			bonusBalanceMinor: wallet.bonusBalanceMinor,
-			reservedCashMinor: wallet.reservedCashMinor,
-		})
-		.from(user)
-		.innerJoin(wallet, eq(wallet.playerId, user.id))
-		.where(and(eq(user.id, playerId), eq(user.banned, false)));
-	if (!account) {
-		throw new GameplayServiceError(
-			"Active player was not found",
-			"INVALID_USER",
-		);
-	}
-	const balances = walletBalances(account);
-	return {
-		email: account.email,
-		name: account.name,
-		createdAt: account.createdAt,
-		currencyCode: account.currencyCode,
-		balances,
-		balanceMinor: playableBalance(balances),
-	};
 }
 
 export async function recordBet(input: RecordBetInput) {

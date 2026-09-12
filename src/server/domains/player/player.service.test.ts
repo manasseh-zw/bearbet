@@ -13,7 +13,11 @@ import {
 	wallet,
 } from "#/server/infra/db/schema";
 
-import { registerPlayer, WELCOME_CREDIT_MINOR } from "./player.service";
+import {
+	getActivePlayerAccountDetails,
+	registerPlayer,
+	WELCOME_CREDIT_MINOR,
+} from "./player.service";
 
 type SignUpEmailInput = NonNullable<Parameters<typeof auth.api.signUpEmail>[0]>;
 
@@ -101,6 +105,10 @@ test("player registration provisions one player and one funded wallet", async (c
 	assert.equal(storedWallet?.cashBalanceMinor, WELCOME_CREDIT_MINOR);
 	assert.equal(storedWallet?.currencyCode, "USD");
 	assert.equal(credentialAccount?.providerId, "credential");
+	const providerAccount = await getActivePlayerAccountDetails(userId);
+	assert.equal(providerAccount.email, email);
+	assert.equal(providerAccount.name, "Test Player");
+	assert.ok(providerAccount.createdAt instanceof Date);
 
 	const emailSignIn = await auth.api.signInEmail({
 		body: {

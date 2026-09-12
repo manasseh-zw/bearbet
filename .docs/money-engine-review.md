@@ -2,7 +2,7 @@
 
 Review date: 2026-09-12. Scope: wallet, bonus, gameplay, simulator, withdrawals, Drakon callback wiring, schema constraints, and existing policy and integration tests. Production code was not changed.
 
-Resolution status: all findings were addressed after this review. The game catalogue now persists trusted category and content-provider metadata, and callback fingerprints exclude that mutable enrichment.
+Resolution status: all findings were addressed after this review. The game catalogue now persists trusted category and content-provider metadata, the Drakon route supplies that metadata to gameplay, and callback fingerprints exclude the mutable enrichment.
 
 ## Findings
 

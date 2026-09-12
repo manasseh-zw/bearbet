@@ -7,12 +7,14 @@ import {
 	assertMinorUnits,
 	assertPositiveMinorUnits,
 	checkedAdd,
+	playableBalance,
 	type WalletBalances,
 } from "#/server/domains/wallet/wallet.policy";
 import { db } from "#/server/infra/db";
 import {
 	ledgerEntry,
 	type ledgerEntryType,
+	user,
 	wallet,
 	type walletBucket,
 	walletOperation,
@@ -54,6 +56,30 @@ export class WalletOperationError extends Error {
 		super(message);
 		this.name = "WalletOperationError";
 	}
+}
+
+export async function getPlayableBalance(playerId: string) {
+	const [current] = await db
+		.select({ wallet, banned: user.banned })
+		.from(wallet)
+		.innerJoin(user, eq(user.id, wallet.playerId))
+		.where(eq(wallet.playerId, playerId));
+	if (!current || current.banned) {
+		throw new WalletOperationError(
+			"Active player wallet was not found",
+			"WALLET_NOT_FOUND",
+		);
+	}
+	const balances: WalletBalances = {
+		cashBalanceMinor: current.wallet.cashBalanceMinor,
+		bonusBalanceMinor: current.wallet.bonusBalanceMinor,
+		reservedCashMinor: current.wallet.reservedCashMinor,
+	};
+	return {
+		currencyCode: current.wallet.currencyCode,
+		balances,
+		balanceMinor: playableBalance(balances),
+	};
 }
 
 export async function applyWalletOperation(input: ApplyWalletOperationInput) {
