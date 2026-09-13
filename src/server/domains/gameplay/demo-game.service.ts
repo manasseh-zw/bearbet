@@ -1,6 +1,6 @@
 import "@tanstack/react-start/server-only";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 import { findGame } from "#/server/domains/game/game.service";
 import {
@@ -34,36 +34,46 @@ export async function startDemoGame(input: {
 		getPlayableBalance(input.playerId),
 	]);
 	if (!game?.isAvailable) throw new DemoGameError("This game is unavailable");
-	if (wallet.balanceMinor <= 0)
-		throw new DemoGameError("Add funds to your wallet before playing");
 
-	const externalSessionId = `bearbet-demo:${input.launchKey}`;
-	const [existing] = await db
-		.select()
-		.from(gameSession)
-		.where(
-			and(
-				eq(gameSession.integrationProvider, env.CASINO_PROVIDER),
-				eq(gameSession.playerId, input.playerId),
-				eq(gameSession.externalSessionId, externalSessionId),
-			),
+	const session = await db.transaction(async (transaction) => {
+		await transaction.execute(
+			sql`select pg_advisory_xact_lock(hashtext(${`${env.CASINO_PROVIDER}:${input.playerId}:${input.gameId}`}))`,
 		);
-	if (existing) return sessionResult(existing, game, wallet.balanceMinor);
 
-	let [session] = await db
-		.insert(gameSession)
-		.values({
-			playerId: input.playerId,
-			integrationProvider: env.CASINO_PROVIDER,
-			externalSessionId,
-			gameId: input.gameId,
-			mode: "real",
-			currencyCode: wallet.currencyCode,
-		})
-		.onConflictDoNothing()
-		.returning();
-	if (!session) {
-		[session] = await db
+		const [activeSession] = await transaction
+			.select()
+			.from(gameSession)
+			.where(
+				and(
+					eq(gameSession.integrationProvider, env.CASINO_PROVIDER),
+					eq(gameSession.playerId, input.playerId),
+					eq(gameSession.gameId, input.gameId),
+					eq(gameSession.status, "active"),
+				),
+			)
+			.orderBy(desc(gameSession.createdAt))
+			.limit(1);
+		if (activeSession) return activeSession;
+
+		if (wallet.balanceMinor <= 0)
+			throw new DemoGameError("Add funds to your wallet before playing");
+
+		const externalSessionId = `bearbet-demo:${input.launchKey}`;
+		const [createdSession] = await transaction
+			.insert(gameSession)
+			.values({
+				playerId: input.playerId,
+				integrationProvider: env.CASINO_PROVIDER,
+				externalSessionId,
+				gameId: input.gameId,
+				mode: "real",
+				currencyCode: wallet.currencyCode,
+			})
+			.onConflictDoNothing()
+			.returning();
+		if (createdSession) return createdSession;
+
+		const [existingSession] = await transaction
 			.select()
 			.from(gameSession)
 			.where(
@@ -73,7 +83,8 @@ export async function startDemoGame(input: {
 					eq(gameSession.externalSessionId, externalSessionId),
 				),
 			);
-	}
+		return existingSession;
+	});
 	if (!session)
 		throw new DemoGameError("The game session could not be started");
 	return sessionResult(session, game, wallet.balanceMinor);

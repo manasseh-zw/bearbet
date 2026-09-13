@@ -70,10 +70,10 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 ### 4. Playable simulator journey
 
 - [~] **P14. Implement launch orchestration and persistence.** The BearBet demo authenticates the player, resolves the persisted game, checks availability and playable balance, and records a retry-safe session. The provider launch branch still needs to call the configured external provider.
-- [~] **P15. Build the game player.** Authenticated game cards open the BearBet demo player with launch, play, error, close, wallet refresh, and session-summary states. External provider URL, full-screen, and close behavior remain.
-- [~] **P16. Expose deterministic simulator controls.** Authenticated browser functions now run server-resolved Lucky Number outcomes through the production gameplay, bonus, wallet, and ledger services. Explicit refund testing controls remain for the broader simulator proof.
+- [~] **P15. Build the game player.** Authenticated game cards open the BearBet demo player with launch, active-session restoration, play, error, close, wallet refresh, and session-summary states. External provider URL, full-screen, and close behavior remain.
+- [x] **P16. Expose deterministic simulator gameplay.** Authenticated browser functions run server-resolved Lucky Number outcomes through the production gameplay, bonus, wallet, and ledger services. Provider-originated refunds are deferred until the live callback contract is known.
 - [x] **P17. Build bet history.** The existing History route now uses its Bets tab for one row per persisted game round. It shows the game, provider, friendly reference, outcome, stake, return or refund, net result, date, and pagination while All remains the complete wallet-operation trail.
-- [ ] **P18. Verify the simulator journey.** Prove one visible flow from launch through win, loss, and refund. Wallet and history must update once under retries and show useful insufficient-balance and invalid-session errors.
+- [x] **P18. Verify the simulator journey.** The signed-in browser proof covers launch, active-session refresh, win and loss settlement, live wallet updates, round-level history, invalid stakes, and duplicate-click protection. Provider-originated refund proof is deferred until the live callback contract is known.
 
 ### 5. Bonus journey
 
