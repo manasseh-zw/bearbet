@@ -21,7 +21,7 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 
 ### The current gap
 
-The browser can now call the authenticated wallet overview, demo top-up, and withdrawal request boundaries. Shared request schemas accept amounts and idempotency keys but no player identity. The Wallet route still uses local preview state, and the app shell does not show the persisted balance yet. Game cards do not launch a session. History, Bonuses, Promotions, VIP, Profile, the game player, and Admin remain navigable placeholders.
+The Wallet route now reads its persisted balances, pending withdrawals, and recent ledger entries through the authenticated wallet query. Demo top-ups and withdrawal requests call the server functions with stable in-flight idempotency keys and refresh the shared wallet query after success. The app shell does not show the persisted balance yet. Game cards do not launch a session. History, Bonuses, Promotions, VIP, Profile, the game player, and Admin remain navigable placeholders.
 
 This means the hard money rules exist, but a reviewer cannot see or drive them. The next work should expose those rules without duplicating them in components or server functions.
 

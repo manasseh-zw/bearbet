@@ -34,9 +34,21 @@ export const addDemoFunds = createServerFn({ method: "POST" })
 export const requestPlayerWithdrawal = createServerFn({ method: "POST" })
 	.middleware([playerAuthMiddleware])
 	.validator(withdrawalRequestInputSchema)
-	.handler(({ context, data }) =>
-		requestWithdrawal({
+	.handler(async ({ context, data }) => {
+		const result = await requestWithdrawal({
 			...data,
 			playerId: context.session.user.id,
-		}),
-	);
+		});
+
+		return {
+			isDuplicate: result.isDuplicate,
+			withdrawal: {
+				id: result.withdrawal.id,
+				currencyCode: result.withdrawal.currencyCode,
+				requestedAmountMinor: result.withdrawal.requestedAmountMinor,
+				reservedAmountMinor: result.withdrawal.reservedAmountMinor,
+				status: result.withdrawal.status,
+				requestedAt: result.withdrawal.requestedAt,
+			},
+		};
+	});
