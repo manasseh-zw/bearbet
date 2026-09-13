@@ -3,7 +3,7 @@
 
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/nunito";
 
 @font-face {
   font-family: "River Adventurer";
@@ -87,7 +87,7 @@
 }
 
 @theme inline {
-  --font-sans: "Geist Variable", sans-serif;
+  --font-sans: "Nunito Variable", sans-serif;
   --font-logo: "River Adventurer", var(--font-sans);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
