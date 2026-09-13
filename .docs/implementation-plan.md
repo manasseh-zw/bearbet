@@ -10,6 +10,7 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 
 - Guests can browse a branded casino lobby and open registration or login.
 - Players can register with the required profile fields, receive `$1,000.00` in virtual cash once, sign in with email or username, retain a database-backed session, and sign out.
+- Signed-in players can open the Wallet to read persisted playable, cash, bonus, and reserved balances. They can add one of the supported demo amounts, request a withdrawal, inspect pending reservations, and review recent ledger activity. Successful money actions refresh the shared wallet query and publish an app-level toast.
 - Signed-in players can browse the synchronized catalogue with client-side search and category filters.
 - The responsive shell has desktop navigation, a mobile drawer, account controls, loading states, catalogue error recovery, and artwork fallbacks.
 - PostgreSQL stores Better Auth identity, player profiles, wallets, wallet operations, immutable ledger entries, withdrawals, bonus definitions and awards, games, sessions, rounds, and provider operations.
@@ -21,9 +22,9 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 
 ### The current gap
 
-The Wallet route now reads its persisted balances, pending withdrawals, and recent ledger entries through the authenticated wallet query. Demo top-ups and withdrawal requests call the server functions with stable in-flight idempotency keys and refresh the shared wallet query after success. The app shell does not show the persisted balance yet. Game cards do not launch a session. History, Bonuses, Promotions, VIP, Profile, the game player, and Admin remain navigable placeholders.
+The core Wallet route is connected to the money engine, but the wallet journey is not complete. The app shell does not show the persisted balance, and `/history` does not yet provide the full paginated and filtered ledger. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, and refresh persistence. Game cards do not launch a session. Bonuses, Promotions, VIP, Profile, the game player, and Admin remain navigable placeholders.
 
-This means the hard money rules exist, but a reviewer cannot see or drive them. The next work should expose those rules without duplicating them in components or server functions.
+A reviewer can now drive top-ups and withdrawal reservations from the Wallet. The next work completes that loop across the shell and transaction history, then records repeatable proof.
 
 ## Delivery rules
 
@@ -38,11 +39,11 @@ This means the hard money rules exist, but a reviewer cannot see or drive them. 
 
 ## Stage 1: authenticated wallet experience
 
-This is the next feature.
+This feature is in progress.
 
-The `_app`, `_player`, `_guest`, and `_admin` route boundaries are in place. Guest and player guards preserve safe internal destinations, and signed-in users leave authentication routes. Browser-safe top-up and withdrawal schemas now reject trusted fields. Authenticated server functions expose the current wallet, demo top-up, withdrawal request, pending withdrawals, and recent ledger entries. The server derives the player ID from a fresh active session.
+The `_app`, `_player`, `_guest`, and `_admin` route boundaries are in place. Guest and player guards preserve safe internal destinations, and signed-in users leave authentication routes. Browser-safe top-up and withdrawal schemas reject trusted fields. Authenticated server functions expose the current wallet, demo top-up, withdrawal request, pending withdrawals, and recent ledger entries. The server derives the player ID from a fresh active session. `/wallet` uses those functions for persisted balances, retryable reads, demo top-ups, withdrawal reservations, pending withdrawals, recent activity, disabled submission states, error feedback, and success toasts.
 
-Put cash, bonus, and playable balance in the app shell. Build `/wallet` with the four virtual top-up amounts, withdrawal reservation, mutation feedback, and recent activity. Build `/history` as the unified home for ledger and gameplay activity. It needs pagination and filters for transactions, bets, wins, refunds, wallet bucket, operation type, and date. Share React Query keys so successful mutations refresh every visible balance and history view.
+Next, put cash, bonus, and playable balance in the app shell using the existing wallet query key. Then build `/history` as the unified home for ledger and gameplay activity, with pagination and filters for transactions, bets, wins, refunds, wallet bucket, operation type, and date. Finish the stage with access tests and one repeatable wallet journey that proves successful mutations refresh every visible balance and history view.
 
 Checkpoint:
 
@@ -157,4 +158,4 @@ Favourites, recently played games, notifications, advanced filters, two-factor a
 
 ## Immediate task
 
-The route portion of P01 and P02 is complete. Next, finish the server-side player policy in P03 and add the access tests in P04. Then implement P05 through P07 as the first wallet feature: browser-safe wallet contracts, authenticated wallet reads, and the shell balance. The `/wallet` mutations and unified `/history` screen should follow as separate focused commits.
+Complete P07 by adding the persisted playable balance and cash and bonus breakdown to the authenticated app shell, including loading, retry, and mobile behavior. Follow with the unified `/history` screen in P09. Then finish P04 and P10 with access-boundary and wallet-journey tests covering duplicate requests, invalid and excessive withdrawals, suspension, cross-user isolation, and refresh persistence.
