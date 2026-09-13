@@ -2,7 +2,7 @@ import "@tanstack/react-start/server-only";
 
 import { z } from "zod";
 
-import { withdrawalRequestInputSchema } from "#/lib/schemas/wallet.schema";
+import { withdrawalRequestInputSchema } from "#/lib/schemas/withdrawal.schema";
 
 const requiredIdentifierSchema = z.string().trim().min(1);
 

@@ -41,14 +41,12 @@ import { walletQueries } from "#/lib/queries/wallet.queries";
 import {
 	DEMO_TOP_UP_AMOUNTS_MINOR,
 	type DemoTopUpInput,
-	type WithdrawalRequestInput,
 } from "#/lib/schemas/wallet.schema";
+import type { WithdrawalRequestInput } from "#/lib/schemas/withdrawal.schema";
 import { emitToast } from "#/lib/toast-events";
 import { cn } from "#/lib/utils";
-import {
-	addDemoFunds,
-	requestPlayerWithdrawal,
-} from "#/server/domains/wallet/wallet.functions";
+import { addDemoFunds } from "#/server/domains/wallet/wallet.functions";
+import { requestPlayerWithdrawal } from "#/server/domains/withdrawal/withdrawal.functions";
 
 const transactionLabels: Record<string, string> = {
 	welcome_credit: "Welcome credit",
