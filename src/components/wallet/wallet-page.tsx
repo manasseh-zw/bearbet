@@ -9,7 +9,6 @@ import {
 	LandmarkIcon,
 	LockKeyholeIcon,
 	PlusIcon,
-	ShieldCheckIcon,
 	WalletCardsIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -121,22 +120,12 @@ export function WalletPage() {
 				<div className="flex items-center gap-2">
 					<h1 className="text-2xl font-semibold tracking-tight">Wallet</h1>
 					<Badge variant="secondary">USD</Badge>
+					<Badge variant="outline">Virtual funds</Badge>
 				</div>
 				<p className="text-sm text-muted-foreground">
 					Add play money, review your balances, and manage demo withdrawals.
 				</p>
 			</header>
-
-			<div className="mb-6 flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
-				<ShieldCheckIcon className="mt-0.5 size-4 shrink-0 text-primary" />
-				<div>
-					<p className="font-medium">Virtual funds only</p>
-					<p className="mt-0.5 text-muted-foreground">
-						This wallet is for demo play. Funds have no cash value. Actions on
-						this preview reset when you refresh.
-					</p>
-				</div>
-			</div>
 
 			{notice ? (
 				<output className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
@@ -322,16 +311,14 @@ export function WalletPage() {
 										<TableRow key={item.id}>
 											<TableCell className="pl-5">
 												<div className="flex items-center gap-3">
-													<span
+													<Icon
 														className={cn(
-															"grid size-8 place-items-center rounded-xl",
+															"size-4 shrink-0",
 															isCredit
-																? "bg-primary/10 text-primary"
-																: "bg-muted text-muted-foreground",
+																? "text-emerald-600 dark:text-emerald-400"
+																: "text-muted-foreground",
 														)}
-													>
-														<Icon className="size-4" />
-													</span>
+													/>
 													<div>
 														<p className="font-medium">{item.type}</p>
 														<p className="text-xs text-muted-foreground">
@@ -357,7 +344,7 @@ export function WalletPage() {
 											<TableCell
 												className={cn(
 													"pr-5 text-right font-medium tabular-nums",
-													isCredit && "text-primary",
+													isCredit && "text-emerald-600 dark:text-emerald-400",
 												)}
 											>
 												{isCredit ? "+" : "-"}
