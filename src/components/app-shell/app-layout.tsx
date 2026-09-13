@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import { Logo } from "#/components/brand";
+import { Logo } from "#/components/shared/brand";
 import {
 	SidebarInset,
 	SidebarProvider,

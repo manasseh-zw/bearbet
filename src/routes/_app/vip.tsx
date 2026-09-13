@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { RoutePlaceholder } from "#/components/casino/route-placeholder";
+import { RoutePlaceholder } from "#/components/shared/route-placeholder";
 
 export const Route = createFileRoute("/_app/vip")({
 	head: () => ({ meta: [{ title: "VIP club | BearBet" }] }),

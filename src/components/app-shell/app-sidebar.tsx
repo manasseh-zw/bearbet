@@ -20,7 +20,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import type { ComponentProps } from "react";
-import { Logo } from "#/components/brand";
+import { Logo } from "#/components/shared/brand";
 import { Button } from "#/components/ui/button";
 import {
 	DropdownMenu,

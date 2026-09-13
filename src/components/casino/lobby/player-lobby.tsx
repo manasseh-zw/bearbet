@@ -11,11 +11,11 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { GameCard } from "#/components/casino/shared/game-card";
 import {
 	type FilterDefinition,
 	FilterGrid,
-} from "#/components/interior/filter-grid";
+} from "#/components/casino/catalogue-filter-grid";
+import { GameCard } from "#/components/casino/game-card";
 import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
 import { catalogueQueries } from "#/lib/queries/catalogue.queries";
@@ -99,7 +99,7 @@ function CatalogueSkeleton() {
 	);
 }
 
-export function AuthenticatedLobby() {
+export function PlayerLobby() {
 	const [search, setSearch] = useState("");
 	const columns = useCatalogueColumns();
 	const catalogue = useQuery(catalogueQueries.games());

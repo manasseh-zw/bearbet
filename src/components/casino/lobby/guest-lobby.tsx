@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRightIcon, DicesIcon, SpadeIcon } from "lucide-react";
 
-import featuredGames from "#/components/casino/guest/featured-games.json";
-import { GameCard } from "#/components/casino/shared/game-card";
+import { GameCard } from "#/components/casino/game-card";
+import featuredGames from "#/components/casino/lobby/featured-games.json";
 import { buttonVariants } from "#/components/ui/button";
 import { TiltCard } from "#/components/unlumen-ui/tilt-card";
 

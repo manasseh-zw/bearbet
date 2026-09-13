@@ -4,7 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
 import { useId, useState } from "react";
 
-import { Logo } from "#/components/brand";
+import { Logo } from "#/components/shared/brand";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { AuthenticatedLobby } from "#/components/casino/authenticated/authenticated-lobby";
-import { GuestLobby } from "#/components/casino/guest/guest-lobby";
+import { GuestLobby } from "#/components/casino/lobby/guest-lobby";
+import { PlayerLobby } from "#/components/casino/lobby/player-lobby";
 import { Skeleton } from "#/components/ui/skeleton";
 import { authClient } from "#/lib/auth-client";
 
@@ -30,5 +30,5 @@ function CasinoLobby() {
 		);
 	}
 
-	return session?.user ? <AuthenticatedLobby /> : <GuestLobby />;
+	return session?.user ? <PlayerLobby /> : <GuestLobby />;
 }
