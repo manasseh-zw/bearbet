@@ -4,7 +4,7 @@ import { ArrowRightIcon, DicesIcon, SpadeIcon } from "lucide-react";
 import { GameCard } from "#/components/casino/game-card";
 import featuredGames from "#/components/casino/lobby/featured-games.json";
 import { buttonVariants } from "#/components/ui/button";
-import { TiltCard } from "#/components/unlumen-ui/tilt-card";
+import { TiltCard } from "#/components/ui/tilt-card";
 
 const featureCards = [
 	{

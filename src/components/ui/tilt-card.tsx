@@ -1,8 +1,8 @@
 "use client";
 
 import type { AnchorHTMLAttributes, HTMLAttributes, ReactNode } from "react";
-import { ClippedCircle } from "#/components/unlumen-ui/clipped-circle.tsx";
-import { Tilt, type TiltProps } from "#/components/unlumen-ui/tilt.tsx";
+import { ClippedCircle } from "#/components/ui/clipped-circle.tsx";
+import { Tilt, type TiltProps } from "#/components/ui/tilt.tsx";
 import { cn } from "#/lib/utils.ts";
 
 export type TiltCardProps = HTMLAttributes<HTMLDivElement> & {

@@ -44,7 +44,6 @@ src/
       route-placeholder.tsx
       toast-provider.tsx
     ui/
-    unlumen-ui/
   lib/
     types/
       auth.ts                   # shared schemas and inferred input types
