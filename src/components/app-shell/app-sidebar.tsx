@@ -1,5 +1,6 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Facehash } from "facehash";
 import type { LucideIcon } from "lucide-react";
 import {
 	BadgePercentIcon,
@@ -12,6 +13,8 @@ import {
 	LoaderCircleIcon,
 	LogInIcon,
 	LogOutIcon,
+	PlusCircleIcon,
+	RefreshCwIcon,
 	SettingsIcon,
 	ShieldCheckIcon,
 	UserRoundIcon,
@@ -44,6 +47,7 @@ import {
 } from "#/components/ui/sidebar";
 import { Skeleton } from "#/components/ui/skeleton";
 import { authClient, signOutPlayer } from "#/lib/auth-client";
+import { walletQueries } from "#/lib/queries/wallet.queries";
 
 type NavigationItem = {
 	label: string;
@@ -139,6 +143,11 @@ function NavigationGroup({
 function PlayerProfile() {
 	const navigate = useNavigate();
 	const { data: session, isPending } = authClient.useSession();
+	const user = session?.user;
+	const wallet = useQuery({
+		...walletQueries.current(),
+		enabled: Boolean(user),
+	});
 	const logout = useMutation({
 		mutationFn: signOutPlayer,
 		onSuccess: async () => {
@@ -154,14 +163,23 @@ function PlayerProfile() {
 			>
 				<Skeleton className="size-9 shrink-0 rounded-lg bg-sidebar-accent" />
 				<div className="grid flex-1 gap-1.5">
-					<Skeleton className="h-3.5 w-24 bg-sidebar-accent" />
-					<Skeleton className="h-3 w-36 bg-sidebar-accent" />
+					<Skeleton className="h-3 w-14 bg-sidebar-accent" />
+					<Skeleton className="h-4 w-24 bg-sidebar-accent" />
 				</div>
 			</output>
 		);
 	}
 
-	const user = session?.user;
+	const money = wallet.data
+		? new Intl.NumberFormat(undefined, {
+				style: "currency",
+				currency: wallet.data.currencyCode,
+			})
+		: null;
+	const playableBalance =
+		wallet.data && money
+			? formatMinorUnits(wallet.data.playableBalanceMinor, money)
+			: null;
 
 	return (
 		<div>
@@ -174,16 +192,60 @@ function PlayerProfile() {
 						/>
 					}
 				>
-					<span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-accent text-sidebar-foreground">
-						<UserRoundIcon className="size-4" />
-					</span>
+					{user ? (
+						<Facehash
+							name={user.name || user.id}
+							size={36}
+							colors={["#f6c453", "#e9a923", "#ffd978"]}
+							intensity3d="subtle"
+							className="shrink-0 overflow-hidden rounded-lg font-semibold text-[#211805] ring-1 ring-primary/30"
+						/>
+					) : (
+						<span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-accent text-sidebar-foreground">
+							<UserRoundIcon className="size-4" />
+						</span>
+					)}
 					<span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-						<span className="truncate font-medium text-sidebar-foreground">
-							{user?.name ?? "Player account"}
-						</span>
-						<span className="truncate text-xs text-sidebar-foreground/45">
-							{user?.email ?? "Sign in to play"}
-						</span>
+						{user ? (
+							wallet.isPending ? (
+								<>
+									<span className="text-xs text-sidebar-foreground/45">
+										Balance
+									</span>
+									<Skeleton className="mt-1 h-4 w-24 bg-sidebar-accent" />
+								</>
+							) : wallet.isError ? (
+								<>
+									<span className="text-xs text-sidebar-foreground/45">
+										Balance
+									</span>
+									<span className="truncate font-medium text-destructive">
+										Unavailable
+									</span>
+								</>
+							) : (
+								<>
+									<span className="text-xs text-sidebar-foreground/45">
+										Playable balance
+									</span>
+									<span className="truncate font-semibold text-sidebar-foreground tabular-nums">
+										{playableBalance}{" "}
+										<span className="text-xs text-primary">
+											{wallet.data?.currencyCode}
+										</span>
+									</span>
+								</>
+							)
+						) : (
+							<>
+								<span className="font-medium text-sidebar-foreground">
+									Player account
+								</span>
+								<span className="text-xs text-sidebar-foreground/45">
+									Sign in to play
+								</span>
+							</>
+						)}
 					</span>
 					<ChevronUpIcon className="ml-auto size-4 text-sidebar-foreground/40" />
 				</DropdownMenuTrigger>
@@ -194,6 +256,50 @@ function PlayerProfile() {
 				>
 					{user ? (
 						<>
+							{wallet.data && money ? (
+								<div className="px-2 py-2.5">
+									<p className="text-xs text-muted-foreground">
+										Available to play
+									</p>
+									<p className="mt-0.5 text-lg font-semibold tabular-nums">
+										{playableBalance}{" "}
+										<span className="text-xs text-primary">
+											{wallet.data.currencyCode}
+										</span>
+									</p>
+									<div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+										<span className="text-muted-foreground">Cash</span>
+										<span className="text-right tabular-nums">
+											{formatMinorUnits(
+												wallet.data.balances.cashBalanceMinor,
+												money,
+											)}
+										</span>
+										<span className="text-muted-foreground">Bonus</span>
+										<span className="text-right tabular-nums">
+											{formatMinorUnits(
+												wallet.data.balances.bonusBalanceMinor,
+												money,
+											)}
+										</span>
+									</div>
+								</div>
+							) : wallet.isError ? (
+								<DropdownMenuItem
+									closeOnClick={false}
+									onClick={() => wallet.refetch()}
+								>
+									<RefreshCwIcon
+										className={wallet.isFetching ? "animate-spin" : undefined}
+									/>
+									{wallet.isFetching ? "Retrying..." : "Retry balance"}
+								</DropdownMenuItem>
+							) : null}
+							<DropdownMenuSeparator />
+							<DropdownMenuItem render={<Link to="/wallet" />}>
+								<PlusCircleIcon />
+								Add funds
+							</DropdownMenuItem>
 							<DropdownMenuItem render={<Link to="/profile" />}>
 								<SettingsIcon />
 								Profile
@@ -240,6 +346,10 @@ function PlayerProfile() {
 			) : null}
 		</div>
 	);
+}
+
+function formatMinorUnits(valueMinor: number, formatter: Intl.NumberFormat) {
+	return formatter.format(valueMinor / 100);
 }
 
 export function AppSidebar(props: ComponentProps<typeof Sidebar>) {

@@ -13,7 +13,7 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 - Signed-in players can open the Wallet to read persisted playable, cash, bonus, and reserved balances. They can add one of the supported demo amounts, request a withdrawal, inspect pending reservations, and review recent ledger activity. Successful money actions refresh the shared wallet query and publish an app-level toast.
 - Signed-in players can open History to review paginated wallet operations as one row per transaction. Category tabs and URL-backed bucket, operation, and date filters query the immutable ledger and include gameplay references where available.
 - Signed-in players can browse the synchronized catalogue with client-side search and category filters.
-- The responsive shell has desktop navigation, a mobile drawer, account controls, loading states, catalogue error recovery, and artwork fallbacks.
+- The responsive shell has desktop navigation, a mobile drawer, a persistent playable balance with cash and bonus detail, account controls, loading and wallet retry states, catalogue error recovery, and artwork fallbacks.
 - PostgreSQL stores Better Auth identity, player profiles, wallets, wallet operations, immutable ledger entries, withdrawals, bonus definitions and awards, games, sessions, rounds, and provider operations.
 - The wallet engine performs exact, atomic, retry-safe movements across cash, bonus, and reserved cash.
 - The bonus engine handles activation, eligibility, wagering progress, completion, conversion, refund effects, expiry, exhaustion, and cancellation.
@@ -23,7 +23,7 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 
 ### The current gap
 
-The core Wallet and History routes are connected to the money engine, but the wallet journey is not complete. The app shell does not show the persisted balance. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, and refresh persistence. Game cards do not launch a session. Bonuses, Promotions, VIP, Profile, the game player, and Admin remain navigable placeholders.
+The core Wallet and History routes are connected to the money engine, and the app shell now reads their shared wallet query to show the persisted playable balance with cash and bonus detail. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, and refresh persistence. Game cards do not launch a session. Bonuses, Promotions, VIP, Profile, the game player, and Admin remain navigable placeholders.
 
 A reviewer can now drive top-ups and withdrawal reservations from the Wallet. The next work completes that loop across the shell and transaction history, then records repeatable proof.
 
@@ -48,7 +48,7 @@ This feature is in progress.
 
 The `_app`, `_player`, `_guest`, and `_admin` route boundaries are in place. Guest and player guards preserve safe internal destinations, and signed-in users leave authentication routes. Browser-safe top-up and withdrawal schemas reject trusted fields. Authenticated server functions expose the current wallet, demo top-up, withdrawal request, pending withdrawals, and recent ledger entries. The server derives the player ID from a fresh active session. `/wallet` uses those functions for persisted balances, retryable reads, demo top-ups, withdrawal reservations, pending withdrawals, recent activity, disabled submission states, error feedback, and success toasts.
 
-Next, put cash, bonus, and playable balance in the app shell using the existing wallet query key. `/history` is now the unified home for wallet operations, with pagination, category views, URL-backed filters, and gameplay references. Finish the stage with access tests and one repeatable wallet journey that proves successful mutations refresh every visible balance and history view.
+The app shell now shows cash, bonus, and playable balance through the existing wallet query key. `/history` is the unified home for wallet operations, with pagination, category views, URL-backed filters, and gameplay references. Finish the stage with access tests and one repeatable wallet journey that proves successful mutations refresh every visible balance and history view.
 
 Checkpoint:
 
@@ -163,4 +163,4 @@ Favourites, recently played games, notifications, advanced filters, two-factor a
 
 ## Immediate task
 
-Complete P07 by adding the persisted playable balance and cash and bonus breakdown to the authenticated app shell, including loading, retry, and mobile behavior. Then finish P04 and P10 with access-boundary and wallet-journey tests covering duplicate requests, invalid and excessive withdrawals, suspension, cross-user isolation, and refresh persistence. The next vertical slice is fixture launch, play, settlement, and history refresh. Bonus activation and visible wagering progress follow it.
+Finish P04 and P10 with access-boundary and wallet-journey tests covering duplicate requests, invalid and excessive withdrawals, suspension, cross-user isolation, and refresh persistence. The next vertical slice is fixture launch, play, settlement, and history refresh. Bonus activation and visible wagering progress follow it.
