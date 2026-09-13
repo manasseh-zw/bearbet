@@ -21,7 +21,7 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 
 ### The current gap
 
-The browser can call the catalogue boundary, but it cannot yet call wallet, withdrawal, bonus, simulator, or history use cases. Game cards do not launch a session. Wallet, History, Bonuses, Promotions, VIP, Profile, the game player, and Admin now have navigable placeholder routes.
+The browser can call the catalogue boundary, but it cannot yet call wallet, withdrawal, bonus, simulator, or history use cases. Game cards do not launch a session. The Wallet route now has a responsive local-state UI preview. History, Bonuses, Promotions, VIP, Profile, the game player, and Admin remain navigable placeholders.
 
 This means the hard money rules exist, but a reviewer cannot see or drive them. The next work should expose those rules without duplicating them in components or server functions.
 
