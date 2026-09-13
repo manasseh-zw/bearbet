@@ -122,12 +122,10 @@ function NavigationGroup({
 								<SidebarMenuButton
 									isActive={isActive}
 									tooltip={itemLabel}
-									asChild
+									render={<Link to={to} onClick={() => setOpenMobile(false)} />}
 									className="h-10 gap-3 rounded-lg px-2 text-sm font-medium text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-active:bg-transparent data-active:text-sidebar-foreground data-active:[&_svg]:text-primary"
 								>
-									<Link to={to} onClick={() => setOpenMobile(false)}>
-										{content}
-									</Link>
+									{content}
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 						);
@@ -168,54 +166,50 @@ function PlayerProfile() {
 	return (
 		<div>
 			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<SidebarMenuButton
-						size="lg"
-						className="h-auto gap-3 rounded-lg px-2 py-2.5 hover:bg-sidebar-accent"
-					>
-						<span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-accent text-sidebar-foreground">
-							<UserRoundIcon className="size-4" />
+				<DropdownMenuTrigger
+					render={
+						<SidebarMenuButton
+							size="lg"
+							className="h-auto gap-3 rounded-lg px-2 py-2.5 hover:bg-sidebar-accent"
+						/>
+					}
+				>
+					<span className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-accent text-sidebar-foreground">
+						<UserRoundIcon className="size-4" />
+					</span>
+					<span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+						<span className="truncate font-medium text-sidebar-foreground">
+							{user?.name ?? "Player account"}
 						</span>
-						<span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-							<span className="truncate font-medium text-sidebar-foreground">
-								{user?.name ?? "Player account"}
-							</span>
-							<span className="truncate text-xs text-sidebar-foreground/45">
-								{user?.email ?? "Sign in to play"}
-							</span>
+						<span className="truncate text-xs text-sidebar-foreground/45">
+							{user?.email ?? "Sign in to play"}
 						</span>
-						<ChevronUpIcon className="ml-auto size-4 text-sidebar-foreground/40" />
-					</SidebarMenuButton>
+					</span>
+					<ChevronUpIcon className="ml-auto size-4 text-sidebar-foreground/40" />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent
 					side="top"
 					align="start"
-					className="w-(--radix-dropdown-menu-trigger-width)"
+					className="w-(--anchor-width)"
 				>
 					{user ? (
 						<>
-							<DropdownMenuItem asChild>
-								<Link to="/profile">
-									<SettingsIcon />
-									Profile
-								</Link>
+							<DropdownMenuItem render={<Link to="/profile" />}>
+								<SettingsIcon />
+								Profile
 							</DropdownMenuItem>
 							{user.role === "admin" ? (
-								<DropdownMenuItem asChild>
-									<Link to="/admin">
-										<ShieldCheckIcon />
-										Admin
-									</Link>
+								<DropdownMenuItem render={<Link to="/admin" />}>
+									<ShieldCheckIcon />
+									Admin
 								</DropdownMenuItem>
 							) : null}
 							<DropdownMenuSeparator />
 							<DropdownMenuItem
 								variant="destructive"
 								disabled={logout.isPending}
-								onSelect={(event) => {
-									event.preventDefault();
-									logout.mutate();
-								}}
+								closeOnClick={false}
+								onClick={() => logout.mutate()}
 							>
 								{logout.isPending ? (
 									<LoaderCircleIcon className="animate-spin" />
@@ -227,17 +221,13 @@ function PlayerProfile() {
 						</>
 					) : (
 						<>
-							<DropdownMenuItem asChild>
-								<Link to="/login">
-									<LogInIcon />
-									Sign in
-								</Link>
+							<DropdownMenuItem render={<Link to="/login" />}>
+								<LogInIcon />
+								Sign in
 							</DropdownMenuItem>
-							<DropdownMenuItem asChild>
-								<Link to="/register">
-									<UserRoundPlusIcon />
-									Create account
-								</Link>
+							<DropdownMenuItem render={<Link to="/register" />}>
+								<UserRoundPlusIcon />
+								Create account
 							</DropdownMenuItem>
 						</>
 					)}

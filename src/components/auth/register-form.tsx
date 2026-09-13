@@ -153,6 +153,7 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 								<Select
 									value={field.state.value}
 									onValueChange={(value) => {
+										if (value === null) return;
 										field.handleChange(value);
 										const country = countries.find(
 											(item) => item.code === value,
@@ -183,7 +184,9 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 								<Label htmlFor={field.name}>Account currency</Label>
 								<Select
 									value={field.state.value}
-									onValueChange={field.handleChange}
+									onValueChange={(value) => {
+										if (value !== null) field.handleChange(value);
+									}}
 									disabled={registration.isPending}
 								>
 									<SelectTrigger id={field.name} className="h-10 w-full">

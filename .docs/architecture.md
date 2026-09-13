@@ -6,6 +6,7 @@ Bearbet will use a small conventional TypeScript structure with a clear server b
 
 - `src/routes` owns URLs, route guards, loaders, and page composition. Route files stay thin.
 - `src/components` owns generic controls and product UI.
+- Shared shadcn components use Base UI through the `base-rhea` style. Application components compose polymorphic controls with Base UI's `render` prop.
 - `src/server` is the source of truth for domain behavior, persistence, authentication, and provider integration.
 - `src/lib` stays small. It contains client utilities and the few input types or schemas that the browser and server share.
 
