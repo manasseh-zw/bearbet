@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { Badge } from "#/components/ui/badge";
-import { Button } from "#/components/ui/button";
+import { Button, buttonVariants } from "#/components/ui/button";
 import {
 	Card,
 	CardAction,
@@ -374,13 +374,15 @@ export function WalletPage() {
 									Your latest wallet transactions.
 								</CardDescription>
 								<CardAction>
-									<Button
-										render={<Link to="/history" />}
-										variant="ghost"
-										size="sm"
+									<Link
+										to="/history"
+										className={buttonVariants({
+											variant: "ghost",
+											size: "sm",
+										})}
 									>
 										View all <ArrowRightIcon data-icon="inline-end" />
-									</Button>
+									</Link>
 								</CardAction>
 							</CardHeader>
 							<CardContent className="p-0">

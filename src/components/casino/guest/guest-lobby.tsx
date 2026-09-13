@@ -3,7 +3,7 @@ import { ArrowRightIcon, DicesIcon, SpadeIcon } from "lucide-react";
 
 import featuredGames from "#/components/casino/guest/featured-games.json";
 import { GameCard } from "#/components/casino/shared/game-card";
-import { Button } from "#/components/ui/button";
+import { buttonVariants } from "#/components/ui/button";
 import { TiltCard } from "#/components/unlumen-ui/tilt-card";
 
 const featureCards = [
@@ -53,13 +53,15 @@ export function GuestLobby() {
 					<p className="mt-4 whitespace-nowrap text-sm leading-6 text-muted-foreground">
 						Find your next favourite.
 					</p>
-					<Button
-						render={<Link to="/register" />}
-						size="lg"
-						className="mt-6 h-12 min-w-56 px-8 text-base font-bold"
+					<Link
+						to="/register"
+						className={buttonVariants({
+							size: "lg",
+							className: "mt-6 h-12 min-w-56 px-8 text-base font-bold",
+						})}
 					>
-						Register now <ArrowRightIcon />
-					</Button>
+						Register now <ArrowRightIcon data-icon="inline-end" />
+					</Link>
 					<p className="mt-4 text-xs text-muted-foreground">
 						Already playing?{" "}
 						<Link
