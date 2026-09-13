@@ -8,10 +8,11 @@ import { username } from "better-auth/plugins/username";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 
 import { registerPlayerInputSchema } from "#/lib/schemas/auth.schema";
-import { registerPlayer } from "#/server/domains/player/player.service";
 import { env } from "#/server/env";
 import { db } from "#/server/infra/db";
 import * as schema from "#/server/infra/db/schema";
+
+import { provisionNewPlayer } from "./player-provisioning";
 
 export const auth = betterAuth({
 	appName: "Bearbet",
@@ -58,7 +59,7 @@ export const auth = betterAuth({
 
 					const registration = registerPlayerInputSchema.parse(context.body);
 
-					await registerPlayer({
+					await provisionNewPlayer({
 						userId: user.id,
 						firstName: registration.firstName,
 						lastName: registration.lastName,

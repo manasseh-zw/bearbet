@@ -192,7 +192,7 @@ admin user ──< admin audit entries
 - The wallet stores cash, bonus, and reserved cash as integer minor units.
 - Currency is selected during registration and cannot change after wallet creation.
 - Better Auth owns identity, sessions, credentials, roles, and banned state. Bearbet owns the player and wallet.
-- Player provisioning and the `$1,000.00` welcome credit are retry-safe and covered by an integration test.
+- Player provisioning and the `$1,000.00` welcome credit are retry-safe and covered by integration tests. If post-commit provisioning fails during sign-up, Bearbet removes the new Better Auth identity so the player can register again.
 
 ## Settled gameplay, bonus, and withdrawal rules
 
