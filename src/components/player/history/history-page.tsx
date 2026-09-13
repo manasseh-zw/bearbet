@@ -376,14 +376,7 @@ function HistoryTable({
 										)}
 									/>
 									<div className="min-w-0">
-										<p className="font-medium">
-											{transactionLabels[item.type]}
-										</p>
-										<p className="max-w-52 truncate text-xs text-muted-foreground">
-											{item.gameName ??
-												item.gameId ??
-												sourceLabel(item.sourceType)}
-										</p>
+										<p>{transactionLabels[item.type]}</p>
 										<p className="mt-1 text-xs text-muted-foreground sm:hidden">
 											{formatDateTime(item.createdAt)}
 										</p>
@@ -494,7 +487,7 @@ function HistorySkeleton() {
 					<Skeleton className="size-4" />
 					<div className="flex flex-1 flex-col gap-2">
 						<Skeleton className="h-3.5 w-32" />
-						<Skeleton className="h-3 w-20" />
+						<Skeleton className="h-3 w-20 sm:hidden" />
 					</div>
 					<Skeleton className="h-4 w-20" />
 				</div>
@@ -539,11 +532,6 @@ function iconForType(type: HistoryOperationType) {
 	if (type === "welcome_credit" || type === "demo_top_up")
 		return ArrowDownLeftIcon;
 	return WalletCardsIcon;
-}
-
-function sourceLabel(sourceType: string | null) {
-	if (!sourceType) return "Wallet activity";
-	return sourceType.replaceAll("_", " ");
 }
 
 function shortReference(value: string | null) {
