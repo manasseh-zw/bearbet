@@ -380,10 +380,12 @@ export function WalletPage() {
 									Your latest wallet transactions.
 								</CardDescription>
 								<CardAction>
-									<Button asChild variant="ghost" size="sm">
-										<Link to="/history">
-											View all <ArrowRightIcon data-icon="inline-end" />
-										</Link>
+									<Button
+										render={<Link to="/history" />}
+										variant="ghost"
+										size="sm"
+									>
+										View all <ArrowRightIcon data-icon="inline-end" />
 									</Button>
 								</CardAction>
 							</CardHeader>

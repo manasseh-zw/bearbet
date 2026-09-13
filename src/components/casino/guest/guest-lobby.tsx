@@ -54,13 +54,11 @@ export function GuestLobby() {
 						Find your next favourite.
 					</p>
 					<Button
-						asChild
+						render={<Link to="/register" />}
 						size="lg"
 						className="mt-6 h-12 min-w-56 px-8 text-base font-bold"
 					>
-						<Link to="/register">
-							Register now <ArrowRightIcon />
-						</Link>
+						Register now <ArrowRightIcon />
 					</Button>
 					<p className="mt-4 text-xs text-muted-foreground">
 						Already playing?{" "}
