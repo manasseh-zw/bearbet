@@ -23,7 +23,7 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 
 ### The current gap
 
-The core Wallet and History routes are connected to the money engine, and the app shell now reads their shared wallet query to show the persisted playable balance with cash and bonus detail. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, and refresh persistence. Authenticated game cards now launch a persisted BearBet demo session. The Lucky Number player accepts a virtual stake, resolves a server-controlled outcome, records the bet and settlement through the production gameplay engine, refreshes wallet and history data, and closes with a session summary. External provider launch, bet history, bonuses, Promotions, VIP, Profile, and Admin remain incomplete or placeholders.
+The core Wallet and History routes are connected to the money engine, and the app shell now reads their shared wallet query to show the persisted playable balance with cash and bonus detail. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, and refresh persistence. Authenticated game cards now launch a persisted BearBet demo session. The Lucky Number player accepts a virtual stake, resolves a server-controlled outcome, records the bet and settlement through the production gameplay engine, refreshes wallet and history data, and closes with a session summary. History shows friendly operation references, game names on financial activity, and round-level won, lost, refunded, and pending results in its Bets tab. External provider launch, bonuses, Promotions, VIP, Profile, and Admin remain incomplete or placeholders.
 
 A reviewer can now drive top-ups and withdrawal reservations from the Wallet. The next work completes that loop across the shell and transaction history, then records repeatable proof.
 
@@ -65,9 +65,9 @@ This stage delivers tasks P01 through P10 in `master-task-list.md`.
 
 The first-party BearBet demo path now authenticates an active player, resolves a persisted enabled game, checks playable balance, records the launch attempt, and wires authenticated game cards to a simple player. Complete the external branch by calling the configured provider and returning its safe launch result.
 
-Authenticated browser functions now resolve Lucky Number wins and losses on the server and run them through the existing gameplay service. The interface labels the experience as a BearBet demo and refreshes wallet and transaction history after each round. Add the explicit refund control and bet-history view needed for the full fixture proof.
+Authenticated browser functions now resolve Lucky Number wins and losses on the server and run them through the existing gameplay service. The interface labels the experience as a BearBet demo and refreshes wallet and transaction history after each round. The Bets tab groups persisted operations into round results. Add the explicit refund control needed for the full fixture proof.
 
-Build bet history from game rounds and provider operations. Do not derive financial truth from UI state.
+Bet history now reads game rounds, provider operations, wallet operations, and ledger movements. It groups each round without creating a duplicate history table and calculates net results from the immutable money evidence.
 
 Checkpoint:
 

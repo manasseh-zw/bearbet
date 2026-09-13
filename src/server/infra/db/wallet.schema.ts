@@ -83,6 +83,7 @@ export const walletOperation = pgTable(
 	"wallet_operation",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
+		publicReference: varchar("public_reference", { length: 17 }).notNull(),
 		walletId: uuid("wallet_id")
 			.notNull()
 			.references(() => wallet.id, { onDelete: "restrict" }),
@@ -108,6 +109,9 @@ export const walletOperation = pgTable(
 			.notNull(),
 	},
 	(table) => [
+		uniqueIndex("wallet_operation_public_reference_unique").on(
+			table.publicReference,
+		),
 		uniqueIndex("wallet_operation_idempotency_key_unique").on(
 			table.idempotencyKey,
 		),

@@ -60,6 +60,14 @@ export async function getPlayerHistory(playerId: string, input: HistoryQuery) {
 			"WALLET_NOT_FOUND",
 		);
 	}
+	if (query.category === "bet") {
+		return getPlayerBetRoundHistory({
+			playerId,
+			walletId: current.wallet.id,
+			currencyCode: current.wallet.currencyCode,
+			query,
+		});
+	}
 
 	const conditions = [eq(walletOperation.walletId, current.wallet.id)];
 	const categoryCondition = conditionForCategory(query.category);
@@ -100,6 +108,7 @@ export async function getPlayerHistory(playerId: string, input: HistoryQuery) {
 	const operations = await db
 		.select({
 			id: walletOperation.id,
+			publicReference: walletOperation.publicReference,
 			type: walletOperation.type,
 			sourceType: walletOperation.sourceType,
 			sourceId: walletOperation.sourceId,
@@ -161,6 +170,7 @@ export async function getPlayerHistory(playerId: string, input: HistoryQuery) {
 
 	return {
 		currencyCode: current.wallet.currencyCode,
+		betRounds: [],
 		items: operations.map((operation) => {
 			const movements = entriesByOperation.get(operation.id) ?? [];
 			return {
@@ -177,6 +187,136 @@ export async function getPlayerHistory(playerId: string, input: HistoryQuery) {
 			total,
 			totalPages,
 		},
+	};
+}
+
+async function getPlayerBetRoundHistory(input: {
+	playerId: string;
+	walletId: string;
+	currencyCode: string;
+	query: HistoryQuery;
+}) {
+	const roundConditions = [eq(gameRound.playerId, input.playerId)];
+	if (input.query.from) {
+		roundConditions.push(
+			gte(gameRound.createdAt, new Date(`${input.query.from}T00:00:00.000Z`)),
+		);
+	}
+	if (input.query.to) {
+		roundConditions.push(
+			lte(gameRound.createdAt, new Date(`${input.query.to}T23:59:59.999Z`)),
+		);
+	}
+	const [totalResult, typeCounts] = await Promise.all([
+		db
+			.select({ count: countDistinct(gameRound.id) })
+			.from(gameRound)
+			.innerJoin(
+				providerOperation,
+				and(
+					eq(providerOperation.roundId, gameRound.id),
+					eq(providerOperation.type, "bet"),
+				),
+			)
+			.where(and(...roundConditions)),
+		db
+			.select({
+				type: walletOperation.type,
+				count: countDistinct(walletOperation.id),
+			})
+			.from(walletOperation)
+			.where(eq(walletOperation.walletId, input.walletId))
+			.groupBy(walletOperation.type),
+	]);
+	const total = totalResult[0]?.count ?? 0;
+	const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+	const page = Math.min(input.query.page, totalPages);
+	const rounds = await db
+		.select({
+			id: gameRound.id,
+			gameId: gameRound.gameId,
+			gameName: game.name,
+			provider: gameRound.integrationProvider,
+			roundReference: gameRound.externalRoundId,
+			status: gameRound.status,
+			createdAt: gameRound.createdAt,
+			publicReference: sql<string>`max(case when ${providerOperation.type} = 'bet' then ${walletOperation.publicReference} end)`,
+			stakeMinor: sql<number>`coalesce(sum(case when ${providerOperation.type} = 'bet' then ${providerOperation.amountMinor} else 0 end), 0)`,
+			returnedMinor: sql<number>`coalesce(sum(case when ${providerOperation.type} = 'win' then ${providerOperation.amountMinor} else 0 end), 0)`,
+			refundedMinor: sql<number>`coalesce(sum(case when ${providerOperation.type} = 'refund' then ${providerOperation.amountMinor} else 0 end), 0)`,
+		})
+		.from(gameRound)
+		.innerJoin(providerOperation, eq(providerOperation.roundId, gameRound.id))
+		.leftJoin(
+			walletOperation,
+			sql`${providerOperation.id}::text = ${walletOperation.sourceId}`,
+		)
+		.leftJoin(
+			game,
+			and(
+				eq(game.externalId, gameRound.gameId),
+				eq(game.providerId, gameRound.integrationProvider),
+			),
+		)
+		.where(and(...roundConditions))
+		.groupBy(gameRound.id, game.id)
+		.having(sql`count(*) filter (where ${providerOperation.type} = 'bet') > 0`)
+		.orderBy(desc(gameRound.createdAt), desc(gameRound.id))
+		.limit(PAGE_SIZE)
+		.offset((page - 1) * PAGE_SIZE);
+	const roundMovements = rounds.length
+		? await db
+				.select({
+					roundId: providerOperation.roundId,
+					amountMinor: ledgerEntry.amountMinor,
+				})
+				.from(providerOperation)
+				.innerJoin(
+					walletOperation,
+					sql`${providerOperation.id}::text = ${walletOperation.sourceId}`,
+				)
+				.innerJoin(ledgerEntry, eq(ledgerEntry.operationId, walletOperation.id))
+				.where(
+					inArray(
+						providerOperation.roundId,
+						rounds.map((round) => round.id),
+					),
+				)
+		: [];
+	const netByRound = new Map<string, number>();
+	for (const movement of roundMovements) {
+		netByRound.set(
+			movement.roundId,
+			(netByRound.get(movement.roundId) ?? 0) + movement.amountMinor,
+		);
+	}
+
+	return {
+		currencyCode: input.currencyCode,
+		items: [],
+		betRounds: rounds.map((round) => {
+			const stakeMinor = Number(round.stakeMinor);
+			const returnedMinor = Number(round.returnedMinor);
+			const refundedMinor = Number(round.refundedMinor);
+			const outcome =
+				refundedMinor > 0
+					? ("refunded" as const)
+					: round.status === "open"
+						? ("pending" as const)
+						: returnedMinor > 0
+							? ("won" as const)
+							: ("lost" as const);
+			return {
+				...round,
+				stakeMinor,
+				returnedMinor,
+				refundedMinor,
+				outcome,
+				netMinor: netByRound.get(round.id) ?? 0,
+			};
+		}),
+		counts: historyCounts(typeCounts),
+		pagination: { page, pageSize: PAGE_SIZE, total, totalPages },
 	};
 }
 

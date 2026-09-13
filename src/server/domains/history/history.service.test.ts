@@ -3,11 +3,18 @@ import test, { after, before } from "node:test";
 
 import { eq } from "drizzle-orm";
 
+import {
+	recordBet,
+	recordWin,
+} from "#/server/domains/gameplay/gameplay.service";
 import { applyWalletOperation } from "#/server/domains/wallet/wallet.service";
 import { db, pool } from "#/server/infra/db";
 import {
+	gameRound,
+	gameSession,
 	ledgerEntry,
 	player,
+	providerOperation,
 	user,
 	wallet,
 	walletOperation,
@@ -69,6 +76,24 @@ before(async () => {
 			{ bucket: "reserved_cash", amountMinor: 100 },
 		],
 	});
+	const gameplayIdentity = {
+		integrationProvider: "fixture",
+		playerId,
+		externalSessionId: `${playerId}:session`,
+		externalRoundId: `${playerId}:round`,
+		gameId: "history-game",
+	};
+	await recordBet({
+		...gameplayIdentity,
+		externalTransactionId: `${playerId}:game-bet`,
+		amountMinor: 200,
+	});
+	await recordWin({
+		...gameplayIdentity,
+		externalTransactionId: `${playerId}:game-win`,
+		betAmountMinor: 200,
+		winAmountMinor: 400,
+	});
 });
 
 after(async () => {
@@ -77,6 +102,11 @@ after(async () => {
 		.from(wallet)
 		.where(eq(wallet.playerId, playerId));
 	if (storedWallet) {
+		await db
+			.delete(providerOperation)
+			.where(eq(providerOperation.playerId, playerId));
+		await db.delete(gameRound).where(eq(gameRound.playerId, playerId));
+		await db.delete(gameSession).where(eq(gameSession.playerId, playerId));
 		await db
 			.delete(ledgerEntry)
 			.where(eq(ledgerEntry.walletId, storedWallet.id));
@@ -96,16 +126,23 @@ test("history returns one row per operation with category counts", async () => {
 		page: 1,
 	});
 
-	assert.equal(history.pagination.total, 4);
+	assert.equal(history.pagination.total, 6);
 	assert.deepEqual(history.counts, {
-		all: 4,
+		all: 6,
 		wallet: 2,
-		bet: 1,
-		win: 0,
+		bet: 2,
+		win: 1,
 		refund: 1,
 	});
+	assert.ok(
+		history.items.every((item) =>
+			/^BB-[0-9A-F]{4}(?:-[0-9A-F]{4}){2}$/.test(item.publicReference),
+		),
+	);
 
-	const bet = history.items.find((item) => item.type === "bet");
+	const bet = history.items.find(
+		(item) => item.type === "bet" && item.sourceType === null,
+	);
 	assert.equal(bet?.amountMinor, -100);
 	assert.deepEqual(bet?.buckets.sort(), ["bonus", "cash"]);
 
@@ -115,14 +152,22 @@ test("history returns one row per operation with category counts", async () => {
 	assert.equal(withdrawal?.amountMinor, -100);
 });
 
-test("history filters by category and wallet bucket", async () => {
+test("bet history groups gameplay operations into a clear round result", async () => {
 	const bets = await getPlayerHistory(playerId, {
 		category: "bet",
 		page: 1,
-		bucket: "bonus",
 	});
 	assert.equal(bets.pagination.total, 1);
-	assert.equal(bets.items[0]?.type, "bet");
+	assert.equal(bets.items.length, 0);
+	assert.equal(bets.betRounds[0]?.gameId, "history-game");
+	assert.equal(bets.betRounds[0]?.outcome, "won");
+	assert.equal(bets.betRounds[0]?.stakeMinor, 200);
+	assert.equal(bets.betRounds[0]?.returnedMinor, 400);
+	assert.equal(bets.betRounds[0]?.netMinor, 200);
+	assert.match(
+		bets.betRounds[0]?.publicReference ?? "",
+		/^BB-[0-9A-F]{4}(?:-[0-9A-F]{4}){2}$/,
+	);
 
 	const walletOnly = await getPlayerHistory(playerId, {
 		category: "wallet",

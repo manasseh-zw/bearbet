@@ -125,6 +125,7 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 								patchQuery({
 									category: value as HistoryCategory,
 									type: undefined,
+									bucket: value === "bet" ? undefined : query.bucket,
 								})
 							}
 						>
@@ -154,43 +155,52 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 					</div>
 
 					<div className="flex flex-col gap-3 pt-6 pb-4 lg:flex-row lg:items-end">
-						<div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
-							<FilterSelect
-								label="Wallet bucket"
-								value={query.bucket ?? "all"}
-								onChange={(value) =>
-									patchQuery({
-										bucket:
-											value === "all"
-												? undefined
-												: (value as HistoryQuery["bucket"]),
-									})
-								}
-								options={[
-									["all", "All buckets"],
-									["cash", "Cash"],
-									["bonus", "Bonus"],
-									["reserved_cash", "Reserved cash"],
-								]}
-							/>
-							<FilterSelect
-								label="Operation"
-								value={query.type ?? "all"}
-								onChange={(value) =>
-									patchQuery({
-										type:
-											value === "all"
-												? undefined
-												: (value as HistoryOperationType),
-									})
-								}
-								options={[
-									["all", "All operations"],
-									...historyOperationTypes.map(
-										(type) => [type, transactionLabels[type]] as const,
-									),
-								]}
-							/>
+						<div
+							className={cn(
+								"grid flex-1 grid-cols-2 gap-3",
+								query.category === "bet" ? "sm:grid-cols-2" : "sm:grid-cols-4",
+							)}
+						>
+							{query.category !== "bet" ? (
+								<FilterSelect
+									label="Wallet bucket"
+									value={query.bucket ?? "all"}
+									onChange={(value) =>
+										patchQuery({
+											bucket:
+												value === "all"
+													? undefined
+													: (value as HistoryQuery["bucket"]),
+										})
+									}
+									options={[
+										["all", "All buckets"],
+										["cash", "Cash"],
+										["bonus", "Bonus"],
+										["reserved_cash", "Reserved cash"],
+									]}
+								/>
+							) : null}
+							{query.category !== "bet" ? (
+								<FilterSelect
+									label="Operation"
+									value={query.type ?? "all"}
+									onChange={(value) =>
+										patchQuery({
+											type:
+												value === "all"
+													? undefined
+													: (value as HistoryOperationType),
+										})
+									}
+									options={[
+										["all", "All operations"],
+										...historyOperationTypes.map(
+											(type) => [type, transactionLabels[type]] as const,
+										),
+									]}
+								/>
+							) : null}
 							<DateFilter
 								label="From"
 								value={query.from ?? ""}
@@ -233,7 +243,11 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 							exit={reducedMotion ? undefined : { opacity: 0, y: -3 }}
 							transition={{ duration: reducedMotion ? 0 : 0.18 }}
 						>
-							<HistoryTable items={history.data.items} money={money} />
+							{query.category === "bet" ? (
+								<BetRoundsTable rounds={history.data.betRounds} money={money} />
+							) : (
+								<HistoryTable items={history.data.items} money={money} />
+							)}
 							<HistoryPagination
 								page={history.data.pagination.page}
 								total={history.data.pagination.total}
@@ -315,6 +329,12 @@ type HistoryItem = Awaited<
 	>
 >["items"][number];
 
+type BetRound = Awaited<
+	ReturnType<
+		typeof import("#/server/domains/history/history.service").getPlayerHistory
+	>
+>["betRounds"][number];
+
 function HistoryTable({
 	items,
 	money,
@@ -371,6 +391,11 @@ function HistoryTable({
 									<Icon className={cn("size-4 shrink-0", tone)} />
 									<div className="min-w-0">
 										<p>{transactionLabels[item.type]}</p>
+										{item.gameName ? (
+											<p className="mt-1 truncate text-xs text-muted-foreground">
+												{item.gameName}
+											</p>
+										) : null}
 										<p className="mt-1 text-xs text-muted-foreground sm:hidden">
 											{formatDateTime(item.createdAt)}
 										</p>
@@ -391,10 +416,8 @@ function HistoryTable({
 								</div>
 							</TableCell>
 							<TableCell className="hidden max-w-52 lg:table-cell">
-								<p className="truncate text-sm">
-									{item.providerReference ?? shortReference(item.sourceId)}
-								</p>
-								{item.provider ? (
+								<p className="truncate text-sm">{item.publicReference}</p>
+								{item.gameName && item.provider ? (
 									<p className="text-xs capitalize text-muted-foreground">
 										{item.provider}
 									</p>
@@ -417,6 +440,106 @@ function HistoryTable({
 				})}
 			</TableBody>
 		</Table>
+	);
+}
+
+function BetRoundsTable({
+	rounds,
+	money,
+}: {
+	rounds: BetRound[];
+	money: Intl.NumberFormat;
+}) {
+	if (rounds.length === 0) return <HistoryEmpty icon="game" />;
+
+	return (
+		<Table>
+			<TableHeader>
+				<TableRow className="border-t bg-muted/30 hover:bg-muted/30">
+					<TableHead className="h-11 pl-6 text-xs uppercase tracking-wide text-muted-foreground">
+						Game
+					</TableHead>
+					<TableHead className="hidden text-xs uppercase tracking-wide text-muted-foreground md:table-cell">
+						Result
+					</TableHead>
+					<TableHead className="hidden text-xs uppercase tracking-wide text-muted-foreground lg:table-cell">
+						Reference
+					</TableHead>
+					<TableHead className="hidden text-xs uppercase tracking-wide text-muted-foreground sm:table-cell">
+						Date
+					</TableHead>
+					<TableHead className="pr-6 text-right text-xs uppercase tracking-wide text-muted-foreground">
+						Net
+					</TableHead>
+				</TableRow>
+			</TableHeader>
+			<TableBody>
+				{rounds.map((round) => {
+					const tone = transactionTone("bet", round.netMinor);
+					return (
+						<TableRow key={round.id} className="h-16">
+							<TableCell className="max-w-64 pl-6">
+								<div className="flex items-center gap-3">
+									<Gamepad2Icon className={cn("size-4 shrink-0", tone)} />
+									<div className="min-w-0">
+										<p className="truncate font-medium">
+											{round.gameName ?? "Casino game"}
+										</p>
+										<p className="mt-1 text-xs capitalize text-muted-foreground">
+											{round.provider}
+										</p>
+									</div>
+								</div>
+							</TableCell>
+							<TableCell className="hidden md:table-cell">
+								<p className="font-medium capitalize">{round.outcome}</p>
+								<p className="mt-1 text-xs text-muted-foreground">
+									Stake {formatMinorUnits(round.stakeMinor, money)}
+									{round.returnedMinor > 0
+										? ` · Returned ${formatMinorUnits(round.returnedMinor, money)}`
+										: ""}
+									{round.refundedMinor > 0
+										? ` · Refunded ${formatMinorUnits(round.refundedMinor, money)}`
+										: ""}
+								</p>
+							</TableCell>
+							<TableCell className="hidden lg:table-cell">
+								<p className="font-mono text-sm">{round.publicReference}</p>
+							</TableCell>
+							<TableCell className="hidden text-muted-foreground sm:table-cell">
+								{formatDateTime(round.createdAt)}
+							</TableCell>
+							<TableCell
+								className={cn(
+									"pr-6 text-right font-semibold tabular-nums",
+									tone,
+								)}
+							>
+								{round.netMinor > 0 ? "+" : round.netMinor < 0 ? "-" : ""}
+								{formatMinorUnits(Math.abs(round.netMinor), money)}
+							</TableCell>
+						</TableRow>
+					);
+				})}
+			</TableBody>
+		</Table>
+	);
+}
+
+function HistoryEmpty({ icon = "wallet" }: { icon?: "wallet" | "game" }) {
+	const Icon = icon === "game" ? Gamepad2Icon : WalletCardsIcon;
+	return (
+		<div className="grid min-h-72 place-items-center border-t px-6 py-12 text-center">
+			<div className="flex max-w-sm flex-col items-center gap-2">
+				<span className="grid size-10 place-items-center rounded-full bg-muted text-muted-foreground">
+					<Icon className="size-5" />
+				</span>
+				<p className="font-medium">No activity found</p>
+				<p className="text-sm text-muted-foreground">
+					Try another category or clear the detailed filters.
+				</p>
+			</div>
+		</div>
 	);
 }
 
@@ -533,13 +656,6 @@ function transactionTone(type: HistoryOperationType, amountMinor: number) {
 	if (amountMinor > 0) return "text-emerald-600 dark:text-emerald-400";
 	if (amountMinor < 0) return "text-destructive";
 	return "text-muted-foreground";
-}
-
-function shortReference(value: string | null) {
-	if (!value) return "Not available";
-	return value.length > 18
-		? `${value.slice(0, 8)}...${value.slice(-6)}`
-		: value;
 }
 
 function formatMinorUnits(valueMinor: number, money: Intl.NumberFormat) {

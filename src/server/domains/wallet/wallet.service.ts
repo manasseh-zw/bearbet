@@ -1,6 +1,6 @@
 import "@tanstack/react-start/server-only";
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 
 import {
@@ -209,9 +209,12 @@ export async function applyWalletOperationInTransaction(
 		};
 	});
 
+	const operationId = randomUUID();
 	const [createdOperation] = await transaction
 		.insert(walletOperation)
 		.values({
+			id: operationId,
+			publicReference: publicReferenceFromId(operationId),
 			walletId: currentWallet.id,
 			type: command.type,
 			idempotencyKey: command.idempotencyKey,
@@ -296,6 +299,15 @@ function operationFingerprint(input: ApplyWalletOperationCommand) {
 			}),
 		)
 		.digest("hex");
+}
+
+function publicReferenceFromId(id: string) {
+	const code = createHash("sha256")
+		.update(id)
+		.digest("hex")
+		.slice(0, 12)
+		.toUpperCase();
+	return `BB-${code.slice(0, 4)}-${code.slice(4, 8)}-${code.slice(8, 12)}`;
 }
 
 function operationResult(
