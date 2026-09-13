@@ -43,6 +43,7 @@ import {
 	type DemoTopUpInput,
 	type WithdrawalRequestInput,
 } from "#/lib/schemas/wallet.schema";
+import { emitToast } from "#/lib/toast-events";
 import { cn } from "#/lib/utils";
 import {
 	addDemoFunds,
@@ -69,7 +70,6 @@ export function WalletPage() {
 	const wallet = useQuery(walletQueries.current());
 	const [selectedTopUpMinor, setSelectedTopUpMinor] = useState<number>(50_000);
 	const [withdrawalAmount, setWithdrawalAmount] = useState("");
-	const [notice, setNotice] = useState<string | null>(null);
 	const topUpKey = useRef<string | null>(null);
 	const withdrawalKey = useRef<string | null>(null);
 	const currencyCode = wallet.data?.currencyCode ?? "USD";
@@ -86,9 +86,10 @@ export function WalletPage() {
 	const topUp = useMutation({
 		mutationFn: (input: DemoTopUpInput) => addDemoFunds({ data: input }),
 		onSuccess: async (_, input) => {
-			setNotice(
-				`${formatMinorUnits(input.amountMinor, money)} added to your demo wallet.`,
-			);
+			emitToast({
+				title: "Demo funds added",
+				description: `${formatMinorUnits(input.amountMinor, money)} added to your wallet.`,
+			});
 			await queryClient.invalidateQueries({ queryKey: walletQueries.all });
 		},
 		onSettled: () => {
@@ -99,9 +100,10 @@ export function WalletPage() {
 		mutationFn: (input: WithdrawalRequestInput) =>
 			requestPlayerWithdrawal({ data: input }),
 		onSuccess: async (_, input) => {
-			setNotice(
-				`${formatMinorUnits(input.amountMinor, money)} moved to reserved cash.`,
-			);
+			emitToast({
+				title: "Withdrawal requested",
+				description: `${formatMinorUnits(input.amountMinor, money)} moved to reserved cash.`,
+			});
 			setWithdrawalAmount("");
 			await queryClient.invalidateQueries({ queryKey: walletQueries.all });
 		},
@@ -165,14 +167,6 @@ export function WalletPage() {
 				/>
 			) : wallet.data ? (
 				<>
-					{notice ? (
-						<output className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
-							<span>{notice}</span>
-							<Button variant="ghost" size="xs" onClick={() => setNotice(null)}>
-								Dismiss
-							</Button>
-						</output>
-					) : null}
 					<section aria-labelledby="balance-heading" className="mb-6">
 						<h2 id="balance-heading" className="sr-only">
 							Wallet balances
