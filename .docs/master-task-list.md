@@ -69,9 +69,9 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 
 ### 4. Playable simulator journey
 
-- [ ] **P14. Implement launch orchestration and persistence.** Authenticate the player, verify active status, resolve the persisted game, check availability and playable balance, record the launch attempt, and call the configured provider.
-- [ ] **P15. Build the game player.** Wire game cards to launch, show loading and provider errors, open the returned game URL safely, support close and full-screen behavior where available, and refresh the wallet after play.
-- [~] **P16. Expose deterministic simulator controls.** The fixture runner already uses the production gameplay and wallet services. Add authenticated browser functions and clearly labelled win, loss, and refund controls for the demo.
+- [~] **P14. Implement launch orchestration and persistence.** The BearBet demo authenticates the player, resolves the persisted game, checks availability and playable balance, and records a retry-safe session. The provider launch branch still needs to call the configured external provider.
+- [~] **P15. Build the game player.** Authenticated game cards open the BearBet demo player with launch, play, error, close, wallet refresh, and session-summary states. External provider URL, full-screen, and close behavior remain.
+- [~] **P16. Expose deterministic simulator controls.** Authenticated browser functions now run server-resolved Lucky Number outcomes through the production gameplay, bonus, wallet, and ledger services. Explicit refund testing controls remain for the broader simulator proof.
 - [ ] **P17. Build bet history.** Show game, round, bet, win, refund, net result, status, date, and provider references with pagination.
 - [ ] **P18. Verify the simulator journey.** Prove one visible flow from launch through win, loss, and refund. Wallet and history must update once under retries and show useful insufficient-balance and invalid-session errors.
 

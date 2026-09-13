@@ -23,7 +23,7 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 
 ### The current gap
 
-The core Wallet and History routes are connected to the money engine, and the app shell now reads their shared wallet query to show the persisted playable balance with cash and bonus detail. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, and refresh persistence. Game cards do not launch a session. Bonuses, Promotions, VIP, Profile, the game player, and Admin remain navigable placeholders.
+The core Wallet and History routes are connected to the money engine, and the app shell now reads their shared wallet query to show the persisted playable balance with cash and bonus detail. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, and refresh persistence. Authenticated game cards now launch a persisted BearBet demo session. The Lucky Number player accepts a virtual stake, resolves a server-controlled outcome, records the bet and settlement through the production gameplay engine, refreshes wallet and history data, and closes with a session summary. External provider launch, bet history, bonuses, Promotions, VIP, Profile, and Admin remain incomplete or placeholders.
 
 A reviewer can now drive top-ups and withdrawal reservations from the Wallet. The next work completes that loop across the shell and transaction history, then records repeatable proof.
 
@@ -63,9 +63,9 @@ This stage delivers tasks P01 through P10 in `master-task-list.md`.
 
 ## Stage 2: playable fixture journey
 
-Implement launch orchestration around the provider contract. It must authenticate an active player, resolve a persisted enabled game, check playable balance, record the launch attempt, call the configured provider, and return a safe result. Wire game cards to the player interface.
+The first-party BearBet demo path now authenticates an active player, resolves a persisted enabled game, checks playable balance, records the launch attempt, and wires authenticated game cards to a simple player. Complete the external branch by calling the configured provider and returning its safe launch result.
 
-Expose the deterministic fixture runner through authenticated browser functions. The demo controls must say that they simulate an outcome. A simulated bet, win, loss, or refund must use the existing gameplay service and trigger wallet and history refreshes.
+Authenticated browser functions now resolve Lucky Number wins and losses on the server and run them through the existing gameplay service. The interface labels the experience as a BearBet demo and refreshes wallet and transaction history after each round. Add the explicit refund control and bet-history view needed for the full fixture proof.
 
 Build bet history from game rounds and provider operations. Do not derive financial truth from UI state.
 

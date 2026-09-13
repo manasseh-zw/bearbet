@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { RoutePlaceholder } from "#/components/shared/route-placeholder";
+import { DemoGamePage } from "#/components/player/game/demo-game-page";
 
 export const Route = createFileRoute("/_app/_player/games/$gameId")({
 	head: () => ({ meta: [{ title: "Game | BearBet" }] }),
@@ -8,5 +8,6 @@ export const Route = createFileRoute("/_app/_player/games/$gameId")({
 });
 
 function GamePage() {
-	return <RoutePlaceholder title="Game" />;
+	const { gameId } = Route.useParams();
+	return <DemoGamePage gameId={gameId} />;
 }

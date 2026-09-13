@@ -141,6 +141,7 @@ export function PlayerLobby() {
 							<GameCard
 								key={game.id}
 								compact
+								playable
 								game={{ ...game, imageUrl: game.bannerUrl ?? game.coverUrl }}
 							/>
 						))}
@@ -206,6 +207,7 @@ export function PlayerLobby() {
 						}
 						renderItem={(game) => (
 							<GameCard
+								playable
 								game={{ ...game, imageUrl: game.bannerUrl ?? game.coverUrl }}
 							/>
 						)}
