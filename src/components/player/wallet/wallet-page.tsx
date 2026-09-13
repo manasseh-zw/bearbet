@@ -376,6 +376,7 @@ export function WalletPage() {
 								<CardAction>
 									<Link
 										to="/history"
+										search={{ category: "all", page: 1 }}
 										className={buttonVariants({
 											variant: "ghost",
 											size: "sm",

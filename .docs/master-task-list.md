@@ -52,13 +52,13 @@ These capabilities are done and should not return to the active queue unless a l
 
 ### 2. Wallet experience
 
-The contracts, authenticated functions, and main Wallet route are complete. The remaining slice is the shell balance, unified history, and repeatable journey proof.
+The contracts, authenticated functions, main Wallet route, and unified History route are complete. The remaining slice is the shell balance and repeatable journey proof.
 
 - [x] **P05. Add browser-safe wallet contracts.** Shared top-up and withdrawal schemas accept only caller-controlled amounts and idempotency keys. Player IDs, balances, actors, and audit data remain server-controlled.
 - [x] **P06. Add authenticated wallet reads and mutations.** Authenticated TanStack server functions expose the current wallet overview, supported demo top-up, withdrawal request, pending withdrawals, and recent ledger entries. Every function derives the player ID from a fresh active session.
 - [ ] **P07. Put the wallet balance in the app shell.** Show cash, bonus, and playable total where a player can see changes after any money movement. Include loading and failure behavior.
 - [x] **P08. Build the wallet page.** The responsive page reads persisted balances, pending withdrawals, and recent ledger activity through the authenticated wallet query. Top-ups and withdrawal requests use shared schemas, stable in-flight idempotency keys, disabled submission states, server errors, post-mutation query refreshes, and app-level success toasts.
-- [ ] **P09. Build unified player history.** Combine ledger activity and gameplay activity in one route with views or filters for transactions, bets, wins, refunds, wallet bucket, operation type, and date. Keep the immutable ledger and gameplay records as the sources of truth.
+- [x] **P09. Build unified player history.** Combine ledger activity and gameplay activity in one route with views or filters for transactions, bets, wins, refunds, wallet bucket, operation type, and date. Keep the immutable ledger and gameplay records as the sources of truth.
 - [ ] **P10. Verify the wallet journey.** Prove that duplicate clicks credit once, invalid amounts fail, over-withdrawal fails, and every successful action refreshes the shell and history.
 
 ### 3. Catalogue at product scale
