@@ -224,9 +224,9 @@ function PlayerProfile() {
 									</span>
 								</>
 							) : (
-								<span className="truncate text-base font-semibold text-sidebar-foreground tabular-nums">
+								<span className="truncate text-xl leading-none font-semibold text-sidebar-foreground tabular-nums">
 									{playableBalance}{" "}
-									<span className="text-xs text-primary">
+									<span className="text-sm text-primary">
 										{wallet.data?.currencyCode}
 									</span>
 								</span>
