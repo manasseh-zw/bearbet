@@ -363,18 +363,12 @@ function HistoryTable({
 				{items.map((item) => {
 					const isCredit = item.amountMinor > 0;
 					const Icon = iconForType(item.type);
+					const tone = transactionTone(item.type, item.amountMinor);
 					return (
 						<TableRow key={item.id} className="h-16">
 							<TableCell className="pl-6">
 								<div className="flex items-center gap-3">
-									<Icon
-										className={cn(
-											"size-4 shrink-0",
-											isCredit
-												? "text-emerald-600 dark:text-emerald-400"
-												: "text-muted-foreground",
-										)}
-									/>
+									<Icon className={cn("size-4 shrink-0", tone)} />
 									<div className="min-w-0">
 										<p>{transactionLabels[item.type]}</p>
 										<p className="mt-1 text-xs text-muted-foreground sm:hidden">
@@ -412,7 +406,7 @@ function HistoryTable({
 							<TableCell
 								className={cn(
 									"pr-6 text-right font-semibold tabular-nums",
-									isCredit && "text-emerald-600 dark:text-emerald-400",
+									tone,
 								)}
 							>
 								{isCredit ? "+" : item.amountMinor < 0 ? "-" : ""}
@@ -532,6 +526,13 @@ function iconForType(type: HistoryOperationType) {
 	if (type === "welcome_credit" || type === "demo_top_up")
 		return ArrowDownLeftIcon;
 	return WalletCardsIcon;
+}
+
+function transactionTone(type: HistoryOperationType, amountMinor: number) {
+	if (type.startsWith("withdrawal")) return "text-foreground";
+	if (amountMinor > 0) return "text-emerald-600 dark:text-emerald-400";
+	if (amountMinor < 0) return "text-destructive";
+	return "text-muted-foreground";
 }
 
 function shortReference(value: string | null) {
