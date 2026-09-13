@@ -21,7 +21,7 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 
 ### The current gap
 
-The browser can call the catalogue boundary, but it cannot yet call wallet, withdrawal, bonus, simulator, or history use cases. Game cards do not launch a session. The Wallet route now has a responsive local-state UI preview. History, Bonuses, Promotions, VIP, Profile, the game player, and Admin remain navigable placeholders.
+The browser can now call the authenticated wallet overview, demo top-up, and withdrawal request boundaries. Shared request schemas accept amounts and idempotency keys but no player identity. The Wallet route still uses local preview state, and the app shell does not show the persisted balance yet. Game cards do not launch a session. History, Bonuses, Promotions, VIP, Profile, the game player, and Admin remain navigable placeholders.
 
 This means the hard money rules exist, but a reviewer cannot see or drive them. The next work should expose those rules without duplicating them in components or server functions.
 
@@ -40,7 +40,7 @@ This means the hard money rules exist, but a reviewer cannot see or drive them. 
 
 This is the next feature.
 
-The `_app`, `_player`, `_guest`, and `_admin` route boundaries are in place. Guest and player guards preserve safe internal destinations, and signed-in users leave authentication routes. Next, create browser-safe top-up and withdrawal schemas, then authenticated server functions for the current wallet, demo top-up, withdrawal request, and recent ledger entries. The server derives the player ID from the session.
+The `_app`, `_player`, `_guest`, and `_admin` route boundaries are in place. Guest and player guards preserve safe internal destinations, and signed-in users leave authentication routes. Browser-safe top-up and withdrawal schemas now reject trusted fields. Authenticated server functions expose the current wallet, demo top-up, withdrawal request, pending withdrawals, and recent ledger entries. The server derives the player ID from a fresh active session.
 
 Put cash, bonus, and playable balance in the app shell. Build `/wallet` with the four virtual top-up amounts, withdrawal reservation, mutation feedback, and recent activity. Build `/history` as the unified home for ledger and gameplay activity. It needs pagination and filters for transactions, bets, wins, refunds, wallet bucket, operation type, and date. Share React Query keys so successful mutations refresh every visible balance and history view.
 

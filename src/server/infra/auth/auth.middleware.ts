@@ -27,6 +27,23 @@ export const freshAuthMiddleware = createMiddleware().server(
 	},
 );
 
+export const playerAuthMiddleware = createMiddleware().server(
+	async ({ next }) => {
+		const session = await getCurrentSession({ disableCookieCache: true });
+
+		if (!session) {
+			setResponseStatus(401);
+			throw new Error("Unauthorized");
+		}
+		if (session.user.role !== "user" || session.user.banned) {
+			setResponseStatus(403);
+			throw new Error("Forbidden");
+		}
+
+		return next({ context: { session } });
+	},
+);
+
 export const adminAuthMiddleware = createMiddleware().server(
 	async ({ next }) => {
 		const session = await getCurrentSession();

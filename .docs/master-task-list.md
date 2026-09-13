@@ -52,8 +52,8 @@ These capabilities are done and should not return to the active queue unless a l
 
 ### 2. Wallet experience
 
-- [ ] **P05. Add browser-safe wallet contracts.** Define shared schemas only for caller-controlled top-up and withdrawal fields. Keep player IDs, balances, actors, and audit data server-controlled.
-- [ ] **P06. Add authenticated wallet reads and mutations.** Expose the current wallet, supported demo top-up, withdrawal request, and recent ledger entries through TanStack server functions.
+- [x] **P05. Add browser-safe wallet contracts.** Shared top-up and withdrawal schemas accept only caller-controlled amounts and idempotency keys. Player IDs, balances, actors, and audit data remain server-controlled.
+- [x] **P06. Add authenticated wallet reads and mutations.** Authenticated TanStack server functions expose the current wallet overview, supported demo top-up, withdrawal request, pending withdrawals, and recent ledger entries. Every function derives the player ID from a fresh active session.
 - [ ] **P07. Put the wallet balance in the app shell.** Show cash, bonus, and playable total where a player can see changes after any money movement. Include loading and failure behavior.
 - [~] **P08. Build the wallet page.** The responsive UI preview now shows virtual-funds wording, balance buckets, the four allowed top-ups, withdrawal input, pending reservations, mutation feedback, and recent activity. Replace its local preview state with authenticated wallet functions and stored ledger results.
 - [ ] **P09. Build unified player history.** Combine ledger activity and gameplay activity in one route with views or filters for transactions, bets, wins, refunds, wallet bucket, operation type, and date. Keep the immutable ledger and gameplay records as the sources of truth.

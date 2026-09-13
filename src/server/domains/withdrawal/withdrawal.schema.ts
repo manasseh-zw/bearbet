@@ -2,18 +2,12 @@ import "@tanstack/react-start/server-only";
 
 import { z } from "zod";
 
+import { withdrawalRequestInputSchema } from "#/lib/schemas/wallet.schema";
+
 const requiredIdentifierSchema = z.string().trim().min(1);
 
-const positiveSafeIntegerSchema = z
-	.number()
-	.refine((value) => Number.isSafeInteger(value) && value > 0, {
-		message: "Amount must be a positive safe integer",
-	});
-
-export const requestWithdrawalSchema = z.object({
+export const requestWithdrawalSchema = withdrawalRequestInputSchema.extend({
 	playerId: requiredIdentifierSchema,
-	amountMinor: positiveSafeIntegerSchema,
-	idempotencyKey: requiredIdentifierSchema,
 });
 
 export const reviewWithdrawalSchema = z.object({

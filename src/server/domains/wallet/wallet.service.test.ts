@@ -16,6 +16,7 @@ import {
 	applyWalletOperation,
 	demoTopUp,
 	getPlayableBalance,
+	getWalletOverview,
 	WalletOperationError,
 } from "./wallet.service";
 
@@ -101,6 +102,19 @@ test("wallet operation moves balances and writes ordered immutable evidence", as
 			{ bucket: "cash", amountMinor: -3_000, before: 100_000, after: 97_000 },
 		],
 	);
+});
+
+test("wallet overview returns balances and recent immutable activity", async () => {
+	const overview = await getWalletOverview(playerId);
+
+	assert.equal(overview.currencyCode, "USD");
+	assert.equal(
+		overview.playableBalanceMinor,
+		overview.balances.cashBalanceMinor + overview.balances.bonusBalanceMinor,
+	);
+	assert.equal(overview.recentActivity.length > 0, true);
+	assert.equal(overview.recentActivity.length <= 5, true);
+	assert.deepEqual(overview.pendingWithdrawals, []);
 });
 
 test("an identical retry returns its original result without moving money again", async () => {

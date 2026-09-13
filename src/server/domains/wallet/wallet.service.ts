@@ -1,7 +1,7 @@
 import "@tanstack/react-start/server-only";
 
 import { createHash } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import {
 	assertMinorUnits,
@@ -23,6 +23,7 @@ import {
 	user,
 	wallet,
 	walletOperation,
+	withdrawal,
 } from "#/server/infra/db/schema";
 
 export { DEMO_TOP_UP_AMOUNTS_MINOR } from "#/server/domains/wallet/wallet.schema";
@@ -71,6 +72,71 @@ export async function getPlayableBalance(playerId: string) {
 		currencyCode: current.wallet.currencyCode,
 		balances,
 		balanceMinor: playableBalance(balances),
+	};
+}
+
+export async function getWalletOverview(playerId: string) {
+	const [current] = await db
+		.select({ wallet, banned: user.banned })
+		.from(wallet)
+		.innerJoin(user, eq(user.id, wallet.playerId))
+		.where(eq(wallet.playerId, playerId));
+
+	if (!current || current.banned) {
+		throw new WalletOperationError(
+			"Active player wallet was not found",
+			"WALLET_NOT_FOUND",
+		);
+	}
+
+	const [recentActivity, pendingWithdrawals] = await Promise.all([
+		db
+			.select({
+				id: ledgerEntry.id,
+				type: ledgerEntry.type,
+				bucket: ledgerEntry.bucket,
+				amountMinor: ledgerEntry.amountMinor,
+				balanceBeforeMinor: ledgerEntry.balanceBeforeMinor,
+				balanceAfterMinor: ledgerEntry.balanceAfterMinor,
+				sourceType: ledgerEntry.sourceType,
+				sourceId: ledgerEntry.sourceId,
+				createdAt: ledgerEntry.createdAt,
+			})
+			.from(ledgerEntry)
+			.where(eq(ledgerEntry.walletId, current.wallet.id))
+			.orderBy(desc(ledgerEntry.createdAt), desc(ledgerEntry.id))
+			.limit(5),
+		db
+			.select({
+				id: withdrawal.id,
+				currencyCode: withdrawal.currencyCode,
+				requestedAmountMinor: withdrawal.requestedAmountMinor,
+				reservedAmountMinor: withdrawal.reservedAmountMinor,
+				status: withdrawal.status,
+				requestedAt: withdrawal.requestedAt,
+			})
+			.from(withdrawal)
+			.where(
+				and(
+					eq(withdrawal.playerId, playerId),
+					eq(withdrawal.status, "pending"),
+				),
+			)
+			.orderBy(desc(withdrawal.requestedAt), desc(withdrawal.id)),
+	]);
+
+	const balances: WalletBalances = {
+		cashBalanceMinor: current.wallet.cashBalanceMinor,
+		bonusBalanceMinor: current.wallet.bonusBalanceMinor,
+		reservedCashMinor: current.wallet.reservedCashMinor,
+	};
+
+	return {
+		currencyCode: current.wallet.currencyCode,
+		balances,
+		playableBalanceMinor: playableBalance(balances),
+		pendingWithdrawals,
+		recentActivity,
 	};
 }
 

@@ -2,11 +2,10 @@ import "@tanstack/react-start/server-only";
 
 import { z } from "zod";
 
+import { demoTopUpInputSchema } from "#/lib/schemas/wallet.schema";
 import { ledgerEntryType, walletBucket } from "#/server/infra/db/wallet.schema";
 
-export const DEMO_TOP_UP_AMOUNTS_MINOR = [
-	10_000, 50_000, 100_000, 1_000_000,
-] as const;
+export { DEMO_TOP_UP_AMOUNTS_MINOR } from "#/lib/schemas/wallet.schema";
 
 const requiredIdentifierSchema = z.string().trim().min(1);
 
@@ -31,18 +30,8 @@ export const applyWalletOperationSchema = z.object({
 	actorUserId: z.string().optional(),
 });
 
-export const demoTopUpSchema = z.object({
+export const demoTopUpSchema = demoTopUpInputSchema.extend({
 	playerId: requiredIdentifierSchema,
-	amountMinor: z
-		.number()
-		.refine(
-			(value) =>
-				DEMO_TOP_UP_AMOUNTS_MINOR.includes(
-					value as (typeof DEMO_TOP_UP_AMOUNTS_MINOR)[number],
-				),
-			{ message: "Choose a supported demo top-up amount" },
-		),
-	idempotencyKey: requiredIdentifierSchema,
 });
 
 export type WalletMovement = z.output<typeof walletMovementSchema>;
