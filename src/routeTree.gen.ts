@@ -9,44 +9,59 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as CasinoRouteRouteImport } from './routes/_casino/route'
+import { Route as AdminRouteRouteImport } from './routes/_admin/route'
+import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as GuestRouteRouteImport } from './routes/_guest/route'
-import { Route as CasinoIndexRouteImport } from './routes/_casino/index'
-import { Route as CasinoBonusesRouteImport } from './routes/_casino/bonuses'
-import { Route as CasinoPromotionsRouteImport } from './routes/_casino/promotions'
-import { Route as CasinoVipRouteImport } from './routes/_casino/vip'
+import { Route as AdminAdminRouteImport } from './routes/_admin/admin'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppPlayerRouteRouteImport } from './routes/_app/_player/route'
+import { Route as AppPromotionsRouteImport } from './routes/_app/promotions'
+import { Route as AppVipRouteImport } from './routes/_app/vip'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
 import { Route as GuestRegisterRouteImport } from './routes/_guest/register'
+import { Route as AppPlayerBonusesRouteImport } from './routes/_app/_player/bonuses'
+import { Route as AppPlayerHistoryRouteImport } from './routes/_app/_player/history'
+import { Route as AppPlayerProfileRouteImport } from './routes/_app/_player/profile'
+import { Route as AppPlayerWalletRouteImport } from './routes/_app/_player/wallet'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiDrakonKeyRouteImport } from './routes/api/drakon/$key'
+import { Route as AppPlayerGamesGameIdRouteImport } from './routes/_app/_player/games/$gameId'
 
-const CasinoRouteRoute = CasinoRouteRouteImport.update({
-  id: '/_casino',
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/_admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRouteRoute = AppRouteRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuestRouteRoute = GuestRouteRouteImport.update({
   id: '/_guest',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CasinoIndexRoute = CasinoIndexRouteImport.update({
+const AdminAdminRoute = AdminAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => CasinoRouteRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const CasinoBonusesRoute = CasinoBonusesRouteImport.update({
-  id: '/bonuses',
-  path: '/bonuses',
-  getParentRoute: () => CasinoRouteRoute,
+const AppPlayerRouteRoute = AppPlayerRouteRouteImport.update({
+  id: '/_player',
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const CasinoPromotionsRoute = CasinoPromotionsRouteImport.update({
+const AppPromotionsRoute = AppPromotionsRouteImport.update({
   id: '/promotions',
   path: '/promotions',
-  getParentRoute: () => CasinoRouteRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const CasinoVipRoute = CasinoVipRouteImport.update({
+const AppVipRoute = AppVipRouteImport.update({
   id: '/vip',
   path: '/vip',
-  getParentRoute: () => CasinoRouteRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const GuestLoginRoute = GuestLoginRouteImport.update({
   id: '/login',
@@ -58,6 +73,26 @@ const GuestRegisterRoute = GuestRegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => GuestRouteRoute,
 } as any)
+const AppPlayerBonusesRoute = AppPlayerBonusesRouteImport.update({
+  id: '/bonuses',
+  path: '/bonuses',
+  getParentRoute: () => AppPlayerRouteRoute,
+} as any)
+const AppPlayerHistoryRoute = AppPlayerHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AppPlayerRouteRoute,
+} as any)
+const AppPlayerProfileRoute = AppPlayerProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppPlayerRouteRoute,
+} as any)
+const AppPlayerWalletRoute = AppPlayerWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AppPlayerRouteRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -68,77 +103,117 @@ const ApiDrakonKeyRoute = ApiDrakonKeyRouteImport.update({
   path: '/api/drakon/$key',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppPlayerGamesGameIdRoute = AppPlayerGamesGameIdRouteImport.update({
+  id: '/games/$gameId',
+  path: '/games/$gameId',
+  getParentRoute: () => AppPlayerRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof CasinoIndexRoute
-  '/bonuses': typeof CasinoBonusesRoute
-  '/promotions': typeof CasinoPromotionsRoute
-  '/vip': typeof CasinoVipRoute
+  '/': typeof AppIndexRoute
+  '/admin': typeof AdminAdminRoute
+  '/promotions': typeof AppPromotionsRoute
+  '/vip': typeof AppVipRoute
   '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
+  '/bonuses': typeof AppPlayerBonusesRoute
+  '/history': typeof AppPlayerHistoryRoute
+  '/profile': typeof AppPlayerProfileRoute
+  '/wallet': typeof AppPlayerWalletRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
+  '/games/$gameId': typeof AppPlayerGamesGameIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof CasinoIndexRoute
-  '/bonuses': typeof CasinoBonusesRoute
-  '/promotions': typeof CasinoPromotionsRoute
-  '/vip': typeof CasinoVipRoute
+  '/': typeof AppIndexRoute
+  '/admin': typeof AdminAdminRoute
+  '/promotions': typeof AppPromotionsRoute
+  '/vip': typeof AppVipRoute
   '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
+  '/bonuses': typeof AppPlayerBonusesRoute
+  '/history': typeof AppPlayerHistoryRoute
+  '/profile': typeof AppPlayerProfileRoute
+  '/wallet': typeof AppPlayerWalletRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
+  '/games/$gameId': typeof AppPlayerGamesGameIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_casino': typeof CasinoRouteRouteWithChildren
+  '/_admin': typeof AdminRouteRouteWithChildren
+  '/_app': typeof AppRouteRouteWithChildren
   '/_guest': typeof GuestRouteRouteWithChildren
-  '/_casino/bonuses': typeof CasinoBonusesRoute
-  '/_casino/promotions': typeof CasinoPromotionsRoute
-  '/_casino/vip': typeof CasinoVipRoute
+  '/_app/_player': typeof AppPlayerRouteRouteWithChildren
+  '/_admin/admin': typeof AdminAdminRoute
+  '/_app/promotions': typeof AppPromotionsRoute
+  '/_app/vip': typeof AppVipRoute
   '/_guest/login': typeof GuestLoginRoute
   '/_guest/register': typeof GuestRegisterRoute
-  '/_casino/': typeof CasinoIndexRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/_player/bonuses': typeof AppPlayerBonusesRoute
+  '/_app/_player/history': typeof AppPlayerHistoryRoute
+  '/_app/_player/profile': typeof AppPlayerProfileRoute
+  '/_app/_player/wallet': typeof AppPlayerWalletRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
+  '/_app/_player/games/$gameId': typeof AppPlayerGamesGameIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/bonuses'
+    | '/admin'
     | '/promotions'
     | '/vip'
     | '/login'
     | '/register'
+    | '/bonuses'
+    | '/history'
+    | '/profile'
+    | '/wallet'
     | '/api/auth/$'
     | '/api/drakon/$key'
+    | '/games/$gameId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/bonuses'
+    | '/admin'
     | '/promotions'
     | '/vip'
     | '/login'
     | '/register'
+    | '/bonuses'
+    | '/history'
+    | '/profile'
+    | '/wallet'
     | '/api/auth/$'
     | '/api/drakon/$key'
+    | '/games/$gameId'
   id:
     | '__root__'
-    | '/_casino'
+    | '/_admin'
+    | '/_app'
     | '/_guest'
-    | '/_casino/bonuses'
-    | '/_casino/promotions'
-    | '/_casino/vip'
+    | '/_app/_player'
+    | '/_admin/admin'
+    | '/_app/promotions'
+    | '/_app/vip'
     | '/_guest/login'
     | '/_guest/register'
-    | '/_casino/'
+    | '/_app/'
+    | '/_app/_player/bonuses'
+    | '/_app/_player/history'
+    | '/_app/_player/profile'
+    | '/_app/_player/wallet'
     | '/api/auth/$'
     | '/api/drakon/$key'
+    | '/_app/_player/games/$gameId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  CasinoRouteRoute: typeof CasinoRouteRouteWithChildren
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  AppRouteRoute: typeof AppRouteRouteWithChildren
   GuestRouteRoute: typeof GuestRouteRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiDrakonKeyRoute: typeof ApiDrakonKeyRoute
@@ -146,11 +221,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_casino': {
-      id: '/_casino'
+    '/_admin': {
+      id: '/_admin'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof CasinoRouteRouteImport
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_guest': {
@@ -160,33 +242,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuestRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_casino/': {
-      id: '/_casino/'
+    '/_admin/admin': {
+      id: '/_admin/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminAdminRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof CasinoIndexRouteImport
-      parentRoute: typeof CasinoRouteRoute
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRouteRoute
     }
-    '/_casino/bonuses': {
-      id: '/_casino/bonuses'
-      path: '/bonuses'
-      fullPath: '/bonuses'
-      preLoaderRoute: typeof CasinoBonusesRouteImport
-      parentRoute: typeof CasinoRouteRoute
+    '/_app/_player': {
+      id: '/_app/_player'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppPlayerRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
-    '/_casino/promotions': {
-      id: '/_casino/promotions'
+    '/_app/promotions': {
+      id: '/_app/promotions'
       path: '/promotions'
       fullPath: '/promotions'
-      preLoaderRoute: typeof CasinoPromotionsRouteImport
-      parentRoute: typeof CasinoRouteRoute
+      preLoaderRoute: typeof AppPromotionsRouteImport
+      parentRoute: typeof AppRouteRoute
     }
-    '/_casino/vip': {
-      id: '/_casino/vip'
+    '/_app/vip': {
+      id: '/_app/vip'
       path: '/vip'
       fullPath: '/vip'
-      preLoaderRoute: typeof CasinoVipRouteImport
-      parentRoute: typeof CasinoRouteRoute
+      preLoaderRoute: typeof AppVipRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_guest/login': {
       id: '/_guest/login'
@@ -202,6 +291,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuestRegisterRouteImport
       parentRoute: typeof GuestRouteRoute
     }
+    '/_app/_player/bonuses': {
+      id: '/_app/_player/bonuses'
+      path: '/bonuses'
+      fullPath: '/bonuses'
+      preLoaderRoute: typeof AppPlayerBonusesRouteImport
+      parentRoute: typeof AppPlayerRouteRoute
+    }
+    '/_app/_player/history': {
+      id: '/_app/_player/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof AppPlayerHistoryRouteImport
+      parentRoute: typeof AppPlayerRouteRoute
+    }
+    '/_app/_player/profile': {
+      id: '/_app/_player/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppPlayerProfileRouteImport
+      parentRoute: typeof AppPlayerRouteRoute
+    }
+    '/_app/_player/wallet': {
+      id: '/_app/_player/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof AppPlayerWalletRouteImport
+      parentRoute: typeof AppPlayerRouteRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -216,25 +333,64 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDrakonKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/_player/games/$gameId': {
+      id: '/_app/_player/games/$gameId'
+      path: '/games/$gameId'
+      fullPath: '/games/$gameId'
+      preLoaderRoute: typeof AppPlayerGamesGameIdRouteImport
+      parentRoute: typeof AppPlayerRouteRoute
+    }
   }
 }
 
-interface CasinoRouteRouteChildren {
-  CasinoBonusesRoute: typeof CasinoBonusesRoute
-  CasinoPromotionsRoute: typeof CasinoPromotionsRoute
-  CasinoVipRoute: typeof CasinoVipRoute
-  CasinoIndexRoute: typeof CasinoIndexRoute
+interface AdminRouteRouteChildren {
+  AdminAdminRoute: typeof AdminAdminRoute
 }
 
-const CasinoRouteRouteChildren: CasinoRouteRouteChildren = {
-  CasinoBonusesRoute: CasinoBonusesRoute,
-  CasinoPromotionsRoute: CasinoPromotionsRoute,
-  CasinoVipRoute: CasinoVipRoute,
-  CasinoIndexRoute: CasinoIndexRoute,
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminAdminRoute: AdminAdminRoute,
 }
 
-const CasinoRouteRouteWithChildren = CasinoRouteRoute._addFileChildren(
-  CasinoRouteRouteChildren,
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
+interface AppPlayerRouteRouteChildren {
+  AppPlayerBonusesRoute: typeof AppPlayerBonusesRoute
+  AppPlayerHistoryRoute: typeof AppPlayerHistoryRoute
+  AppPlayerProfileRoute: typeof AppPlayerProfileRoute
+  AppPlayerWalletRoute: typeof AppPlayerWalletRoute
+  AppPlayerGamesGameIdRoute: typeof AppPlayerGamesGameIdRoute
+}
+
+const AppPlayerRouteRouteChildren: AppPlayerRouteRouteChildren = {
+  AppPlayerBonusesRoute: AppPlayerBonusesRoute,
+  AppPlayerHistoryRoute: AppPlayerHistoryRoute,
+  AppPlayerProfileRoute: AppPlayerProfileRoute,
+  AppPlayerWalletRoute: AppPlayerWalletRoute,
+  AppPlayerGamesGameIdRoute: AppPlayerGamesGameIdRoute,
+}
+
+const AppPlayerRouteRouteWithChildren = AppPlayerRouteRoute._addFileChildren(
+  AppPlayerRouteRouteChildren,
+)
+
+interface AppRouteRouteChildren {
+  AppPlayerRouteRoute: typeof AppPlayerRouteRouteWithChildren
+  AppPromotionsRoute: typeof AppPromotionsRoute
+  AppVipRoute: typeof AppVipRoute
+  AppIndexRoute: typeof AppIndexRoute
+}
+
+const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppPlayerRouteRoute: AppPlayerRouteRouteWithChildren,
+  AppPromotionsRoute: AppPromotionsRoute,
+  AppVipRoute: AppVipRoute,
+  AppIndexRoute: AppIndexRoute,
+}
+
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
 )
 
 interface GuestRouteRouteChildren {
@@ -252,7 +408,8 @@ const GuestRouteRouteWithChildren = GuestRouteRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  CasinoRouteRoute: CasinoRouteRouteWithChildren,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
+  AppRouteRoute: AppRouteRouteWithChildren,
   GuestRouteRoute: GuestRouteRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiDrakonKeyRoute: ApiDrakonKeyRoute,

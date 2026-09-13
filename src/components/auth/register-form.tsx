@@ -59,7 +59,7 @@ function useRegistrationForm(
 	});
 }
 
-export function RegisterForm() {
+export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 	const navigate = useNavigate();
 	const passwordId = useId();
 	const confirmPasswordId = useId();
@@ -69,7 +69,7 @@ export function RegisterForm() {
 	const registration = useMutation({
 		mutationFn: registerPlayer,
 		onSuccess: async () => {
-			await navigate({ to: "/", replace: true });
+			await navigate({ href: redirectTo ?? "/", replace: true });
 		},
 	});
 
@@ -245,7 +245,11 @@ export function RegisterForm() {
 
 			<p className="mt-6 text-center text-sm text-muted-foreground">
 				Already have an account?{" "}
-				<Link to="/login" className="font-medium text-primary hover:underline">
+				<Link
+					to="/login"
+					search={{ redirect: redirectTo }}
+					className="font-medium text-primary hover:underline"
+				>
 					Sign in
 				</Link>
 			</p>

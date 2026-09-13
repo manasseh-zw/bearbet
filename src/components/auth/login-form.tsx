@@ -30,7 +30,7 @@ function useLoginForm(onSubmit: (value: LoginFormInput) => Promise<void>) {
 	});
 }
 
-export function LoginForm() {
+export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 	const navigate = useNavigate();
 	const passwordId = useId();
 	const [showPassword, setShowPassword] = useState(false);
@@ -38,7 +38,7 @@ export function LoginForm() {
 	const login = useMutation({
 		mutationFn: signInPlayer,
 		onSuccess: async () => {
-			await navigate({ to: "/", replace: true });
+			await navigate({ href: redirectTo ?? "/", replace: true });
 		},
 	});
 
@@ -186,6 +186,7 @@ export function LoginForm() {
 				New to BearBet?{" "}
 				<Link
 					to="/register"
+					search={{ redirect: redirectTo }}
 					className="font-medium text-primary hover:underline"
 				>
 					Create an account

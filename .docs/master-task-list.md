@@ -45,8 +45,8 @@ These capabilities are done and should not return to the active queue unless a l
 
 ### 1. Authenticated player boundary
 
-- [ ] **P01. Add the authenticated route group.** Put wallet, history, profile, bonus, and game-player pages behind a pathless `_auth` layout. Preserve the intended destination when redirecting a guest to login.
-- [ ] **P02. Complete the guest-route guard.** Redirect signed-in users away from login and registration without treating route guards as authorization.
+- [x] **P01. Add the authenticated player route group.** Wallet, unified history, bonuses, profile, and game-player routes live below the pathless `_app/_player` layout. Guests return to their intended destination after authentication.
+- [x] **P02. Complete the guest-route guard.** Signed-in users leave login and registration for the requested internal destination or the lobby. External redirect values are rejected.
 - [~] **P03. Apply player authorization to browser-facing use cases.** The middleware authenticates sessions and gameplay rejects suspended players. Extend that policy to every new player server function and derive the player ID from the session.
 - [ ] **P04. Prove access boundaries.** Test session persistence, logout, guest rejection, duplicate email and username behavior, suspension, cross-user reads, and failed self-promotion.
 
@@ -56,7 +56,7 @@ These capabilities are done and should not return to the active queue unless a l
 - [ ] **P06. Add authenticated wallet reads and mutations.** Expose the current wallet, supported demo top-up, withdrawal request, and recent ledger entries through TanStack server functions.
 - [ ] **P07. Put the wallet balance in the app shell.** Show cash, bonus, and playable total where a player can see changes after any money movement. Include loading and failure behavior.
 - [ ] **P08. Build the wallet page.** Show virtual-funds wording, balance buckets, the four allowed top-ups, withdrawal input, pending reservations, and mutation feedback.
-- [ ] **P09. Build transaction history.** Read from the immutable ledger. Add pagination and filters for wallet bucket, operation type, and date without creating a second transaction store.
+- [ ] **P09. Build unified player history.** Combine ledger activity and gameplay activity in one route with views or filters for transactions, bets, wins, refunds, wallet bucket, operation type, and date. Keep the immutable ledger and gameplay records as the sources of truth.
 - [ ] **P10. Verify the wallet journey.** Prove that duplicate clicks credit once, invalid amounts fail, over-withdrawal fails, and every successful action refreshes the shell and history.
 
 ### 3. Catalogue at product scale

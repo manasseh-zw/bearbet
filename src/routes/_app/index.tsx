@@ -5,7 +5,7 @@ import { GuestLobby } from "#/components/casino/guest/guest-lobby";
 import { Skeleton } from "#/components/ui/skeleton";
 import { authClient } from "#/lib/auth-client";
 
-export const Route = createFileRoute("/_casino/")({
+export const Route = createFileRoute("/_app/")({
 	component: CasinoLobby,
 });
 

@@ -37,22 +37,27 @@ src/
     format.ts
   routes/
     __root.tsx
-    index.tsx                    # public casino lobby
     _guest/
       route.tsx                 # signed-in users leave guest flows
       login.tsx
       register.tsx
       forgot-password.tsx
       reset-password.tsx
-    _auth/
-      route.tsx                 # active-session navigation boundary
-      account/
-      wallet/
-      transactions/
-      bonuses/
-      _admin/
-        route.tsx               # active admin navigation boundary
-        admin/
+    _app/
+      route.tsx                 # public casino shell
+      index.tsx                 # public casino lobby
+      promotions.tsx
+      vip.tsx
+      _player/
+        route.tsx               # active-player navigation boundary
+        wallet.tsx
+        history.tsx
+        bonuses.tsx
+        profile.tsx
+        games/$gameId.tsx
+    _admin/
+      route.tsx                 # active administrator boundary
+      admin.tsx
     api/
       auth/$
       drakon/$key.ts
@@ -226,9 +231,9 @@ The Greenbear V0 at `/Users/manasseh/Projects/work/greenbear-v0` is the behavior
 
 - `/` is the product, not a separate brochure site. Guests can browse the branded shell, catalogue, collections, search, and game details.
 - Sign in and registration live under a pathless `_guest` layout. Its `beforeLoad` sends an existing user back to the requested destination or the lobby.
-- Account, wallet, transaction, bonus, and game-launch routes live under a pathless `_auth` layout. Its `beforeLoad` sends guests to sign in with the intended destination preserved.
+- The public casino shell and lobby live under the pathless `_app` layout. Wallet, unified history, bonuses, profile, and game launch live below its pathless `_player` layout. The player guard sends guests to sign in with the intended destination preserved and rejects suspended sessions.
 - Guest actions such as Play, Favourite, Top Up, Withdraw, or Activate Bonus open the authentication flow. Browsing does not require authentication.
-- Admin pages live below a nested `_admin` layout so they inherit the session check and add a role check.
+- Admin pages live below a separate pathless `_admin` layout. Its guard requires an active administrator. This keeps the future admin interface independent of the player casino shell.
 - Route `beforeLoad` checks are navigation behavior, not the security boundary. Every protected server function uses authentication middleware and still checks ownership or role.
 - Provider callbacks authenticate independently of browser sessions.
 - Client-side hiding is presentation, not authorization.

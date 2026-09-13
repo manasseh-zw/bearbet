@@ -1,6 +1,19 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+
+import { getInternalRedirect } from "#/lib/navigation";
+import { getRouteSession } from "#/server/infra/auth/session.functions";
 
 export const Route = createFileRoute("/_guest")({
+	beforeLoad: async ({ location }) => {
+		const session = await getRouteSession();
+
+		if (session) {
+			const redirectTo = getInternalRedirect(
+				new URLSearchParams(location.searchStr).get("redirect"),
+			);
+			throw redirect({ href: redirectTo ?? "/" });
+		}
+	},
 	component: GuestLayout,
 });
 

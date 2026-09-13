@@ -8,10 +8,10 @@ import {
 	CrownIcon,
 	DicesIcon,
 	GiftIcon,
+	HistoryIcon,
 	LoaderCircleIcon,
 	LogInIcon,
 	LogOutIcon,
-	ReceiptTextIcon,
 	SettingsIcon,
 	ShieldCheckIcon,
 	UserRoundIcon,
@@ -48,7 +48,7 @@ import { authClient, signOutPlayer } from "#/lib/auth-client";
 type NavigationItem = {
 	label: string;
 	icon: LucideIcon;
-	to?: "/" | "/promotions" | "/bonuses" | "/vip";
+	to: "/" | "/promotions" | "/bonuses" | "/vip" | "/wallet" | "/history";
 };
 
 const casinoNavigation: NavigationItem[] = [
@@ -59,8 +59,8 @@ const casinoNavigation: NavigationItem[] = [
 ];
 
 const accountNavigation: NavigationItem[] = [
-	{ label: "Wallet", icon: WalletCardsIcon },
-	{ label: "Transactions", icon: ReceiptTextIcon },
+	{ label: "Wallet", icon: WalletCardsIcon, to: "/wallet" },
+	{ label: "History", icon: HistoryIcon, to: "/history" },
 ];
 
 function MobileCloseButton() {
@@ -100,7 +100,10 @@ function NavigationGroup({
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map(({ icon: Icon, label: itemLabel, to }) => {
-						const isActive = to === pathname;
+						const isActive =
+							to === pathname ||
+							(to === "/" && pathname.startsWith("/games/")) ||
+							(to !== "/" && pathname.startsWith(`${to}/`));
 						const content = (
 							<>
 								<Icon className="size-5 text-sidebar-foreground/45" />
@@ -119,16 +122,12 @@ function NavigationGroup({
 								<SidebarMenuButton
 									isActive={isActive}
 									tooltip={itemLabel}
-									asChild={Boolean(to)}
+									asChild
 									className="h-10 gap-3 rounded-lg px-2 text-sm font-medium text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-active:bg-transparent data-active:text-sidebar-foreground data-active:[&_svg]:text-primary"
 								>
-									{to ? (
-										<Link to={to} onClick={() => setOpenMobile(false)}>
-											{content}
-										</Link>
-									) : (
-										content
-									)}
+									<Link to={to} onClick={() => setOpenMobile(false)}>
+										{content}
+									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 						);
@@ -195,10 +194,20 @@ function PlayerProfile() {
 				>
 					{user ? (
 						<>
-							<DropdownMenuItem disabled>
-								<SettingsIcon />
-								Settings
+							<DropdownMenuItem asChild>
+								<Link to="/profile">
+									<SettingsIcon />
+									Profile
+								</Link>
 							</DropdownMenuItem>
+							{user.role === "admin" ? (
+								<DropdownMenuItem asChild>
+									<Link to="/admin">
+										<ShieldCheckIcon />
+										Admin
+									</Link>
+								</DropdownMenuItem>
+							) : null}
 							<DropdownMenuSeparator />
 							<DropdownMenuItem
 								variant="destructive"
