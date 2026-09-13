@@ -79,7 +79,7 @@ test("player registration provisions one player and one funded wallet", async (c
 		lastName: "Player",
 		dateOfBirth: "1990-01-01",
 		countryCode: "zw",
-		currencyCode: "usd",
+		currencyCode: "USD",
 	});
 
 	const [playerCount] = await db

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const MINIMUM_PLAYER_AGE = 18;
+export const supportedCurrencies = ["USD", "ZAR", "GBP"] as const;
 
 const isoCode = (length: number, label: string) =>
 	z
@@ -21,7 +22,9 @@ export const playerProfileInputSchema = z.object({
 		message: `You must be at least ${MINIMUM_PLAYER_AGE} years old`,
 	}),
 	countryCode: isoCode(2, "Country code"),
-	currencyCode: isoCode(3, "Currency code"),
+	currencyCode: isoCode(3, "Currency code").pipe(
+		z.enum(supportedCurrencies, { error: "Choose a supported currency" }),
+	),
 });
 
 export const registerPlayerInputSchema = playerProfileInputSchema.extend({

@@ -19,6 +19,7 @@ import { registerPlayer } from "#/lib/auth-client";
 import {
 	type RegistrationFormInput,
 	registrationFormSchema,
+	supportedCurrencies,
 } from "#/lib/schemas/auth.schema";
 
 const countries = [
@@ -28,11 +29,11 @@ const countries = [
 	{ code: "US", name: "United States", currencyCode: "USD" },
 ] as const;
 
-const currencies = [
-	{ code: "USD", name: "US dollar" },
-	{ code: "ZAR", name: "South African rand" },
-	{ code: "GBP", name: "British pound" },
-] as const;
+const currencyNames: Record<(typeof supportedCurrencies)[number], string> = {
+	USD: "US dollar",
+	ZAR: "South African rand",
+	GBP: "British pound",
+};
 
 const defaultValues: RegistrationFormInput = {
 	username: "",
@@ -193,9 +194,9 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										{currencies.map((currency) => (
-											<SelectItem key={currency.code} value={currency.code}>
-												{currency.code} · {currency.name}
+										{supportedCurrencies.map((currency) => (
+											<SelectItem key={currency} value={currency}>
+												{currency} · {currencyNames[currency]}
 											</SelectItem>
 										))}
 									</SelectContent>
