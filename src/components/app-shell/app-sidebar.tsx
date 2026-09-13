@@ -170,15 +170,15 @@ function PlayerProfile() {
 		);
 	}
 
-	const money = wallet.data
+	const amount = wallet.data
 		? new Intl.NumberFormat(undefined, {
-				style: "currency",
-				currency: wallet.data.currencyCode,
+				minimumFractionDigits: 2,
+				maximumFractionDigits: 2,
 			})
 		: null;
 	const playableBalance =
-		wallet.data && money
-			? formatMinorUnits(wallet.data.playableBalanceMinor, money)
+		wallet.data && amount
+			? formatMinorUnits(wallet.data.playableBalanceMinor, amount)
 			: null;
 
 	return (
@@ -224,17 +224,12 @@ function PlayerProfile() {
 									</span>
 								</>
 							) : (
-								<>
-									<span className="text-xs text-sidebar-foreground/45">
-										Playable balance
+								<span className="truncate text-base font-semibold text-sidebar-foreground tabular-nums">
+									{playableBalance}{" "}
+									<span className="text-xs text-primary">
+										{wallet.data?.currencyCode}
 									</span>
-									<span className="truncate font-semibold text-sidebar-foreground tabular-nums">
-										{playableBalance}{" "}
-										<span className="text-xs text-primary">
-											{wallet.data?.currencyCode}
-										</span>
-									</span>
-								</>
+								</span>
 							)
 						) : (
 							<>
@@ -256,7 +251,7 @@ function PlayerProfile() {
 				>
 					{user ? (
 						<>
-							{wallet.data && money ? (
+							{wallet.data && amount ? (
 								<div className="px-2 py-2.5">
 									<p className="text-xs text-muted-foreground">
 										Available to play
@@ -272,15 +267,17 @@ function PlayerProfile() {
 										<span className="text-right tabular-nums">
 											{formatMinorUnits(
 												wallet.data.balances.cashBalanceMinor,
-												money,
-											)}
+												amount,
+											)}{" "}
+											{wallet.data.currencyCode}
 										</span>
 										<span className="text-muted-foreground">Bonus</span>
 										<span className="text-right tabular-nums">
 											{formatMinorUnits(
 												wallet.data.balances.bonusBalanceMinor,
-												money,
-											)}
+												amount,
+											)}{" "}
+											{wallet.data.currencyCode}
 										</span>
 									</div>
 								</div>
