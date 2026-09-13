@@ -3,7 +3,54 @@
 
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/nunito";
+
+@font-face {
+  font-family: "Excon";
+  src: url("/fonts/excon-thin.otf") format("opentype");
+  font-style: normal;
+  font-weight: 100;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Excon";
+  src: url("/fonts/excon-light.otf") format("opentype");
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Excon";
+  src: url("/fonts/excon-regular.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Excon";
+  src: url("/fonts/excon-medium.otf") format("opentype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Excon";
+  src: url("/fonts/excon-bold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Excon";
+  src: url("/fonts/excon-black.otf") format("opentype");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
 
 @font-face {
   font-family: "River Adventurer";
@@ -87,7 +134,7 @@
 }
 
 @theme inline {
-  --font-sans: "Nunito Variable", sans-serif;
+  --font-sans: "Excon", sans-serif;
   --font-logo: "River Adventurer", var(--font-sans);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
