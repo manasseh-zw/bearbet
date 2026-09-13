@@ -27,6 +27,10 @@ The core Wallet and History routes are connected to the money engine, but the wa
 
 A reviewer can now drive top-ups and withdrawal reservations from the Wallet. The next work completes that loop across the shell and transaction history, then records repeatable proof.
 
+### Agreed delivery direction
+
+Finish the visible money loop first, then make the fixture game playable before adding its bonus UI. Follow that with account and catalogue completion, then administration, release work, and live Drakon proof. Do not let Profile, password recovery, favourites, or VIP delay the first playable game. Promotions and VIP remain honest unavailable states until they have a defined product scope.
+
 ## Delivery rules
 
 1. Build one visible journey at a time. A backend-only addition is incomplete when the task promises a player or administrator outcome.
@@ -57,9 +61,7 @@ Register -> receive $1,000.00 -> refresh and retain the balance
 
 This stage delivers tasks P01 through P10 in `master-task-list.md`.
 
-## Stage 2: catalogue reads and simulator gameplay
-
-Replace the full client-side catalogue read with indexed, paginated PostgreSQL queries. Support name, content provider, category, availability, and curation filters. Keep filter state in the URL where returning to a result set matters.
+## Stage 2: playable fixture journey
 
 Implement launch orchestration around the provider contract. It must authenticate an active player, resolve a persisted enabled game, check playable balance, record the launch attempt, call the configured provider, and return a safe result. Wire game cards to the player interface.
 
@@ -94,9 +96,11 @@ Seed a known offer -> player activates it
 
 This stage delivers tasks P19 through P21. It depends on wallet and gameplay. Administrator-authored offers join the same flow in Stage 4.
 
-## Stage 4: account and administration
+## Stage 4: account, catalogue completion, and administration
 
 Complete player profile and password recovery. Profile edits must exclude role, status, balances, and audit fields. Password changes require a fresh session.
+
+Add favourites and recently played games, then move catalogue filtering to indexed, paginated PostgreSQL reads with provider filters, URL state, and persisted featured, popular, and new collections. These close the original product brief, but they follow the playable and bonus journeys.
 
 Add a nested administrator route group with a server-side role check on every function. Build operations in this order:
 
@@ -159,4 +163,4 @@ Favourites, recently played games, notifications, advanced filters, two-factor a
 
 ## Immediate task
 
-Complete P07 by adding the persisted playable balance and cash and bonus breakdown to the authenticated app shell, including loading, retry, and mobile behavior. Follow with the unified `/history` screen in P09. Then finish P04 and P10 with access-boundary and wallet-journey tests covering duplicate requests, invalid and excessive withdrawals, suspension, cross-user isolation, and refresh persistence.
+Complete P07 by adding the persisted playable balance and cash and bonus breakdown to the authenticated app shell, including loading, retry, and mobile behavior. Then finish P04 and P10 with access-boundary and wallet-journey tests covering duplicate requests, invalid and excessive withdrawals, suspension, cross-user isolation, and refresh persistence. The next vertical slice is fixture launch, play, settlement, and history refresh. Bonus activation and visible wagering progress follow it.
