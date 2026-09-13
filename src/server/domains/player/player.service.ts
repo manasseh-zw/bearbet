@@ -6,8 +6,9 @@ import {
 	type PlayerProfile,
 	playerProfileInputSchema,
 } from "#/lib/schemas/auth.schema";
+import { applyWalletOperationInTransaction } from "#/server/domains/wallet/wallet.service";
 import { db } from "#/server/infra/db";
-import { ledgerEntry, player, user, wallet } from "#/server/infra/db/schema";
+import { player, user, wallet } from "#/server/infra/db/schema";
 
 export const WELCOME_CREDIT_MINOR = 100_000;
 
@@ -68,40 +69,14 @@ export async function registerPlayer(input: RegisterPlayerInput) {
 			})
 			.onConflictDoNothing({ target: wallet.playerId });
 
-		const [currentWallet] = await transaction
-			.select()
-			.from(wallet)
-			.where(eq(wallet.playerId, input.userId))
-			.for("update");
-
-		if (!currentWallet) {
-			throw new Error("Player wallet was not created");
-		}
-
-		const nextCashBalance =
-			currentWallet.cashBalanceMinor + WELCOME_CREDIT_MINOR;
-		const [welcomeEntry] = await transaction
-			.insert(ledgerEntry)
-			.values({
-				walletId: currentWallet.id,
-				bucket: "cash",
-				type: "welcome_credit",
-				amountMinor: WELCOME_CREDIT_MINOR,
-				balanceBeforeMinor: currentWallet.cashBalanceMinor,
-				balanceAfterMinor: nextCashBalance,
-				idempotencyKey,
-				sourceType: "player",
-				sourceId: input.userId,
-			})
-			.onConflictDoNothing({ target: ledgerEntry.idempotencyKey })
-			.returning({ id: ledgerEntry.id });
-
-		if (welcomeEntry) {
-			await transaction
-				.update(wallet)
-				.set({ cashBalanceMinor: nextCashBalance })
-				.where(eq(wallet.id, currentWallet.id));
-		}
+		await applyWalletOperationInTransaction(transaction, {
+			playerId: input.userId,
+			type: "welcome_credit",
+			idempotencyKey,
+			movements: [{ bucket: "cash", amountMinor: WELCOME_CREDIT_MINOR }],
+			sourceType: "player",
+			sourceId: input.userId,
+		});
 
 		const [provisionedPlayer] = await transaction
 			.select()
@@ -111,7 +86,7 @@ export async function registerPlayer(input: RegisterPlayerInput) {
 		const [provisionedWallet] = await transaction
 			.select()
 			.from(wallet)
-			.where(eq(wallet.id, currentWallet.id));
+			.where(eq(wallet.playerId, input.userId));
 
 		if (!provisionedPlayer || !provisionedWallet) {
 			throw new Error("Player provisioning did not complete");

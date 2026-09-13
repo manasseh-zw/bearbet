@@ -3,6 +3,7 @@ import test, { after } from "node:test";
 
 import { count, eq } from "drizzle-orm";
 import type { RegisterPlayerInput } from "#/lib/schemas/auth.schema";
+import { getPlayerHistory } from "#/server/domains/history/history.service";
 import { auth } from "#/server/infra/auth/auth";
 import { db, pool } from "#/server/infra/db";
 import {
@@ -11,6 +12,7 @@ import {
 	player,
 	user,
 	wallet,
+	walletOperation,
 } from "#/server/infra/db/schema";
 
 import {
@@ -61,6 +63,9 @@ test("player registration provisions one player and one funded wallet", async (c
 
 		if (walletId) {
 			await db.delete(ledgerEntry).where(eq(ledgerEntry.walletId, walletId));
+			await db
+				.delete(walletOperation)
+				.where(eq(walletOperation.walletId, walletId));
 			await db.delete(wallet).where(eq(wallet.id, walletId));
 		}
 
@@ -90,6 +95,11 @@ test("player registration provisions one player and one funded wallet", async (c
 		.from(ledgerEntry)
 		.innerJoin(wallet, eq(ledgerEntry.walletId, wallet.id))
 		.where(eq(wallet.playerId, userId));
+	const [welcomeOperationCount] = await db
+		.select({ value: count() })
+		.from(walletOperation)
+		.innerJoin(wallet, eq(walletOperation.walletId, wallet.id))
+		.where(eq(wallet.playerId, userId));
 	const [storedWallet] = await db
 		.select()
 		.from(wallet)
@@ -102,8 +112,13 @@ test("player registration provisions one player and one funded wallet", async (c
 	assert.equal(playerCount?.value, 1);
 	assert.equal(walletCount?.value, 1);
 	assert.equal(welcomeCount?.value, 1);
+	assert.equal(welcomeOperationCount?.value, 1);
 	assert.equal(storedWallet?.cashBalanceMinor, WELCOME_CREDIT_MINOR);
 	assert.equal(storedWallet?.currencyCode, "USD");
+	const history = await getPlayerHistory(userId, { category: "all", page: 1 });
+	assert.equal(history.pagination.total, 1);
+	assert.equal(history.items[0]?.type, "welcome_credit");
+	assert.equal(history.items[0]?.amountMinor, WELCOME_CREDIT_MINOR);
 	assert.equal(credentialAccount?.providerId, "credential");
 	const providerAccount = await getActivePlayerAccountDetails(userId);
 	assert.equal(providerAccount.email, email);
