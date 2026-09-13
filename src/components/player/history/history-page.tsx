@@ -113,19 +113,38 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 			</header>
 
 			<section
-				aria-labelledby="activity-heading"
-				className="overflow-hidden rounded-2xl border bg-card"
+				aria-label="Transaction history"
+				className="overflow-hidden rounded-2xl border bg-card shadow-none"
 			>
-				<div className="flex flex-col gap-5 px-4 pt-5 sm:px-6">
-					<div className="flex items-start justify-between gap-4">
-						<div className="flex flex-col gap-1">
-							<h2 id="activity-heading" className="text-base font-semibold">
-								Activity
-							</h2>
-							<p className="text-sm text-muted-foreground">
-								Filter your immutable transaction record.
-							</p>
-						</div>
+				<div className="flex flex-col px-4 pt-4 sm:px-6">
+					<div className="flex items-center justify-between gap-4">
+						<Tabs
+							className="min-w-0"
+							value={query.category}
+							onValueChange={(value) =>
+								patchQuery({
+									category: value as HistoryCategory,
+									type: undefined,
+								})
+							}
+						>
+							<div className="overflow-x-auto">
+								<TabsList variant="line" aria-label="Activity category">
+									{categoryTabs.map((tab) => (
+										<TabsTrigger
+											key={tab.value}
+											value={tab.value}
+											className="gap-2 px-2.5 data-active:text-primary data-active:after:bg-primary"
+										>
+											{tab.label}
+											<span className="rounded-full border px-1.5 text-[11px] leading-4 text-muted-foreground tabular-nums">
+												{history.data?.counts[tab.value] ?? 0}
+											</span>
+										</TabsTrigger>
+									))}
+								</TabsList>
+							</div>
+						</Tabs>
 						{history.isFetching && !history.isPending ? (
 							<LoaderCircleIcon
 								className="size-4 animate-spin text-muted-foreground"
@@ -134,34 +153,7 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 						) : null}
 					</div>
 
-					<Tabs
-						value={query.category}
-						onValueChange={(value) =>
-							patchQuery({
-								category: value as HistoryCategory,
-								type: undefined,
-							})
-						}
-					>
-						<div className="overflow-x-auto">
-							<TabsList variant="line" aria-label="Activity category">
-								{categoryTabs.map((tab) => (
-									<TabsTrigger
-										key={tab.value}
-										value={tab.value}
-										className="gap-2 px-2.5"
-									>
-										{tab.label}
-										<span className="rounded-full border px-1.5 text-[11px] leading-4 text-muted-foreground tabular-nums">
-											{history.data?.counts[tab.value] ?? 0}
-										</span>
-									</TabsTrigger>
-								))}
-							</TabsList>
-						</div>
-					</Tabs>
-
-					<div className="flex flex-col gap-3 border-t py-4 lg:flex-row lg:items-end">
+					<div className="flex flex-col gap-3 pt-6 pb-4 lg:flex-row lg:items-end">
 						<div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
 							<FilterSelect
 								label="Wallet bucket"
@@ -372,12 +364,17 @@ function HistoryTable({
 					const isCredit = item.amountMinor > 0;
 					const Icon = iconForType(item.type);
 					return (
-						<TableRow key={item.id} className="h-20">
+						<TableRow key={item.id} className="h-16">
 							<TableCell className="pl-6">
 								<div className="flex items-center gap-3">
-									<span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
-										<Icon className="size-4" />
-									</span>
+									<Icon
+										className={cn(
+											"size-4 shrink-0",
+											isCredit
+												? "text-emerald-600 dark:text-emerald-400"
+												: "text-muted-foreground",
+										)}
+									/>
 									<div className="min-w-0">
 										<p className="font-medium">
 											{transactionLabels[item.type]}
@@ -492,9 +489,9 @@ function HistorySkeleton() {
 			{[1, 2, 3, 4, 5].map((key) => (
 				<div
 					key={key}
-					className="flex h-20 items-center gap-3 border-b last:border-0"
+					className="flex h-16 items-center gap-3 border-b last:border-0"
 				>
-					<Skeleton className="size-9 rounded-xl" />
+					<Skeleton className="size-4" />
 					<div className="flex flex-1 flex-col gap-2">
 						<Skeleton className="h-3.5 w-32" />
 						<Skeleton className="h-3 w-20" />
