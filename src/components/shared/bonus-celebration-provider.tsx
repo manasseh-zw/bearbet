@@ -1,8 +1,7 @@
 "use client";
 
-import { Link } from "@tanstack/react-router";
 import { TrophyIcon } from "lucide-react";
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button, buttonVariants } from "#/components/ui/button";
 import {
@@ -19,17 +18,26 @@ import {
 	subscribeToBonusCompletions,
 } from "#/lib/bonus-events";
 
-import "./bonus-celebration.css";
+const celebrationColors = ["#ffdd00", "#fff6c2", "#d7a928", "#ffffff"];
 
-const confetti = Array.from({ length: 32 }, (_, index) => ({
-	id: index,
-	left: `${6 + ((index * 29) % 88)}%`,
-	delay: (index % 8) * 0.045,
-	duration: 1.15 + (index % 5) * 0.13,
-	drift: ((index * 17) % 90) - 45,
-	rotation: 130 + ((index * 47) % 280),
-	color: ["#ffdd00", "#fff6c2", "#d7a928", "#ffffff"][index % 4],
-}));
+async function launchCelebration() {
+	const { default: confetti } = await import("canvas-confetti");
+	const options = {
+		particleCount: 54,
+		spread: 68,
+		startVelocity: 42,
+		gravity: 0.9,
+		ticks: 180,
+		colors: celebrationColors,
+		disableForReducedMotion: true,
+		zIndex: 60,
+	};
+
+	await Promise.all([
+		confetti({ ...options, angle: 62, origin: { x: 0, y: 0.72 } }),
+		confetti({ ...options, angle: 118, origin: { x: 1, y: 0.72 } }),
+	]);
+}
 
 export function BonusCelebrationProvider() {
 	const [completion, setCompletion] = useState<BonusCompletionEvent | null>(
@@ -43,6 +51,7 @@ export function BonusCelebrationProvider() {
 				if (seenAwards.current.has(event.awardId)) return;
 				seenAwards.current.add(event.awardId);
 				setCompletion(event);
+				requestAnimationFrame(() => void launchCelebration());
 			}),
 		[],
 	);
@@ -61,29 +70,7 @@ export function BonusCelebrationProvider() {
 				if (!open) setCompletion(null);
 			}}
 		>
-			{completion ? (
-				<div className="bonus-confetti" aria-hidden="true">
-					{confetti.map((piece) => (
-						<span
-							key={`${completion.awardId}-${piece.id}`}
-							className="bonus-confetti__piece"
-							style={
-								{
-									"--confetti-left": piece.left,
-									"--confetti-color": piece.color,
-									"--confetti-delay": `${piece.delay}s`,
-									"--confetti-duration": `${piece.duration}s`,
-									"--confetti-drift": `${piece.drift}px`,
-									"--confetti-drift-end": `${piece.drift * -0.35}px`,
-									"--confetti-rotation": `${piece.rotation}deg`,
-									"--confetti-rotation-mid": `${piece.rotation * 0.55}deg`,
-								} as CSSProperties
-							}
-						/>
-					))}
-				</div>
-			) : null}
-			<DialogContent className="max-w-md text-center">
+			<DialogContent className="z-[70] max-w-md text-center">
 				<div className="mx-auto grid size-14 place-items-center rounded-full bg-primary text-primary-foreground">
 					<TrophyIcon className="size-7" />
 				</div>
@@ -100,11 +87,13 @@ export function BonusCelebrationProvider() {
 					<DialogClose render={<Button variant="ghost" />}>
 						Keep playing
 					</DialogClose>
-					<DialogClose
-						render={<Link to="/wallet" className={buttonVariants()} />}
+					<a
+						href="/wallet"
+						className={buttonVariants()}
+						onClick={() => setCompletion(null)}
 					>
 						View wallet
-					</DialogClose>
+					</a>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
