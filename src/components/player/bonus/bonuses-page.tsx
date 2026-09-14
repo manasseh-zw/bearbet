@@ -1,42 +1,32 @@
 "use client";
 
-import {
-	ArrowRightIcon,
-	Clock3Icon,
-	GiftIcon,
-	ShieldCheckIcon,
-	SparklesIcon,
-} from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
+import { Separator } from "#/components/ui/separator";
 
 const bonusOffers = [
 	{
 		name: "Bear Hug Welcome Bonus",
-		type: "Welcome offer",
 		image: "/images/bear_hug.png",
-		description: "Start with $100 in bonus funds and a simple 1× playthrough.",
-		details: ["$100 bonus", "1× wagering", "All games eligible"],
-		accent: "group-hover:border-amber-400/50",
+		amount: "$100 bonus",
+		wagering: "1× playthrough",
+		description: "Available to new BearBet players across the casino.",
 	},
 	{
 		name: "Honey Pot Reload",
-		type: "Top-up offer",
 		image: "/images/honey_pot.png",
-		description: "Add demo funds and receive a 20% bonus, up to $100.",
-		details: ["20% demo match", "2× wagering", "Slots eligible"],
-		accent: "group-hover:border-fuchsia-400/45",
+		amount: "20% match",
+		wagering: "2× playthrough",
+		description: "Add demo funds and receive up to $100 for eligible slots.",
 	},
 	{
 		name: "Lucky Paw Weekend",
-		type: "Weekend offer",
 		image: "/images/lucky_paw.png",
-		description:
-			"A $75 weekend bonus for a rotating selection of casino games.",
-		details: ["$75 bonus", "1× wagering", "Selected games"],
-		accent: "group-hover:border-emerald-400/45",
+		amount: "$75 bonus",
+		wagering: "1× playthrough",
+		description: "A weekend offer for a rotating selection of casino games.",
 	},
 ] as const;
 
@@ -45,113 +35,80 @@ export function BonusesPage() {
 		<main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
 			<section
 				aria-labelledby="bonus-hero-title"
-				className="relative isolate mb-10 min-h-[25rem] overflow-hidden rounded-3xl border bg-[#242421] sm:min-h-[22rem] lg:min-h-[25rem]"
+				className="grid min-h-[31rem] overflow-hidden rounded-2xl border bg-[#222220] md:min-h-0 md:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]"
 			>
-				<div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_45%,rgba(254,228,2,0.13),transparent_36%)]" />
-				<div className="relative z-10 flex max-w-2xl flex-col items-start px-6 pt-8 sm:px-10 sm:pt-10 lg:px-14 lg:py-14">
-					<Badge className="mb-5 gap-1.5 rounded-full px-3 py-1.5">
-						<SparklesIcon /> BearBet bonuses
-					</Badge>
+				<div className="relative min-h-64 overflow-hidden border-b md:min-h-[21rem] md:border-r md:border-b-0">
+					<img
+						src="/images/bonus_bear.png"
+						alt="BearBet bear holding playing cards"
+						className="pointer-events-none absolute bottom-[-7.75rem] left-1/2 w-[28rem] max-w-none -translate-x-1/2 select-none sm:bottom-[-9rem] sm:w-[34rem] md:bottom-[-10.5rem] md:w-[37rem]"
+					/>
+				</div>
+
+				<div className="flex flex-col justify-center px-6 py-8 sm:px-9 md:px-10 md:py-10 lg:px-12">
 					<h1
 						id="bonus-hero-title"
-						className="max-w-xl font-logo text-4xl leading-[0.95] text-balance sm:text-5xl lg:text-6xl"
+						className="max-w-md text-3xl leading-[1.05] font-semibold tracking-[-0.025em] text-balance sm:text-4xl lg:text-[2.75rem]"
 					>
-						A little extra luck goes a long way.
+						Your next bonus is closer than you think.
 					</h1>
-					<p className="mt-5 max-w-lg text-sm leading-6 text-muted-foreground sm:text-base">
-						Choose one offer, play eligible games, and turn the remaining bonus
-						into cash when you complete its wagering target.
+					<p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground sm:text-base">
+						Choose one offer and complete its playthrough to turn the remaining
+						bonus into demo cash.
 					</p>
 					<BonusCountdown />
 				</div>
-
-				<img
-					src="/images/bonus_bear.png"
-					alt="BearBet bear dressed for the casino"
-					className="pointer-events-none absolute -right-20 -bottom-20 z-0 w-[25rem] max-w-none select-none sm:-right-10 sm:-bottom-24 sm:w-[31rem] lg:-right-2 lg:-bottom-36 lg:w-[39rem]"
-				/>
 			</section>
 
-			<section aria-labelledby="live-bonuses-title">
-				<div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-					<div>
-						<p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
-							Pick your perk
-						</p>
-						<h2
-							id="live-bonuses-title"
-							className="mt-1 font-logo text-3xl sm:text-4xl"
-						>
-							Live bonus offers
-						</h2>
-					</div>
-					<p className="max-w-md text-sm text-muted-foreground sm:text-right">
-						You can keep one bonus active at a time. Activation is coming in the
-						next build.
-					</p>
-				</div>
+			<section aria-labelledby="live-bonuses-title" className="mt-10 sm:mt-12">
+				<h2
+					id="live-bonuses-title"
+					className="text-2xl font-semibold tracking-[-0.02em] sm:text-3xl"
+				>
+					Live bonus offers
+				</h2>
 
-				<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+				<div className="mt-5 grid gap-6 md:grid-cols-2 xl:grid-cols-3 xl:gap-7">
 					{bonusOffers.map((offer) => (
 						<article
 							key={offer.name}
-							className={`group overflow-hidden rounded-2xl border bg-card transition-[transform,border-color] duration-200 ease-out hover:-translate-y-1 motion-reduce:transform-none ${offer.accent}`}
+							className="group overflow-hidden rounded-2xl border bg-card transition-colors duration-200 hover:border-foreground/25"
 						>
+							<h3 className="sr-only">{offer.name}</h3>
 							<div className="aspect-3/2 overflow-hidden border-b bg-muted">
 								<img
 									src={offer.image}
-									alt=""
-									className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.025] motion-reduce:transform-none"
+									alt={`${offer.name} campaign artwork`}
+									className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.015] motion-reduce:transform-none"
 								/>
 							</div>
-							<div className="flex min-h-64 flex-col p-5 sm:p-6">
-								<Badge variant="secondary" className="mb-4 w-fit">
-									{offer.type}
-								</Badge>
-								<h3 className="font-logo text-2xl leading-none">
-									{offer.name}
-								</h3>
-								<p className="mt-3 text-sm leading-6 text-muted-foreground">
+
+							<div className="p-5 sm:p-6">
+								<p className="min-h-10 text-sm leading-5 text-muted-foreground">
 									{offer.description}
 								</p>
-								<ul
-									className="mt-4 flex flex-wrap gap-2"
-									aria-label="Offer details"
-								>
-									{offer.details.map((detail) => (
-										<li
-											key={detail}
-											className="rounded-full border bg-background/60 px-2.5 py-1 text-xs text-muted-foreground"
-										>
-											{detail}
-										</li>
-									))}
-								</ul>
-								<Button className="mt-auto w-full" disabled>
+								<Separator className="my-5" />
+								<dl className="grid grid-cols-2 gap-5">
+									<div>
+										<dt className="text-xs text-muted-foreground">Offer</dt>
+										<dd className="mt-1 text-sm font-medium">{offer.amount}</dd>
+									</div>
+									<div>
+										<dt className="text-xs text-muted-foreground">
+											Requirement
+										</dt>
+										<dd className="mt-1 text-sm font-medium">
+											{offer.wagering}
+										</dd>
+									</div>
+								</dl>
+								<Button className="mt-6" disabled>
 									Enter now <ArrowRightIcon />
 								</Button>
 							</div>
 						</article>
 					))}
 				</div>
-			</section>
-
-			<section className="mt-8 grid gap-3 border-t pt-6 text-sm text-muted-foreground sm:grid-cols-3">
-				<BonusNote
-					icon={GiftIcon}
-					title="Choose one"
-					text="Only one bonus can be active on your account."
-				/>
-				<BonusNote
-					icon={Clock3Icon}
-					title="Watch the clock"
-					text="Each offer has its own activation and expiry window."
-				/>
-				<BonusNote
-					icon={ShieldCheckIcon}
-					title="Virtual funds only"
-					text="BearBet bonuses and winnings have no cash value."
-				/>
 			</section>
 		</main>
 	);
@@ -171,18 +128,43 @@ function BonusCountdown() {
 		return () => window.clearInterval(timer);
 	}, []);
 
+	const units = remaining
+		? [
+				{ label: "days", value: remaining.days },
+				{ label: "hours", value: remaining.hours },
+				{ label: "mins", value: remaining.minutes },
+				{ label: "secs", value: remaining.seconds },
+			]
+		: null;
+
 	return (
-		<div className="mt-7 flex items-center gap-3 rounded-2xl border bg-background/35 px-4 py-3 backdrop-blur-sm">
-			<div className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-				<Clock3Icon className="size-4" />
+		<div className="mt-7 border-t pt-5">
+			<div className="flex items-center gap-2 text-xs text-muted-foreground">
+				<span className="size-1.5 rounded-full bg-primary" />
+				Next bonus drop
 			</div>
-			<div>
-				<p className="text-xs text-muted-foreground">Next bonus drop</p>
-				<p className="mt-0.5 font-medium tabular-nums" aria-live="polite">
-					{remaining
-						? `${remaining.days}d ${remaining.hours}h ${remaining.minutes}m ${remaining.seconds}s`
-						: "Calculating..."}
-				</p>
+			<div className="mt-3 flex items-start" aria-live="polite">
+				{units ? (
+					units.map((unit, index) => (
+						<div key={unit.label} className="flex items-start">
+							<div className="min-w-11">
+								<p className="text-xl font-semibold tabular-nums">
+									{String(unit.value).padStart(2, "0")}
+								</p>
+								<p className="mt-0.5 text-[0.6875rem] text-muted-foreground">
+									{unit.label}
+								</p>
+							</div>
+							{index < units.length - 1 ? (
+								<span className="mx-2 mt-0.5 text-muted-foreground/50">:</span>
+							) : null}
+						</div>
+					))
+				) : (
+					<p className="text-sm text-muted-foreground">
+						Calculating next drop...
+					</p>
+				)}
 			</div>
 		</div>
 	);
@@ -207,24 +189,4 @@ function timeUntilNextDrop(now: Date) {
 	const minutes = Math.floor(seconds / 60);
 	seconds %= 60;
 	return { days, hours, minutes, seconds };
-}
-
-function BonusNote({
-	icon: Icon,
-	title,
-	text,
-}: {
-	icon: typeof GiftIcon;
-	title: string;
-	text: string;
-}) {
-	return (
-		<div className="flex gap-3 py-2">
-			<Icon className="mt-0.5 size-4 shrink-0 text-primary" />
-			<div>
-				<p className="font-medium text-foreground">{title}</p>
-				<p className="mt-1 leading-5">{text}</p>
-			</div>
-		</div>
-	);
 }
