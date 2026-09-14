@@ -71,7 +71,16 @@ export async function getPlayerBonusOverview(
 			and(eq(bonusAward.playerId, playerId), eq(bonusAward.status, "active")),
 		);
 	if (active && active.expiresAt <= now) {
-		await settleBonusAward({ awardId: active.id, reason: "expire", now });
+		try {
+			await settleBonusAward({ awardId: active.id, reason: "expire", now });
+		} catch (error) {
+			if (
+				!(error instanceof BonusServiceError) ||
+				error.code !== "INVALID_TRANSITION"
+			) {
+				throw error;
+			}
+		}
 	}
 
 	const [definitions, awards] = await Promise.all([

@@ -6,6 +6,7 @@ import {
 	activateBonusAward,
 	BonusServiceError,
 	createBonusDefinition,
+	getPlayerBonusOverview,
 	settleBonusAward,
 } from "#/server/domains/bonus/bonus.service";
 import {
@@ -281,6 +282,11 @@ test("an expired award blocks new bonus stakes until its last bet settles", asyn
 	});
 	assert.equal(afterExpiry.balances.cashBalanceMinor, 19_000);
 	assert.equal(afterExpiry.balances.bonusBalanceMinor, 6_000);
+	const pendingOverview = await getPlayerBonusOverview(
+		playerId,
+		new Date("2030-04-02T01:30:00Z"),
+	);
+	assert.equal(pendingOverview.activeAward?.award.id, activated.award.id);
 
 	const settled = await recordWin({
 		...gameIdentity(playerId, "expiry-loss", "expiry-round"),
@@ -295,6 +301,11 @@ test("an expired award blocks new bonus stakes until its last bet settles", asyn
 		.from(bonusAward)
 		.where(eq(bonusAward.id, activated.award.id));
 	assert.equal(expired?.status, "expired");
+	const settledOverview = await getPlayerBonusOverview(
+		playerId,
+		new Date("2030-04-02T02:01:00Z"),
+	);
+	assert.equal(settledOverview.activeAward, null);
 });
 
 test("the deterministic simulator retries through production gameplay services", async (context) => {

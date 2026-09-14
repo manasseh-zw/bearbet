@@ -18,6 +18,7 @@ import {
 	activateBonusAward,
 	BonusServiceError,
 	createBonusDefinition,
+	getPlayerBonusOverview,
 	settleBonusAward,
 } from "./bonus.service";
 
@@ -305,4 +306,48 @@ test("expiry forfeits remaining bonus without crediting cash", async () => {
 	assert.equal(expired.award.status, "expired");
 	assert.equal(afterExpiry?.cashBalanceMinor, before?.cashBalanceMinor);
 	assert.equal(afterExpiry?.bonusBalanceMinor, 0);
+});
+
+test("bonus reads settle expiry once at the exact stored boundary", async () => {
+	const definition = await createBonusDefinition({
+		code: `read_expiry_${crypto.randomUUID().slice(0, 8)}`,
+		name: "Read expiry award",
+		type: "promotional",
+		amountMinor: 2_500,
+		wageringMultiplier: 2,
+		expiresAfterDays: 1,
+	});
+	definitionIds.push(definition.id);
+	const activated = await activateBonusAward({
+		playerId,
+		definitionId: definition.id,
+		idempotencyKey: `${playerId}:read-expiry-award`,
+		now: new Date("2031-01-01T00:00:00Z"),
+	});
+
+	const beforeBoundary = await getPlayerBonusOverview(
+		playerId,
+		new Date("2031-01-01T23:59:59.999Z"),
+	);
+	assert.equal(beforeBoundary.activeAward?.award.id, activated.award.id);
+
+	const atBoundary = await getPlayerBonusOverview(
+		playerId,
+		new Date("2031-01-02T00:00:00Z"),
+	);
+	assert.equal(atBoundary.activeAward, null);
+	const retry = await getPlayerBonusOverview(
+		playerId,
+		new Date("2031-01-02T00:00:01Z"),
+	);
+	assert.equal(retry.activeAward, null);
+
+	const forfeits = await db
+		.select()
+		.from(ledgerEntry)
+		.where(eq(ledgerEntry.sourceId, activated.award.id));
+	assert.equal(
+		forfeits.filter((entry) => entry.type === "bonus_forfeit").length,
+		1,
+	);
 });
