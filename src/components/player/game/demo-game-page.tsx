@@ -24,6 +24,7 @@ import {
 } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { emitBonusCompletion } from "#/lib/bonus-events";
 import { bonusQueries } from "#/lib/queries/bonus.queries";
 import { historyQueries } from "#/lib/queries/history.queries";
 import { walletQueries } from "#/lib/queries/wallet.queries";
@@ -57,7 +58,14 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 			stakeMinor: number;
 			idempotencyKey: string;
 		}) => playCurrentPlayerDemoGame({ data: input }),
-		onSuccess: async () => {
+		onSuccess: async (result) => {
+			if (result.bonusTransition?.status === "completed") {
+				emitBonusCompletion({
+					awardId: result.bonusTransition.awardId,
+					convertedAmountMinor: result.bonusTransition.convertedAmountMinor,
+					currencyCode: result.currencyCode,
+				});
+			}
 			await Promise.all([
 				queryClient.invalidateQueries({ queryKey: bonusQueries.all }),
 				queryClient.invalidateQueries({ queryKey: walletQueries.all }),

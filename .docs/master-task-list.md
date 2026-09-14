@@ -79,7 +79,7 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 
 - [x] **P19. Add player bonus reads and activation.** Authenticated reads return active definitions, claimed states, and the current award. Activation accepts only a definition and idempotency key; the server owns eligibility, deposit selection, award calculation, and wallet credit.
 - [x] **P20. Build the bonus page.** The responsive BearBet campaign page reads persisted Bear Hug, Honey Pot, and Lucky Paw offers. It explains terms before activation, locks competing offers, and shows active-award balance, wagering progress, expiry, loading, empty, error, and rejection states.
-- [ ] **P21. Verify the player bonus flow.** Start with a seeded or service-created offer. A player activates it, eligible bonus-funded bets advance progress, excluded bets do not, and completion converts once with ledger evidence. The administrator-created offer joins this proof in A05.
+- [x] **P21. Verify the player bonus flow.** A live player pass activated Bear Hug, advanced its `$100.00` target with eligible bonus-funded bets, completed it during settlement, converted the remaining `$220.00` once, and reconciled to the final wallet and ledger. Database tests cover excluded games, exact expiry, unsettled rounds, retry safety, and conversion. The administrator-created offer joins this proof in A05.
 
 ### 6. Account completion
 

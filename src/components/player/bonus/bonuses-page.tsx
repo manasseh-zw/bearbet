@@ -220,6 +220,16 @@ function BonusOfferCard({
 	const isActive = activeAward?.award.definitionId === offer.id;
 	const isLocked = Boolean(activeAward && !isActive);
 	const isUnavailable = isLocked || (offer.claimed && !isActive);
+	const outcomeLabel =
+		offer.latestAward?.status === "completed"
+			? "Bonus won"
+			: offer.latestAward?.status === "expired"
+				? "Expired"
+				: offer.latestAward?.status === "exhausted"
+					? "Bonus used"
+					: offer.latestAward?.status === "cancelled"
+						? "Ended"
+						: null;
 	const actionLabel = isActive
 		? "View progress"
 		: isLocked
@@ -230,13 +240,28 @@ function BonusOfferCard({
 	return (
 		<article
 			className={cn(
-				"group overflow-hidden rounded-2xl border-2 bg-card transition-[border-color,opacity,filter] duration-200",
+				"group relative overflow-hidden rounded-2xl border-2 bg-card transition-[border-color,opacity,filter] duration-200",
 				isActive
 					? "border-primary"
 					: "border-border hover:border-primary focus-within:border-primary",
-				isUnavailable && "opacity-55 grayscale-[0.65] hover:border-border",
+				isLocked && "opacity-55 grayscale-[0.65] hover:border-border",
+				outcomeLabel && "grayscale-[0.8] hover:border-border",
 			)}
 		>
+			{outcomeLabel ? (
+				<div className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-background/62 px-6 text-center supports-backdrop-filter:backdrop-blur-[1px]">
+					<p
+						className={cn(
+							"font-logo text-4xl leading-none uppercase sm:text-5xl",
+							offer.latestAward?.status === "completed"
+								? "text-primary"
+								: "text-foreground",
+						)}
+					>
+						{outcomeLabel}
+					</p>
+				</div>
+			) : null}
 			<h3 className="sr-only">{offer.name}</h3>
 			<div className="relative aspect-3/2 overflow-hidden border-b bg-muted">
 				<img

@@ -133,6 +133,7 @@ export async function playDemoGame(input: {
 		stakeMinor: input.stakeMinor,
 		netMinor: result.winAmountMinor - input.stakeMinor,
 		balanceMinor: settlement.balanceMinor,
+		bonusTransition: settlement.bonusTransition,
 		currencyCode: context.currencyCode,
 		isDuplicate: bet.isDuplicate && settlement.isDuplicate,
 	};

@@ -260,13 +260,16 @@ export async function recordWin(input: RecordWinInput) {
 			response: {},
 		});
 
-		const finalBalances = await finalizeAwardAfterOperation(
+		const finalization = await finalizeAwardAfterOperation(
 			transaction,
 			original.bonusAwardId,
 			input.now ?? new Date(),
 			walletResult.balances,
 		);
-		const response = responseFor(finalBalances);
+		const response = responseFor(
+			finalization.balances,
+			finalization.bonusTransition,
+		);
 		await transaction
 			.update(providerOperation)
 			.set({ response })
@@ -376,13 +379,16 @@ export async function recordRefund(input: RecordRefundInput) {
 			walletOperationId: walletResult.operationId,
 			response: {},
 		});
-		const finalBalances = await finalizeAwardAfterOperation(
+		const finalization = await finalizeAwardAfterOperation(
 			transaction,
 			original.bonusAwardId,
 			input.now ?? new Date(),
 			walletResult.balances,
 		);
-		const response = responseFor(finalBalances);
+		const response = responseFor(
+			finalization.balances,
+			finalization.bonusTransition,
+		);
 		await transaction
 			.update(providerOperation)
 			.set({ response })
@@ -610,23 +616,34 @@ async function finalizeAwardAfterOperation(
 	now: Date,
 	fallback: WalletBalances,
 ) {
-	if (!awardId) return fallback;
+	if (!awardId) return { balances: fallback, bonusTransition: null };
 	const unsettledOperationCount = await countUnsettledAwardBets(
 		transaction,
 		awardId,
 	);
-	if (unsettledOperationCount > 0) return fallback;
+	if (unsettledOperationCount > 0)
+		return { balances: fallback, bonusTransition: null };
 	const award = await lockAward(transaction, awardId);
-	if (!award || award.status !== "active") return fallback;
+	if (!award || award.status !== "active")
+		return { balances: fallback, bonusTransition: null };
 	const result = await settleBonusAwardInTransaction(transaction, {
 		awardId,
 		reason: now >= award.expiresAt ? "expire" : "evaluate",
 		unsettledOperationCount,
 		now,
 	});
-	if (result.award.status === "active") return fallback;
+	if (result.award.status === "active")
+		return { balances: fallback, bonusTransition: null };
 	const finalWallet = await lockWallet(transaction, award.playerId);
-	return walletBalances(finalWallet);
+	return {
+		balances: walletBalances(finalWallet),
+		bonusTransition: {
+			awardId: award.id,
+			status: result.award.status,
+			convertedAmountMinor:
+				result.award.status === "completed" ? award.bonusBalanceMinor : 0,
+		},
+	};
 }
 
 async function markRoundSettled(
@@ -757,8 +774,15 @@ function walletBalances(
 	};
 }
 
-function responseFor(balances: WalletBalances) {
-	return { balances, balanceMinor: playableBalance(balances) };
+function responseFor(
+	balances: WalletBalances,
+	bonusTransition: {
+		awardId: string;
+		status: "completed" | "exhausted" | "expired" | "cancelled";
+		convertedAmountMinor: number;
+	} | null = null,
+) {
+	return { balances, balanceMinor: playableBalance(balances), bonusTransition };
 }
 
 function callbackFingerprint(

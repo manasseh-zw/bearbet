@@ -98,11 +98,18 @@ export async function getPlayerBonusOverview(
 	const claimedDefinitionIds = new Set(
 		awards.map(({ award }) => award.definitionId),
 	);
+	const latestAwards = new Map<string, (typeof awards)[number]["award"]>();
+	for (const { award } of awards) {
+		if (!latestAwards.has(award.definitionId)) {
+			latestAwards.set(award.definitionId, award);
+		}
+	}
 	const current = awards.find(({ award }) => award.status === "active") ?? null;
 	return {
 		definitions: definitions.map((definition) => ({
 			...definition,
 			claimed: claimedDefinitionIds.has(definition.id),
+			latestAward: latestAwards.get(definition.id) ?? null,
 		})),
 		activeAward: current,
 	};

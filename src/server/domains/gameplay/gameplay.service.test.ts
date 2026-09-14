@@ -119,6 +119,11 @@ test("mixed bonus gameplay completes once and a later win refund debits converte
 		bonusBalanceMinor: 0,
 		reservedCashMinor: 0,
 	});
+	assert.deepEqual(win.bonusTransition, {
+		awardId: activated.award.id,
+		status: "completed",
+		convertedAmountMinor: 20_833,
+	});
 	const [completed] = await db
 		.select()
 		.from(bonusAward)
@@ -133,6 +138,7 @@ test("mixed bonus gameplay completes once and a later win refund debits converte
 	});
 	assert.equal(winRetry.isDuplicate, true);
 	assert.equal(winRetry.balanceMinor, 123_000);
+	assert.deepEqual(winRetry.bonusTransition, win.bonusTransition);
 
 	const refund = await recordRefund({
 		...identity,

@@ -85,7 +85,7 @@ This stage delivers tasks P11 through P18.
 
 The Bonuses route has a responsive promotional hero, recurring drop countdown, and persisted Bear Hug, Honey Pot, and Lucky Paw offers using the supplied BearBet artwork. Authenticated server functions return definitions and the current award and activate one offer at a time. The page explains the rules before activation, locks competing offers, and discloses the active award's balance, completed and remaining wagering, percentage, and expiry. Deposit-match activation selects the latest unused qualifying demo top-up on the server.
 
-The fixture game player should make bonus behavior visible. Eligible bonus-funded bets advance progress. Excluded bets use cash and leave progress unchanged. Completion converts the remaining bonus once and transaction history explains the conversion.
+The fixture game player makes bonus behavior visible. Eligible bonus-funded bets advance progress. Excluded bets use cash and leave progress unchanged. Completion converts the remaining bonus once, returns that transition to the player, and opens a dismissible completion celebration with a wallet link. Transaction history explains the conversion, while completed and expired offer cards retain their outcome.
 
 Checkpoint:
 
