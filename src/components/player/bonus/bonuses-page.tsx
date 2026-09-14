@@ -35,20 +35,20 @@ export function BonusesPage() {
 		<main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
 			<section
 				aria-labelledby="bonus-hero-title"
-				className="grid min-h-[31rem] overflow-hidden rounded-2xl border bg-[#222220] md:my-8 md:min-h-0 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:overflow-visible"
+				className="mt-4 grid min-h-[31rem] overflow-visible rounded-2xl border bg-[#222220] md:my-8 md:min-h-0 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
 			>
-				<div className="relative min-h-64 border-b md:min-h-[21rem] md:border-r md:border-b-0">
+				<div className="relative min-h-48 border-b md:min-h-[21rem] md:border-r md:border-b-0">
 					<img
 						src="/images/bonus_bear.png"
 						alt="BearBet bear holding playing cards"
-						className="pointer-events-none absolute inset-0 size-full object-contain p-4 select-none sm:p-5 md:inset-auto md:bottom-[-2rem] md:left-1/2 md:z-10 md:h-[25rem] md:w-auto md:max-w-none md:-translate-x-1/2 md:p-0"
+						className="pointer-events-none absolute top-[-2rem] left-[62%] z-10 h-[19rem] w-auto max-w-none -translate-x-1/2 select-none md:top-auto md:bottom-[-2rem] md:left-1/2 md:h-[25rem]"
 					/>
 				</div>
 
-				<div className="flex flex-col justify-center px-6 py-8 sm:px-9 md:px-10 md:py-10 lg:px-12">
+				<div className="relative z-20 flex flex-col justify-center px-6 py-8 sm:px-9 md:px-10 md:py-10 lg:px-12">
 					<h1
 						id="bonus-hero-title"
-						className="max-w-lg font-logo text-3xl leading-[0.98] text-balance sm:text-4xl lg:text-[2.75rem]"
+						className="max-w-56 font-logo text-3xl leading-[0.98] text-balance sm:max-w-lg sm:text-4xl lg:text-[2.75rem]"
 					>
 						Your next <span className="text-primary">bonus</span> is closer than
 						you think.
