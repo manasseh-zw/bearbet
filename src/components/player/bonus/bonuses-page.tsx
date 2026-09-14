@@ -35,13 +35,13 @@ export function BonusesPage() {
 		<main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
 			<section
 				aria-labelledby="bonus-hero-title"
-				className="grid min-h-[31rem] overflow-hidden rounded-2xl border bg-[#222220] md:min-h-0 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
+				className="grid min-h-[31rem] overflow-hidden rounded-2xl border bg-[#222220] md:my-8 md:min-h-0 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:overflow-visible"
 			>
-				<div className="relative min-h-64 overflow-hidden border-b md:min-h-[21rem] md:border-r md:border-b-0">
+				<div className="relative min-h-64 border-b md:min-h-[21rem] md:border-r md:border-b-0">
 					<img
 						src="/images/bonus_bear.png"
 						alt="BearBet bear holding playing cards"
-						className="pointer-events-none absolute inset-0 size-full object-contain p-4 select-none sm:p-5 md:p-6"
+						className="pointer-events-none absolute inset-0 size-full object-contain p-4 select-none sm:p-5 md:inset-auto md:bottom-[-2rem] md:left-1/2 md:z-10 md:h-[25rem] md:w-auto md:max-w-none md:-translate-x-1/2 md:p-0"
 					/>
 				</div>
 
