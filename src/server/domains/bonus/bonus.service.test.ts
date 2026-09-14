@@ -191,29 +191,22 @@ test("deposit awards verify persisted top-ups and completed awards convert once"
 		name: "Deposit award",
 		type: "deposit",
 		amountMinor: 10_000,
+		matchPercentageBps: 2_000,
+		maximumAwardMinor: 10_000,
 		wageringMultiplier: 5,
 		expiresAfterDays: 7,
 		minimumDepositMinor: 50_000,
 	});
 	definitionIds.push(definition.id);
 
-	await assert.rejects(
-		activateBonusAward({
-			playerId,
-			definitionId: definition.id,
-			idempotencyKey: `${playerId}:missing-deposit`,
-		}),
-		(error) =>
-			error instanceof BonusServiceError &&
-			error.code === "DEPOSIT_NOT_ELIGIBLE",
-	);
 	const activated = await activateBonusAward({
 		playerId,
 		definitionId: definition.id,
 		idempotencyKey: `${playerId}:deposit-award`,
-		qualifyingDepositOperationId: topUp.operationId,
 		now: new Date("2030-02-01T00:00:00Z"),
 	});
+	assert.equal(activated.award.qualifyingDepositOperationId, topUp.operationId);
+	assert.equal(activated.award.awardedAmountMinor, 10_000);
 
 	await db
 		.update(bonusAward)

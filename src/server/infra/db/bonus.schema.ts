@@ -41,6 +41,7 @@ export const bonusDefinition = pgTable(
 		description: text("description"),
 		type: bonusDefinitionType("type").notNull(),
 		amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
+		matchPercentageBps: integer("match_percentage_bps"),
 		wageringMultiplier: integer("wagering_multiplier").notNull(),
 		expiresAfterDays: integer("expires_after_days").notNull(),
 		minimumDepositMinor: bigint("minimum_deposit_minor", {
@@ -71,6 +72,10 @@ export const bonusDefinition = pgTable(
 	(table) => [
 		uniqueIndex("bonus_definition_code_unique").on(table.code),
 		check("bonus_definition_amount_positive", sql`${table.amountMinor} > 0`),
+		check(
+			"bonus_definition_match_percentage_valid",
+			sql`${table.matchPercentageBps} IS NULL OR (${table.matchPercentageBps} > 0 AND ${table.matchPercentageBps} <= 10000)`,
+		),
 		check(
 			"bonus_definition_multiplier_positive",
 			sql`${table.wageringMultiplier} > 0`,

@@ -24,6 +24,7 @@ import {
 } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { bonusQueries } from "#/lib/queries/bonus.queries";
 import { historyQueries } from "#/lib/queries/history.queries";
 import { walletQueries } from "#/lib/queries/wallet.queries";
 import { cn } from "#/lib/utils";
@@ -58,6 +59,7 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 		}) => playCurrentPlayerDemoGame({ data: input }),
 		onSuccess: async () => {
 			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: bonusQueries.all }),
 				queryClient.invalidateQueries({ queryKey: walletQueries.all }),
 				queryClient.invalidateQueries({ queryKey: historyQueries.all }),
 			]);
@@ -72,6 +74,7 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 		onSuccess: async (result) => {
 			setSummary(result);
 			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: bonusQueries.all }),
 				queryClient.invalidateQueries({ queryKey: walletQueries.all }),
 				queryClient.invalidateQueries({ queryKey: historyQueries.all }),
 			]);

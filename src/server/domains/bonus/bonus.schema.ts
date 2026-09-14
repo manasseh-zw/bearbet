@@ -34,6 +34,7 @@ export const createBonusDefinitionSchema = z
 			.transform((value) => value?.trim() || undefined),
 		type: z.enum(bonusDefinitionType.enumValues),
 		amountMinor: positiveSafeIntegerSchema,
+		matchPercentageBps: z.number().int().positive().max(10_000).optional(),
 		wageringMultiplier: positiveSafeIntegerSchema,
 		expiresAfterDays: positiveSafeIntegerSchema,
 		minimumDepositMinor: safeIntegerSchema
@@ -47,6 +48,13 @@ export const createBonusDefinitionSchema = z
 		eligibleProviders: optionalRuleListSchema,
 	})
 	.superRefine((input, context) => {
+		if (input.matchPercentageBps && input.type !== "deposit") {
+			context.addIssue({
+				code: "custom",
+				path: ["matchPercentageBps"],
+				message: "Only deposit bonuses can use a match percentage",
+			});
+		}
 		const requiredWager =
 			BigInt(input.amountMinor) * BigInt(input.wageringMultiplier);
 		if (requiredWager > BigInt(Number.MAX_SAFE_INTEGER)) {

@@ -37,6 +37,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "#/components/ui/table";
+import { bonusQueries } from "#/lib/queries/bonus.queries";
 import { walletQueries } from "#/lib/queries/wallet.queries";
 import {
 	DEMO_TOP_UP_AMOUNTS_MINOR,
@@ -88,7 +89,10 @@ export function WalletPage() {
 				title: "Demo funds added",
 				description: `${formatMinorUnits(input.amountMinor, money)} added to your wallet.`,
 			});
-			await queryClient.invalidateQueries({ queryKey: walletQueries.all });
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: bonusQueries.all }),
+				queryClient.invalidateQueries({ queryKey: walletQueries.all }),
+			]);
 		},
 		onSettled: () => {
 			topUpKey.current = null;

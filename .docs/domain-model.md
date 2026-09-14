@@ -202,6 +202,8 @@ admin user ──< admin audit entries
 - Refunds restore the original stake buckets and reverse the matching wagering contribution while an award is active. After conversion they use cash without reopening the award. After forfeiture they do not recreate or remove bonus funds.
 - Completed awards convert remaining bonus funds to cash once. Expired or cancelled awards forfeit the remainder. Empty awards become exhausted.
 - One player may have one active bonus award in the MVP.
+- Deposit-match bonuses calculate the award from the latest unused qualifying demo top-up, cap it at the definition maximum, and store the match percentage in basis points. The browser cannot choose the qualifying wallet operation or award amount.
+- Players cannot cancel an active bonus in the MVP. Completion converts the remaining bonus balance, while expiry forfeits it.
 - Playable and provider-reported balance is cash plus bonus. Reserved cash is excluded.
 - Withdrawals reserve cash on request, consume the reserve on approval, and release it on rejection.
 - Wallet currency is immutable. The MVP accepts USD, ZAR, and GBP and performs no conversion.

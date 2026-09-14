@@ -1,6 +1,6 @@
 import "@tanstack/react-start/server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 
 import {
 	calculateRequiredWager,
@@ -58,6 +58,45 @@ export async function createBonusDefinition(input: CreateBonusDefinitionInput) {
 		);
 	}
 	return definition;
+}
+
+export async function getPlayerBonusOverview(
+	playerId: string,
+	now = new Date(),
+) {
+	const [active] = await db
+		.select({ id: bonusAward.id, expiresAt: bonusAward.expiresAt })
+		.from(bonusAward)
+		.where(
+			and(eq(bonusAward.playerId, playerId), eq(bonusAward.status, "active")),
+		);
+	if (active && active.expiresAt <= now) {
+		await settleBonusAward({ awardId: active.id, reason: "expire", now });
+	}
+
+	const [definitions, awards] = await Promise.all([
+		db.select().from(bonusDefinition).where(eq(bonusDefinition.isActive, true)),
+		db
+			.select({ award: bonusAward, definition: bonusDefinition })
+			.from(bonusAward)
+			.innerJoin(
+				bonusDefinition,
+				eq(bonusAward.definitionId, bonusDefinition.id),
+			)
+			.where(eq(bonusAward.playerId, playerId))
+			.orderBy(desc(bonusAward.activatedAt)),
+	]);
+	const claimedDefinitionIds = new Set(
+		awards.map(({ award }) => award.definitionId),
+	);
+	const current = awards.find(({ award }) => award.status === "active") ?? null;
+	return {
+		definitions: definitions.map((definition) => ({
+			...definition,
+			claimed: claimedDefinitionIds.has(definition.id),
+		})),
+		activeAward: current,
+	};
 }
 
 export async function activateBonusAward(input: {
@@ -145,13 +184,30 @@ export async function activateBonusAward(input: {
 			);
 		}
 
-		await validateQualifyingDeposit(transaction, definition, input);
+		const qualifyingDeposit = await resolveQualifyingDeposit(
+			transaction,
+			definition,
+			input,
+		);
 
 		const now = input.now ?? new Date();
+		const calculatedAmountMinor = definition.matchPercentageBps
+			? Math.floor(
+					((qualifyingDeposit?.amountMinor ?? 0) *
+						definition.matchPercentageBps) /
+						10_000,
+				)
+			: definition.amountMinor;
 		const amountMinor = Math.min(
-			definition.amountMinor,
-			definition.maximumAwardMinor ?? definition.amountMinor,
+			calculatedAmountMinor,
+			definition.maximumAwardMinor ?? calculatedAmountMinor,
 		);
+		if (amountMinor <= 0) {
+			throw new BonusServiceError(
+				"Qualifying top-up does not produce a bonus award",
+				"DEPOSIT_NOT_ELIGIBLE",
+			);
+		}
 		const expiresAt = new Date(now);
 		expiresAt.setUTCDate(expiresAt.getUTCDate() + definition.expiresAfterDays);
 
@@ -160,7 +216,7 @@ export async function activateBonusAward(input: {
 			.values({
 				definitionId: definition.id,
 				playerId: input.playerId,
-				qualifyingDepositOperationId: input.qualifyingDepositOperationId,
+				qualifyingDepositOperationId: qualifyingDeposit?.operationId,
 				awardedAmountMinor: amountMinor,
 				bonusBalanceMinor: amountMinor,
 				requiredWagerMinor: calculateRequiredWager(
@@ -331,7 +387,7 @@ export async function settleBonusAwardInTransaction(
 	return { award: updated, isDuplicate: false };
 }
 
-async function validateQualifyingDeposit(
+async function resolveQualifyingDeposit(
 	transaction: DatabaseTransaction,
 	definition: typeof bonusDefinition.$inferSelect,
 	input: {
@@ -339,22 +395,35 @@ async function validateQualifyingDeposit(
 		qualifyingDepositOperationId?: string;
 	},
 ) {
-	if (definition.type !== "deposit") return;
-	if (!input.qualifyingDepositOperationId) {
-		throw new BonusServiceError(
-			"Deposit bonus needs a qualifying top-up",
-			"DEPOSIT_NOT_ELIGIBLE",
-		);
-	}
-
-	const [deposit] = await transaction
+	if (definition.type !== "deposit") return null;
+	const deposits = await transaction
 		.select({
 			operation: walletOperation,
 			walletPlayerId: wallet.playerId,
+			amountMinor: ledgerEntry.amountMinor,
 		})
 		.from(walletOperation)
 		.innerJoin(wallet, eq(walletOperation.walletId, wallet.id))
-		.where(eq(walletOperation.id, input.qualifyingDepositOperationId));
+		.innerJoin(ledgerEntry, eq(ledgerEntry.operationId, walletOperation.id))
+		.leftJoin(
+			bonusAward,
+			eq(bonusAward.qualifyingDepositOperationId, walletOperation.id),
+		)
+		.where(
+			and(
+				eq(walletOperation.type, "demo_top_up"),
+				eq(wallet.playerId, input.playerId),
+				isNull(bonusAward.id),
+				...(input.qualifyingDepositOperationId
+					? [eq(walletOperation.id, input.qualifyingDepositOperationId)]
+					: []),
+			),
+		)
+		.orderBy(desc(walletOperation.createdAt));
+	const deposit = deposits.find(
+		(candidate) =>
+			candidate.amountMinor >= (definition.minimumDepositMinor ?? 0),
+	);
 	if (
 		!deposit ||
 		deposit.operation.type !== "demo_top_up" ||
@@ -365,36 +434,10 @@ async function validateQualifyingDeposit(
 			"DEPOSIT_NOT_ELIGIBLE",
 		);
 	}
-	const [usedDeposit] = await transaction
-		.select({ id: bonusAward.id })
-		.from(bonusAward)
-		.where(
-			eq(
-				bonusAward.qualifyingDepositOperationId,
-				input.qualifyingDepositOperationId,
-			),
-		);
-	if (usedDeposit) {
-		throw new BonusServiceError(
-			"Top-up has already funded another bonus",
-			"DEPOSIT_NOT_ELIGIBLE",
-		);
-	}
-
-	const depositEntries = await transaction
-		.select({ amountMinor: ledgerEntry.amountMinor })
-		.from(ledgerEntry)
-		.where(eq(ledgerEntry.operationId, deposit.operation.id));
-	const depositedMinor = depositEntries.reduce(
-		(total, entry) => total + Math.max(0, entry.amountMinor),
-		0,
-	);
-	if (depositedMinor < (definition.minimumDepositMinor ?? 0)) {
-		throw new BonusServiceError(
-			"Top-up is below the bonus minimum",
-			"DEPOSIT_NOT_ELIGIBLE",
-		);
-	}
+	return {
+		operationId: deposit.operation.id,
+		amountMinor: deposit.amountMinor,
+	};
 }
 
 function parseBonusDefinition(
