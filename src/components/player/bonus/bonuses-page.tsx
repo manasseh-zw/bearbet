@@ -35,20 +35,20 @@ export function BonusesPage() {
 		<main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
 			<section
 				aria-labelledby="bonus-hero-title"
-				className="grid min-h-[31rem] overflow-hidden rounded-2xl border bg-[#222220] md:min-h-0 md:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]"
+				className="grid min-h-[31rem] overflow-hidden rounded-2xl border bg-[#222220] md:min-h-0 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
 			>
 				<div className="relative min-h-64 overflow-hidden border-b md:min-h-[21rem] md:border-r md:border-b-0">
 					<img
 						src="/images/bonus_bear.png"
 						alt="BearBet bear holding playing cards"
-						className="pointer-events-none absolute bottom-[-7.75rem] left-1/2 w-[28rem] max-w-none -translate-x-1/2 select-none sm:bottom-[-9rem] sm:w-[34rem] md:bottom-[-10.5rem] md:w-[37rem]"
+						className="pointer-events-none absolute inset-0 size-full object-contain p-4 select-none sm:p-5 md:p-6"
 					/>
 				</div>
 
 				<div className="flex flex-col justify-center px-6 py-8 sm:px-9 md:px-10 md:py-10 lg:px-12">
 					<h1
 						id="bonus-hero-title"
-						className="max-w-md text-3xl leading-[1.05] font-semibold tracking-[-0.025em] text-balance sm:text-4xl lg:text-[2.75rem]"
+						className="max-w-lg font-logo text-3xl leading-[0.98] text-balance sm:text-4xl lg:text-[2.75rem]"
 					>
 						Your next bonus is closer than you think.
 					</h1>
@@ -63,7 +63,7 @@ export function BonusesPage() {
 			<section aria-labelledby="live-bonuses-title" className="mt-10 sm:mt-12">
 				<h2
 					id="live-bonuses-title"
-					className="text-2xl font-semibold tracking-[-0.02em] sm:text-3xl"
+					className="font-logo text-3xl leading-none sm:text-4xl"
 				>
 					Live bonus offers
 				</h2>
@@ -72,7 +72,7 @@ export function BonusesPage() {
 					{bonusOffers.map((offer) => (
 						<article
 							key={offer.name}
-							className="group overflow-hidden rounded-2xl border bg-card transition-colors duration-200 hover:border-foreground/25"
+							className="group overflow-hidden rounded-2xl border-2 border-border bg-card transition-colors duration-200 hover:border-primary focus-within:border-primary"
 						>
 							<h3 className="sr-only">{offer.name}</h3>
 							<div className="aspect-3/2 overflow-hidden border-b bg-muted">
@@ -148,7 +148,7 @@ function BonusCountdown() {
 					units.map((unit, index) => (
 						<div key={unit.label} className="flex items-start">
 							<div className="min-w-11">
-								<p className="text-xl font-semibold tabular-nums">
+								<p className="font-logo text-2xl leading-none tabular-nums">
 									{String(unit.value).padStart(2, "0")}
 								</p>
 								<p className="mt-0.5 text-[0.6875rem] text-muted-foreground">
