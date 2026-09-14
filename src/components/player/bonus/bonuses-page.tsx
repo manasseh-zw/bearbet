@@ -50,7 +50,8 @@ export function BonusesPage() {
 						id="bonus-hero-title"
 						className="max-w-lg font-logo text-3xl leading-[0.98] text-balance sm:text-4xl lg:text-[2.75rem]"
 					>
-						Your next bonus is closer than you think.
+						Your next <span className="text-primary">bonus</span> is closer than
+						you think.
 					</h1>
 					<p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground sm:text-base">
 						Choose one offer and complete its playthrough to turn the remaining
@@ -63,7 +64,7 @@ export function BonusesPage() {
 			<section aria-labelledby="live-bonuses-title" className="mt-10 sm:mt-12">
 				<h2
 					id="live-bonuses-title"
-					className="font-logo text-3xl leading-none sm:text-4xl"
+					className="font-sans text-3xl leading-none font-bold tracking-tight sm:text-4xl"
 				>
 					Live bonus offers
 				</h2>
