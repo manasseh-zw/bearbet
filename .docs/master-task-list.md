@@ -104,6 +104,12 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 - [ ] **D03. Prove a provider-originated money movement.** Authenticate, synchronize the catalogue, launch a supported game, identify the Bearbet player, receive a bet and settlement, and update the persistent wallet and history.
 - [ ] **D04. Resolve approved agent access.** `BLOCKED` until the required Drakon credentials arrive. This blocks only live proof, not the simulator-backed MVP.
 
+### 8a. BigBang sandbox proof
+
+- [x] **B01. Prove a BigBang sandbox launch.** Catalogue, player creation, signed non-demo session, and playable iframe were verified on 2026-09-17. The throwaway `/bigbang-sandbox` route provides a repeatable demo launch check.
+- [~] **B02. Add BigBang seamless-wallet callback boundary.** Build and test HMAC validation, balance reads, retry-safe responses, and sandbox synthetic-balance behavior. Do not alter BearBet funds for `sandbox: true` callbacks.
+- [ ] **B03. Resolve BigBang financial event mapping.** Standard games report net rounds; the current engine requires separate bet, win, and refund evidence. Requires a compatible live provider contract or provider guidance.
+
 ### 9. Release and handover
 
 - [ ] **R01. Add repeatable seed and reset commands.** Create known player, administrator, wallet, bonus, and fixture catalogue state. Document reviewer credentials and reset behavior.

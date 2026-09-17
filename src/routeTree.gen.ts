@@ -15,6 +15,7 @@ import { Route as GuestRouteRouteImport } from './routes/_guest/route'
 import { Route as AdminAdminRouteImport } from './routes/_admin/admin'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppPlayerRouteRouteImport } from './routes/_app/_player/route'
+import { Route as AppBigbangSandboxRouteImport } from './routes/_app/bigbang-sandbox'
 import { Route as AppPromotionsRouteImport } from './routes/_app/promotions'
 import { Route as AppVipRouteImport } from './routes/_app/vip'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
@@ -51,6 +52,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 } as any)
 const AppPlayerRouteRoute = AppPlayerRouteRouteImport.update({
   id: '/_player',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppBigbangSandboxRoute = AppBigbangSandboxRouteImport.update({
+  id: '/bigbang-sandbox',
+  path: '/bigbang-sandbox',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppPromotionsRoute = AppPromotionsRouteImport.update({
@@ -112,6 +118,7 @@ const AppPlayerGamesGameIdRoute = AppPlayerGamesGameIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/admin': typeof AdminAdminRoute
+  '/bigbang-sandbox': typeof AppBigbangSandboxRoute
   '/promotions': typeof AppPromotionsRoute
   '/vip': typeof AppVipRoute
   '/login': typeof GuestLoginRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/admin': typeof AdminAdminRoute
+  '/bigbang-sandbox': typeof AppBigbangSandboxRoute
   '/promotions': typeof AppPromotionsRoute
   '/vip': typeof AppVipRoute
   '/login': typeof GuestLoginRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/_guest': typeof GuestRouteRouteWithChildren
   '/_app/_player': typeof AppPlayerRouteRouteWithChildren
   '/_admin/admin': typeof AdminAdminRoute
+  '/_app/bigbang-sandbox': typeof AppBigbangSandboxRoute
   '/_app/promotions': typeof AppPromotionsRoute
   '/_app/vip': typeof AppVipRoute
   '/_guest/login': typeof GuestLoginRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/bigbang-sandbox'
     | '/promotions'
     | '/vip'
     | '/login'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/bigbang-sandbox'
     | '/promotions'
     | '/vip'
     | '/login'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/_guest'
     | '/_app/_player'
     | '/_admin/admin'
+    | '/_app/bigbang-sandbox'
     | '/_app/promotions'
     | '/_app/vip'
     | '/_guest/login'
@@ -261,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppPlayerRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/bigbang-sandbox': {
+      id: '/_app/bigbang-sandbox'
+      path: '/bigbang-sandbox'
+      fullPath: '/bigbang-sandbox'
+      preLoaderRoute: typeof AppBigbangSandboxRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/promotions': {
@@ -377,6 +396,7 @@ const AppPlayerRouteRouteWithChildren = AppPlayerRouteRoute._addFileChildren(
 
 interface AppRouteRouteChildren {
   AppPlayerRouteRoute: typeof AppPlayerRouteRouteWithChildren
+  AppBigbangSandboxRoute: typeof AppBigbangSandboxRoute
   AppPromotionsRoute: typeof AppPromotionsRoute
   AppVipRoute: typeof AppVipRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -384,6 +404,7 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppPlayerRouteRoute: AppPlayerRouteRouteWithChildren,
+  AppBigbangSandboxRoute: AppBigbangSandboxRoute,
   AppPromotionsRoute: AppPromotionsRoute,
   AppVipRoute: AppVipRoute,
   AppIndexRoute: AppIndexRoute,
@@ -417,12 +438,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
