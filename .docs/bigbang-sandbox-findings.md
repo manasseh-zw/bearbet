@@ -73,6 +73,43 @@ On 2026-09-18, BearBet repeated the sandbox test with an append-only receiver ca
 
 This contradicts the dashboard statement that sandbox wallet callbacks fire with `sandbox: true`. The tested sandbox session used BigBang's managed synthetic wallet even though Wallet RGS URLs were saved. Treat sandbox Wallet RGS support as a provider-side blocker until BigBang fixes or explains the account configuration. Do not redesign BearBet's money engine around the documented callback shape without provider-originated evidence.
 
+## Hybrid submission plan
+
+The submission should present two complementary paths rather than pretending the
+BigBang sandbox is BearBet's authoritative wallet:
+
+1. The fixture simulator remains the canonical BearBet wallet demonstration. It
+   exercises the real gameplay service, wallet policy, immutable ledger, round
+   history, bonus rules, retries, and insufficient-funds behavior. Its outcomes
+   are fully reconcilable because BearBet owns every movement.
+2. BigBang remains the playable provider demonstration. It supplies a genuine
+   catalogue, signed game session, and provider-managed virtual balance. The UI
+   must label this path as a provider sandbox and must not claim that each spin
+   produced a BearBet ledger operation.
+
+The provider balance update can still make the hybrid experience more realistic,
+but only as an explicit session-level reconciliation:
+
+- At launch, create an authenticated BearBet-to-BigBang player mapping and store
+  the provider balance snapshot for that session.
+- At an explicit session close/reconcile action, fetch the same provider
+  player's current balance and calculate `netDelta = final - initial`.
+- If the sandbox reconciliation feature is enabled, apply only that delta to a
+  dedicated, idempotent BearBet reconciliation operation. Never copy the
+  provider's absolute `100000.00` synthetic balance into the BearBet wallet.
+- Show the delta as a session summary and label it asynchronous. It is not a
+  per-round bet/win history and cannot prove real-time insufficient-funds
+  enforcement.
+- If a session is abandoned or the final balance cannot be fetched, leave the
+  reconciliation pending rather than guessing.
+
+This bridge is safe only behind an authenticated player session, an explicit
+sandbox flag, a stored baseline, and a unique reconciliation key. The current
+public throwaway launcher intentionally has none of those properties, so it
+must not mutate BearBet balances. Until that authenticated flow is implemented,
+the fixture simulator is the wallet source of truth and BigBang is the gameplay
+source of truth.
+
 ## Remaining integration work
 
 Bearbet now exposes separate `user_data` and `balance_change` routes. The balance-change boundary limits request size, validates the documented HMAC, parses signed decimal amounts into integer minor units, and rejects live money changes until the financial mapping is complete. Sandbox callbacks return the synthetic balance without touching Bearbet funds. A public ngrok probe confirmed both routes return successful responses, but a provider-originated callback still needs to be captured.
