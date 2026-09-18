@@ -30,6 +30,7 @@ import { Route as ApiBigbangUserDataRouteImport } from './routes/api/bigbang/use
 import { Route as ApiBigbangWebhookRouteImport } from './routes/api/bigbang/webhook'
 import { Route as ApiDrakonKeyRouteImport } from './routes/api/drakon/$key'
 import { Route as AppPlayerGamesGameIdRouteImport } from './routes/_app/_player/games/$gameId'
+import { Route as ApiDrakonWebhookKeyDrakon_apiRouteImport } from './routes/api/drakon/webhook/$key/drakon_api'
 
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/_admin',
@@ -132,6 +133,12 @@ const AppPlayerGamesGameIdRoute = AppPlayerGamesGameIdRouteImport.update({
   path: '/games/$gameId',
   getParentRoute: () => AppPlayerRouteRoute,
 } as any)
+const ApiDrakonWebhookKeyDrakon_apiRoute =
+  ApiDrakonWebhookKeyDrakon_apiRouteImport.update({
+    id: '/api/drakon/webhook/$key/drakon_api',
+    path: '/api/drakon/webhook/$key/drakon_api',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/api/bigbang/webhook': typeof ApiBigbangWebhookRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/games/$gameId': typeof AppPlayerGamesGameIdRoute
+  '/api/drakon/webhook/$key/drakon_api': typeof ApiDrakonWebhookKeyDrakon_apiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -170,6 +178,7 @@ export interface FileRoutesByTo {
   '/api/bigbang/webhook': typeof ApiBigbangWebhookRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/games/$gameId': typeof AppPlayerGamesGameIdRoute
+  '/api/drakon/webhook/$key/drakon_api': typeof ApiDrakonWebhookKeyDrakon_apiRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -194,6 +203,7 @@ export interface FileRoutesById {
   '/api/bigbang/webhook': typeof ApiBigbangWebhookRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/_app/_player/games/$gameId': typeof AppPlayerGamesGameIdRoute
+  '/api/drakon/webhook/$key/drakon_api': typeof ApiDrakonWebhookKeyDrakon_apiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/api/bigbang/webhook'
     | '/api/drakon/$key'
     | '/games/$gameId'
+    | '/api/drakon/webhook/$key/drakon_api'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/api/bigbang/webhook'
     | '/api/drakon/$key'
     | '/games/$gameId'
+    | '/api/drakon/webhook/$key/drakon_api'
   id:
     | '__root__'
     | '/_admin'
@@ -257,6 +269,7 @@ export interface FileRouteTypes {
     | '/api/bigbang/webhook'
     | '/api/drakon/$key'
     | '/_app/_player/games/$gameId'
+    | '/api/drakon/webhook/$key/drakon_api'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -268,6 +281,7 @@ export interface RootRouteChildren {
   ApiBigbangUserDataRoute: typeof ApiBigbangUserDataRoute
   ApiBigbangWebhookRoute: typeof ApiBigbangWebhookRoute
   ApiDrakonKeyRoute: typeof ApiDrakonKeyRoute
+  ApiDrakonWebhookKeyDrakon_apiRoute: typeof ApiDrakonWebhookKeyDrakon_apiRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -419,6 +433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPlayerGamesGameIdRouteImport
       parentRoute: typeof AppPlayerRouteRoute
     }
+    '/api/drakon/webhook/$key/drakon_api': {
+      id: '/api/drakon/webhook/$key/drakon_api'
+      path: '/api/drakon/webhook/$key/drakon_api'
+      fullPath: '/api/drakon/webhook/$key/drakon_api'
+      preLoaderRoute: typeof ApiDrakonWebhookKeyDrakon_apiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -497,7 +518,17 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBigbangUserDataRoute: ApiBigbangUserDataRoute,
   ApiBigbangWebhookRoute: ApiBigbangWebhookRoute,
   ApiDrakonKeyRoute: ApiDrakonKeyRoute,
+  ApiDrakonWebhookKeyDrakon_apiRoute: ApiDrakonWebhookKeyDrakon_apiRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

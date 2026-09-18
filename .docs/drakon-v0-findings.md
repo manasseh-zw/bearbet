@@ -60,6 +60,38 @@ This failure occurs before iframe navigation. Opening `/game-error` in a new tab
 
 The evidence points to account-level provider/game enablement, test credit, or another undocumented launch prerequisite. Do not purchase credit merely to diagnose it without written confirmation.
 
+## Fresh callback-route and launch retest
+
+On 2026-09-18, Bearbet repeated the Drakon flow from a fresh local server and
+fresh ngrok tunnel.
+
+- The first launch response exposed the immediate cause: Drakon was still
+  calling the previous expired tunnel and returned `ERR_NGROK_3200` while
+  validating `user_balance`.
+- Drakon appends `/drakon_api` to the dashboard Site EndPoint. The dashboard
+  endpoint therefore resolves to `/api/drakon/webhook/:key/drakon_api`, while
+  Bearbet previously served only `/api/drakon/:key`. Bearbet now serves the
+  Drakon-generated path through the same callback handler and retains the
+  original route for compatibility.
+- After the dashboard endpoint was updated to the fresh tunnel, Drakon's
+  Integration Test reached all four callbacks with HTTP 200 and displayed
+  `Integração aprovada!`.
+- Fun-mode launches then passed callback validation but still returned HTTP 200
+  with `https://gator.drakon.casino/game-error`. This happened for game `2108`
+  and eleven additional fun-compatible slot games across distinct providers.
+- A real-mode launch using an existing Bearbet user also passed callback
+  validation and returned the same `/game-error` URL. A fake user was rejected
+  earlier with `INVALID_USER`, confirming that real mode requires a known
+  Bearbet player.
+
+The tunnel and callback route are no longer the launch blocker. The remaining
+failure is account/provider-side session enablement, provider availability, or
+an undocumented Drakon launch prerequisite. The Drakon agent dashboard still
+shows zero wallet and agent balance, but the API does not explain whether
+funding is required for fun-mode titles. Do not purchase credit without written
+confirmation from Drakon about the exact prerequisite and a guaranteed test
+game.
+
 ## Campaign API investigation
 
 - The agent can list 20 campaign vendors and retrieve USD campaign limits.

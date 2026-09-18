@@ -100,9 +100,9 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 ### 8. Live Drakon proof
 
 - [~] **D01. Complete the live launch path.** The adapter behavior has tests, but Bearbet still needs launch orchestration tied to persisted game sessions and the player UI.
-- [~] **D02. Verify the callback route against Drakon.** Local contract tests pass. Capture redacted evidence from real dashboard probes and financial callbacks.
+- [~] **D02. Verify the callback route against Drakon.** The Drakon-generated `/api/drakon/webhook/:key/drakon_api` path now reaches BearBet, and the dashboard integration test approved all four callbacks through a fresh tunnel. Provider-originated gameplay callbacks and a playable Drakon session remain unverified because launches still return `/game-error` after callback validation succeeds.
 - [ ] **D03. Prove a provider-originated money movement.** Authenticate, synchronize the catalogue, launch a supported game, identify the Bearbet player, receive a bet and settlement, and update the persistent wallet and history.
-- [ ] **D04. Resolve approved agent access.** `BLOCKED` until the required Drakon credentials arrive. This blocks only live proof, not the simulator-backed MVP.
+- [x] **D04. Resolve approved agent access.** The approved Drakon agent credentials are present and the callback integration is reachable. Provider-side launch enablement remains unresolved, which blocks live proof but not the simulator-backed MVP.
 
 ### 8a. BigBang sandbox proof
 
