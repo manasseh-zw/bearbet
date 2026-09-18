@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { getPlayableBalance } from "#/server/domains/wallet/wallet.service";
 import { getBigBangEnv } from "#/server/env";
+import { captureBigBangCallback } from "#/server/infra/providers/bigbang/bigbang.capture";
 
 const querySchema = z.object({ username: z.string().min(1).max(255) });
 
@@ -10,15 +11,32 @@ export const Route = createFileRoute("/api/bigbang/user-data")({
 	server: {
 		handlers: {
 			GET: async ({ request }) => {
+				const receivedAt = new Date().toISOString();
+				const config = getBigBangEnv();
 				const parsed = querySchema.safeParse(
 					Object.fromEntries(new URL(request.url).searchParams),
 				);
 				if (!parsed.success) {
+					if (config.sandboxKey.startsWith("ek_test_")) {
+						await captureBigBangCallback({
+							kind: "user_data",
+							receivedAt,
+							validation: "invalid",
+							responseStatus: 400,
+						});
+					}
 					return json({ error: "invalid username" }, { status: 400 });
 				}
 
-				const config = getBigBangEnv();
 				if (config.sandboxKey.startsWith("ek_test_")) {
+					await captureBigBangCallback({
+						kind: "user_data",
+						receivedAt,
+						username: parsed.data.username,
+						validation: "accepted",
+						responseStatus: 200,
+						response: { balance: "100000.00", currency: "USD" },
+					});
 					console.info("BigBang sandbox user_data callback", {
 						username: parsed.data.username,
 					});

@@ -107,7 +107,7 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 ### 8a. BigBang sandbox proof
 
 - [x] **B01. Prove a BigBang sandbox launch.** Catalogue, player creation, signed non-demo session, and playable iframe were verified on 2026-09-17. The temporary `/bigbang-sandbox` route creates an isolated provider player and a callback-enabled sandbox launch without using Bearbet authentication, PostgreSQL, or wallet funds.
-- [~] **B02. Add BigBang seamless-wallet callback boundary.** The `user_data` and `balance_change` routes now validate input, enforce a request-size limit, verify the documented HMAC, return the sandbox synthetic balance, and refuse live money changes. Capture provider-originated callbacks and persist retry-safe responses before marking this complete.
+- [~] **B02. Add BigBang seamless-wallet callback boundary.** The `user_data` and `balance_change` routes validate input, enforce a request-size limit, verify the documented HMAC, return the sandbox synthetic balance, and refuse live money changes. An append-only sandbox capture is available for provider evidence. A browser-controlled non-demo sandbox spin on 2026-09-18 changed BigBang's provider-held player balance but produced no wallet callback despite correctly saved RGS URLs. Provider clarification or repair is now required before retry-safe financial dispatch can be completed.
 - [ ] **B03. Resolve BigBang financial event mapping.** Standard games report net rounds; the current engine requires separate bet, win, and refund evidence. Requires a compatible live provider contract or provider guidance.
 
 ### 9. Release and handover

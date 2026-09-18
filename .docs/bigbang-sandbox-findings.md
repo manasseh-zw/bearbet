@@ -31,6 +31,18 @@ The working iframe proof does not prove BearBet money movement.
 - Standard games report one net round movement. BearBet's current gameplay engine records separate bet, win, and refund operations, so it cannot safely infer a stake and settlement from that net callback.
 - Separate `bet`, `win`, and `refund` movements are documented for Premium games. Sandbox keys cannot launch Premium games.
 
+## Wallet callback capture result
+
+On 2026-09-18, BearBet repeated the sandbox test with an append-only receiver capture and browser-controlled gameplay:
+
+- The dashboard retained the current ngrok `user_data` and `balance_change` URLs, and the configured `ek_test_` key matched BearBet's key.
+- Both callback URLs returned HTTP `200` through ngrok immediately before the game test.
+- BearBet created player `bearbet-sandbox-d40e3bf0-dd35-4a15-bb2a-83bb0e9a6d00`, launched Amusnet game `333854` without `demo: true`, and completed a 1.50 USD spin.
+- BigBang's player API reported the provider-held balance changed from 100000.00 to 99998.50 USD.
+- BigBang sent no `user_data` or `balance_change` request. BearBet's receiver file and ngrok inspector both recorded zero provider callbacks for the player.
+
+This contradicts the dashboard statement that sandbox wallet callbacks fire with `sandbox: true`. The tested sandbox session used BigBang's managed synthetic wallet even though Wallet RGS URLs were saved. Treat sandbox Wallet RGS support as a provider-side blocker until BigBang fixes or explains the account configuration. Do not redesign BearBet's money engine around the documented callback shape without provider-originated evidence.
+
 ## Remaining integration work
 
 Bearbet now exposes separate `user_data` and `balance_change` routes. The balance-change boundary limits request size, validates the documented HMAC, parses signed decimal amounts into integer minor units, and rejects live money changes until the financial mapping is complete. Sandbox callbacks return the synthetic balance without touching Bearbet funds. A public ngrok probe confirmed both routes return successful responses, but a provider-originated callback still needs to be captured.
