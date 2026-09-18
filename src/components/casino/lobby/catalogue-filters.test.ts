@@ -5,6 +5,7 @@ import {
 	catalogueViewConfig,
 	getCatalogueCategories,
 	normalizeCatalogueCategory,
+	orderCatalogueGames,
 } from "./catalogue-filters";
 
 test("catalogue categories reflect provider data and sort by availability", () => {
@@ -61,7 +62,7 @@ test("curated provider priority wins over category size", () => {
 });
 
 test("promotions use a separate default and curated provider set", () => {
-	assert.equal(catalogueViewConfig.promotions.defaultCategory, "Pragmatic");
+	assert.equal(catalogueViewConfig.promotions.defaultCategory, "all");
 	assert.equal(catalogueViewConfig.promotions.maxItems, 100);
 	assert.deepEqual(catalogueViewConfig.promotions.includedCategories, [
 		"Pragmatic",
@@ -72,6 +73,20 @@ test("promotions use a separate default and curated provider set", () => {
 		"Spinomenal",
 		"Endorphina",
 		"Amatic",
+	]);
+});
+
+test("priority categories sort games within the All categories result", () => {
+	const games = [
+		{ id: "amusnet", category: "Amusnet" },
+		{ id: "pragmatic", category: "Pragmatic" },
+		{ id: "other", category: "Other" },
+	];
+
+	assert.deepEqual(orderCatalogueGames(games, ["Pragmatic", "Booming"]), [
+		{ id: "pragmatic", category: "Pragmatic" },
+		{ id: "amusnet", category: "Amusnet" },
+		{ id: "other", category: "Other" },
 	]);
 });
 

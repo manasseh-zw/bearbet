@@ -9,7 +9,7 @@ export const catalogueViewConfig = {
 		priorityCategories: ["Booming", "Evoplay"],
 	},
 	promotions: {
-		defaultCategory: "Pragmatic",
+		defaultCategory: "all",
 		maxItems: 100,
 		priorityCategories: [
 			"Pragmatic",
@@ -47,6 +47,29 @@ export type CatalogueCategoryOptions = {
 
 export function normalizeCatalogueCategory(category?: string) {
 	return category?.trim() || uncategorizedGameLabel;
+}
+
+export function orderCatalogueGames<T extends Pick<NormalizedGame, "category">>(
+	games: readonly T[],
+	priorityCategories: readonly string[] = [],
+): T[] {
+	const priority = new Map(
+		priorityCategories.map((category, index) => [category, index]),
+	);
+
+	return [...games].sort((left, right) => {
+		const leftPriority = priority.get(
+			normalizeCatalogueCategory(left.category),
+		);
+		const rightPriority = priority.get(
+			normalizeCatalogueCategory(right.category),
+		);
+
+		if (leftPriority === undefined && rightPriority === undefined) return 0;
+		if (leftPriority === undefined) return 1;
+		if (rightPriority === undefined) return -1;
+		return leftPriority - rightPriority;
+	});
 }
 
 export function getCatalogueCategories(

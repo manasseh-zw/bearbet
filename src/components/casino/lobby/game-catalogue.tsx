@@ -9,6 +9,7 @@ import { GameCard } from "#/components/casino/game-card";
 import {
 	getCatalogueCategories,
 	normalizeCatalogueCategory,
+	orderCatalogueGames,
 } from "#/components/casino/lobby/catalogue-filters";
 import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
@@ -91,6 +92,10 @@ export function GameCatalogue({
 			included.has(normalizeCatalogueCategory(game.category)),
 		);
 	}, [games, includedCategories]);
+	const orderedGames = useMemo(
+		() => orderCatalogueGames(scopedGames, priorityCategories),
+		[priorityCategories, scopedGames],
+	);
 	const categories = useMemo<FilterDefinition<NormalizedGame>[]>(
 		() => [
 			{
@@ -98,7 +103,7 @@ export function GameCatalogue({
 				label: "All categories",
 				match: () => true,
 			},
-			...getCatalogueCategories(scopedGames, { priorityCategories }).map(
+			...getCatalogueCategories(orderedGames, { priorityCategories }).map(
 				(category) => ({
 					id: category.id,
 					label: category.label,
@@ -107,18 +112,18 @@ export function GameCatalogue({
 				}),
 			),
 		],
-		[priorityCategories, scopedGames],
+		[orderedGames, priorityCategories],
 	);
 	const searchedGames = useMemo(() => {
 		const query = search.trim().toLocaleLowerCase();
-		if (!query) return scopedGames;
+		if (!query) return orderedGames;
 
-		return scopedGames.filter((game) =>
+		return orderedGames.filter((game) =>
 			`${game.name} ${game.provider} ${game.category ?? ""}`
 				.toLocaleLowerCase()
 				.includes(query),
 		);
-	}, [scopedGames, search]);
+	}, [orderedGames, search]);
 
 	return (
 		<section
@@ -172,7 +177,11 @@ export function GameCatalogue({
 					items={searchedGames}
 					filters={categories}
 					defaultValue={
-						defaultCategory ? `category:${defaultCategory}` : undefined
+						defaultCategory === "all"
+							? "all"
+							: defaultCategory
+								? `category:${defaultCategory}`
+								: undefined
 					}
 					maxItems={maxItems}
 					label="Game category"
