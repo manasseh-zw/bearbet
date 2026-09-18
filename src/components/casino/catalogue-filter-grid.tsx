@@ -152,6 +152,7 @@ export function FilterGrid<T>({
 	const heldFocus = useRef(false);
 
 	const cols = Math.max(1, Math.floor(columns));
+	const shouldAnimateItems = visible.length <= 200;
 	const index = Math.max(
 		0,
 		filters.findIndex((f) => f.id === active),
@@ -289,25 +290,37 @@ export function FilterGrid<T>({
 						gap: `${gap}px`,
 					}}
 				>
-					<AnimatePresence
-						initial={false}
-						mode="popLayout"
-						onExitComplete={settle}
-					>
-						{visible.map((item) => (
-							<motion.li
-								key={getKey(item)}
-								layout={reduced ? false : "position"}
-								initial={{ opacity: 0, scale: 0.97 }}
-								animate={{ opacity: 1, scale: 1 }}
-								exit={{ opacity: 0, scale: 0.98, transition: leave }}
-								transition={step}
-								className="min-w-0"
-							>
+					{shouldAnimateItems ? (
+						<AnimatePresence
+							initial={false}
+							mode="popLayout"
+							onExitComplete={settle}
+						>
+							{visible.map((item) => (
+								<motion.li
+									key={getKey(item)}
+									layout={reduced ? false : "position"}
+									initial={{ opacity: 0, scale: 0.97 }}
+									animate={{ opacity: 1, scale: 1 }}
+									exit={{
+										opacity: 0,
+										scale: 0.98,
+										transition: leave,
+									}}
+									transition={step}
+									className="min-w-0"
+								>
+									{renderItem(item)}
+								</motion.li>
+							))}
+						</AnimatePresence>
+					) : (
+						visible.map((item) => (
+							<li key={getKey(item)} className="min-w-0">
 								{renderItem(item)}
-							</motion.li>
-						))}
-					</AnimatePresence>
+							</li>
+						))
+					)}
 				</ul>
 				<AnimatePresence initial={false}>
 					{visible.length === 0 && (

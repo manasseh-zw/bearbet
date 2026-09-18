@@ -1,14 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-	CircleDotIcon,
-	DicesIcon,
-	FlameIcon,
-	Gamepad2Icon,
-	Grid2X2Icon,
-	SearchIcon,
-	SpadeIcon,
-	ZapIcon,
-} from "lucide-react";
+import { FlameIcon, Grid2X2Icon, SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -16,49 +7,14 @@ import {
 	FilterGrid,
 } from "#/components/casino/catalogue-filter-grid";
 import { GameCard } from "#/components/casino/game-card";
+import {
+	getCatalogueCategories,
+	normalizeCatalogueCategory,
+} from "#/components/casino/lobby/catalogue-filters";
 import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
 import { catalogueQueries } from "#/lib/queries/catalogue.queries";
 import type { NormalizedGame } from "#/server/infra/providers/provider.types";
-
-const categories: FilterDefinition<NormalizedGame>[] = [
-	{
-		id: "all",
-		label: "All categories",
-		icon: <Grid2X2Icon className="size-4" />,
-		match: () => true,
-	},
-	{
-		id: "slots",
-		label: "Slots",
-		icon: <Gamepad2Icon className="size-4" />,
-		match: (game) => game.type === "slots",
-	},
-	{
-		id: "crash",
-		label: "Crash games",
-		icon: <ZapIcon className="size-4" />,
-		match: (game) => game.type === "crashgame",
-	},
-	{
-		id: "roulette",
-		label: "Roulette",
-		icon: <CircleDotIcon className="size-4" />,
-		match: (game) => game.type === "roulette",
-	},
-	{
-		id: "baccarat",
-		label: "Baccarat",
-		icon: <SpadeIcon className="size-4" />,
-		match: (game) => game.type === "baccarat",
-	},
-	{
-		id: "instant",
-		label: "Instant games",
-		icon: <DicesIcon className="size-4" />,
-		match: (game) => game.type === "instantgame",
-	},
-];
 
 function useCatalogueColumns() {
 	const [columns, setColumns] = useState(2);
@@ -103,8 +59,28 @@ export function PlayerLobby() {
 	const [search, setSearch] = useState("");
 	const columns = useCatalogueColumns();
 	const catalogue = useQuery(catalogueQueries.games());
-	const games = catalogue.data?.filter((game) => game.isAvailable) ?? [];
+	const games = useMemo(
+		() => catalogue.data?.filter((game) => game.isAvailable) ?? [],
+		[catalogue.data],
+	);
 	const topPicks = games.slice(0, 6);
+	const categories = useMemo<FilterDefinition<NormalizedGame>[]>(
+		() => [
+			{
+				id: "all",
+				label: "All categories",
+				icon: <Grid2X2Icon className="size-4" />,
+				match: () => true,
+			},
+			...getCatalogueCategories(games).map((category) => ({
+				id: category.id,
+				label: category.label,
+				match: (game: NormalizedGame) =>
+					normalizeCatalogueCategory(game.category) === category.value,
+			})),
+		],
+		[games],
+	);
 	const searchedGames = useMemo(() => {
 		const query = search.trim().toLocaleLowerCase();
 		if (!query) return games;
