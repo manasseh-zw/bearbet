@@ -25,6 +25,7 @@ function PromotionsPage() {
 				isError={catalogue.isError}
 				onRetry={() => catalogue.refetch()}
 				defaultCategory={catalogueViewConfig.promotions.defaultCategory}
+				maxItems={catalogueViewConfig.promotions.maxItems}
 				priorityCategories={catalogueViewConfig.promotions.priorityCategories}
 				includedCategories={catalogueViewConfig.promotions.includedCategories}
 				eyebrow="Selected providers"

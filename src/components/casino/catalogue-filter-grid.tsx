@@ -40,6 +40,7 @@ export type UseFilterGridOptions<T> = {
 	value?: string;
 	defaultValue?: string;
 	onValueChange?: (id: string) => void;
+	maxItems?: number;
 };
 
 export type UseFilterGridResult<T> = {
@@ -57,6 +58,7 @@ export function useFilterGrid<T>({
 	value,
 	defaultValue,
 	onValueChange,
+	maxItems,
 }: UseFilterGridOptions<T>): UseFilterGridResult<T> {
 	const fallback = filters[0]?.id ?? "";
 	const [internal, setInternal] = useState(() => defaultValue ?? fallback);
@@ -80,9 +82,13 @@ export function useFilterGrid<T>({
 
 	const visible = useMemo(() => {
 		const filter = filters.find((f) => f.id === active);
-		if (!filter) return [...items];
-		return items.filter((item) => filter.match(item));
-	}, [filters, items, active]);
+		const matching = filter
+			? items.filter((item) => filter.match(item))
+			: [...items];
+		return maxItems === undefined
+			? matching
+			: matching.slice(0, Math.max(0, Math.floor(maxItems)));
+	}, [filters, items, active, maxItems]);
 
 	const select = useCallback(
 		(id: string) => {
@@ -111,6 +117,7 @@ export type FilterGridProps<T> = {
 	value?: string;
 	defaultValue?: string;
 	onValueChange?: (id: string) => void;
+	maxItems?: number;
 	columns?: number;
 	rowHeight?: number;
 	maxRows?: number;
@@ -128,6 +135,7 @@ export function FilterGrid<T>({
 	value,
 	defaultValue,
 	onValueChange,
+	maxItems,
 	columns = 3,
 	gap = 8,
 	emptyLabel = "Nothing matches this filter",
@@ -144,6 +152,7 @@ export function FilterGrid<T>({
 			value,
 			defaultValue,
 			onValueChange,
+			maxItems,
 		},
 	);
 

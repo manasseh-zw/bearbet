@@ -9,8 +9,10 @@ export const catalogueViewConfig = {
 		priorityCategories: ["Booming", "Evoplay"],
 	},
 	promotions: {
-		defaultCategory: "Evoplay",
+		defaultCategory: "Pragmatic",
+		maxItems: 100,
 		priorityCategories: [
+			"Pragmatic",
 			"Evoplay",
 			"Booming",
 			"Playtech",
@@ -18,9 +20,9 @@ export const catalogueViewConfig = {
 			"Spinomenal",
 			"Endorphina",
 			"Amatic",
-			"Pragmatic",
 		],
 		includedCategories: [
+			"Pragmatic",
 			"Evoplay",
 			"Booming",
 			"Playtech",
@@ -28,7 +30,6 @@ export const catalogueViewConfig = {
 			"Spinomenal",
 			"Endorphina",
 			"Amatic",
-			"Pragmatic",
 		],
 	},
 } as const;

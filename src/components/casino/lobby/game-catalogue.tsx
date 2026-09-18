@@ -20,6 +20,7 @@ type GameCatalogueProps = {
 	isError: boolean;
 	onRetry: () => void;
 	defaultCategory?: string;
+	maxItems?: number;
 	priorityCategories?: readonly string[];
 	includedCategories?: readonly string[];
 	title: string;
@@ -72,6 +73,7 @@ export function GameCatalogue({
 	isError,
 	onRetry,
 	defaultCategory,
+	maxItems,
 	priorityCategories,
 	includedCategories,
 	title,
@@ -172,6 +174,7 @@ export function GameCatalogue({
 					defaultValue={
 						defaultCategory ? `category:${defaultCategory}` : undefined
 					}
+					maxItems={maxItems}
 					label="Game category"
 					getKey={(game) => game.id}
 					columns={columns}

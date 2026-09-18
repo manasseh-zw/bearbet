@@ -61,8 +61,10 @@ test("curated provider priority wins over category size", () => {
 });
 
 test("promotions use a separate default and curated provider set", () => {
-	assert.equal(catalogueViewConfig.promotions.defaultCategory, "Evoplay");
+	assert.equal(catalogueViewConfig.promotions.defaultCategory, "Pragmatic");
+	assert.equal(catalogueViewConfig.promotions.maxItems, 100);
 	assert.deepEqual(catalogueViewConfig.promotions.includedCategories, [
+		"Pragmatic",
 		"Evoplay",
 		"Booming",
 		"Playtech",
@@ -70,7 +72,6 @@ test("promotions use a separate default and curated provider set", () => {
 		"Spinomenal",
 		"Endorphina",
 		"Amatic",
-		"Pragmatic",
 	]);
 });
 
