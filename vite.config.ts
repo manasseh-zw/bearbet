@@ -9,6 +9,8 @@ import { defineConfig } from "vite";
 
 const config = defineConfig({
 	resolve: { tsconfigPaths: true },
+	// The sandbox callback receiver is tested through ephemeral ngrok hosts.
+	server: { allowedHosts: [".ngrok-free.app"] },
 	plugins: [
 		devtools(),
 		nitro({ rollupConfig: { external: [/^@sentry\//] } }),

@@ -30,6 +30,21 @@ BigBang documents HMAC-SHA256 webhook signing but does not document the exact
 canonical input. The route must remain capture-only until a genuine event exposes
 the payload and signature placement. After that evidence is recorded, add signature
 verification and map `round.completed` into an idempotent reconciliation command.
+
+## Fresh tunnel validation
+
+On 2026-09-18, the original Vite process and ngrok tunnel were stopped. A new
+process and tunnel were started at `https://a3e8-197-221-251-233.ngrok-free.app`.
+Vite initially rejected that hostname with HTTP 403 before routing requests, so the
+development server now allows `.ngrok-free.app` hosts. Direct local and public
+probes then returned HTTP 200.
+
+The dashboard webhook, `user_data`, and `balance_change` URLs were replaced with
+the new tunnel and persisted. A fresh non-demo sandbox session launched and a $1.50
+spin changed the BigBang player balance to $99,998.50. The new tunnel recorded no
+provider-originated wallet or event webhook request. Only the manual probes were
+received. This rules out the old tunnel as the cause and leaves the BigBang wallet
+mode or provider-side callback dispatch as the remaining issue.
 - A sandbox key has the `ek_test_` prefix, costs nothing, has an automatic virtual balance, and is limited to Standard games.
 - The game catalogue comes from `GET /games`; a launch is created by `POST /games/launch`.
 - A non-demo launch requires a provider player created through `POST /users/create`. Demo launch uses `demo: true` and does not require a player.
