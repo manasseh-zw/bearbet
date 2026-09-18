@@ -249,12 +249,14 @@ For the submission, BearBet uses a deliberate hybrid boundary: the fixture
 provider remains the authoritative, database-backed wallet/ledger proof, while
 BigBang supplies the genuine playable provider session. The authenticated
 BigBang bridge creates a provider player from the signed-in BearBet identity,
-stores the provider balance at launch, and reconciles only the session-level
-balance delta (final minus launch snapshot) through an idempotent,
-explicitly-labelled sandbox operation at close. It never copies BigBang's
-absolute synthetic balance or invents per-round transactions when callbacks are
-absent. The public sandbox launcher remains read-only with respect to BearBet
-wallets.
+launches the game before taking the provider account baseline, and reconciles
+only the session-level balance delta (final minus that post-launch snapshot)
+through an idempotent, explicitly-labelled sandbox operation at close. The
+tested BigBang sandbox account shares its balance across provider players, so
+the bridge allows one active BigBang session at a time and serializes the final
+balance read with the BearBet wallet update. It never copies BigBang's absolute
+synthetic balance or invents per-round transactions when callbacks are absent.
+The public sandbox launcher remains read-only with respect to BearBet wallets.
 
 The Greenbear V0 at `/Users/manasseh/Projects/work/greenbear-v0` is the behavioral reference for Drakon authentication, catalogue normalization, launch errors, callback probes, and refund edge cases.
 

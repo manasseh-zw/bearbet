@@ -8,7 +8,7 @@ Observed on 2026-09-17 with a BearBet BigBang sandbox key. Credentials and signe
 - `POST /api/v1/users/create` accepted a BearBet-owned player ID and returned a sandbox USD player.
 - `POST /api/v1/games/launch` for that player returned a signed session URL.
 - The returned URL loaded a playable BigBang game in an iframe and in a browser tab.
-- BearBet has a temporary public route at `/bigbang-sandbox`. It lists nine sandbox games, creates an isolated provider-side player, launches a non-demo sandbox session, and embeds it in an iframe so genuine Wallet RGS callbacks can be captured. It does not read or change the BearBet database or wallet.
+- BearBet has a temporary public route at `/bigbang-sandbox`. It lists nine sandbox games, creates a provider-side player token, launches a non-demo sandbox session, and embeds it in an iframe so genuine Wallet RGS callbacks can be captured. It does not read or change the BearBet database or wallet.
 - `CASINO_PROVIDER=BIGBANG` is accepted. The BigBang adapter can synchronize the Standard catalogue and create a provider player plus a non-demo sandbox launch URL through the shared `CasinoProvider` contract.
 
 ## Verified contract
@@ -90,10 +90,14 @@ BigBang sandbox is BearBet's authoritative wallet:
 The provider balance update can still make the hybrid experience more realistic,
 but only as an explicit session-level reconciliation:
 
-- At launch, create an authenticated BearBet-to-BigBang player mapping and store
-  the provider balance snapshot for that session.
-- At an explicit session close/reconcile action, fetch the same provider
-  player's current balance and calculate `netDelta = final - initial`.
+- At launch, create an authenticated BearBet-to-BigBang player mapping, launch
+  the game, and store the provider account balance immediately after launch.
+- BigBang's sandbox balance is shared at the configured account level in the
+  tested environment. The authenticated route therefore allows one active
+  BigBang session at a time and serializes the final balance read with the
+  wallet update.
+- At an explicit session close/reconcile action, fetch the current provider
+  account balance and calculate `netDelta = final - launch snapshot`.
 - If the sandbox reconciliation feature is enabled, apply only that delta to a
   dedicated, idempotent BearBet reconciliation operation. Never copy the
   provider's absolute `100000.00` synthetic balance into the BearBet wallet.
@@ -127,8 +131,10 @@ Do not use sandbox callbacks to alter BearBet balances. The fixture provider rem
 The normal player route now uses BigBang when `CASINO_PROVIDER=bigbang`. It
 creates the provider player with the signed-in BearBet user ID, stores the
 signed launch URL and provider session ID, and captures the managed sandbox
-balance before play. Ending the iframe session fetches the provider balance and
-applies only `final - launch` as one idempotent `provider_reconciliation`
-operation when the key is a sandbox key. The provider's absolute synthetic
-balance is never copied into the BearBet wallet, and the existing public
-`/bigbang-sandbox` route remains capture-only.
+account balance after launch. Because the tested account balance is shared,
+only one authenticated BigBang session may be active at a time. Ending the
+iframe session reads the final account balance under the same lock and applies
+only `final - launch snapshot` as one idempotent
+`provider_reconciliation` operation when the key is a sandbox key. The
+provider's absolute synthetic balance is never copied into the BearBet wallet,
+and the existing public `/bigbang-sandbox` route remains capture-only.

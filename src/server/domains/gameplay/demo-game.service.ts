@@ -8,7 +8,7 @@ import {
 	recordWin,
 } from "#/server/domains/gameplay/gameplay.service";
 import {
-	applyWalletOperation,
+	applyWalletOperationInTransaction,
 	getPlayableBalance,
 } from "#/server/domains/wallet/wallet.service";
 import { env, getBigBangEnv } from "#/server/env";
@@ -28,6 +28,8 @@ export class DemoGameError extends Error {
 		this.name = "DemoGameError";
 	}
 }
+
+const BIGBANG_SHARED_BALANCE_LOCK = "bigbang:shared-sandbox-balance";
 
 export async function startDemoGame(input: {
 	playerId: string;
@@ -127,6 +129,9 @@ export async function startCurrentPlayerGame(
 		await transaction.execute(
 			sql`select pg_advisory_xact_lock(hashtext(${`${env.CASINO_PROVIDER}:${input.playerId}:${input.gameId}`}))`,
 		);
+		await transaction.execute(
+			sql`select pg_advisory_xact_lock(hashtext(${BIGBANG_SHARED_BALANCE_LOCK}))`,
+		);
 
 		const [activeSession] = await transaction
 			.select()
@@ -146,6 +151,22 @@ export async function startCurrentPlayerGame(
 				throw new DemoGameError("The active BigBang session is unavailable");
 			}
 			return activeSession;
+		}
+
+		const [otherActiveSession] = await transaction
+			.select({ id: gameSession.id })
+			.from(gameSession)
+			.where(
+				and(
+					eq(gameSession.integrationProvider, env.CASINO_PROVIDER),
+					eq(gameSession.status, "active"),
+				),
+			)
+			.limit(1);
+		if (otherActiveSession) {
+			throw new DemoGameError(
+				"The BigBang sandbox balance is shared; end the active provider session before starting another",
+			);
 		}
 
 		const launch = await provider.launchGame({
@@ -328,7 +349,8 @@ export async function closeCurrentPlayerGame(
 	if (session.integrationProvider !== "bigbang") return closeDemoGame(input);
 
 	const provider = providerOverride ?? createCasinoProvider();
-	if (!provider.getPlayerBalance || !session.providerPlayerId) {
+	const getPlayerBalance = provider.getPlayerBalance;
+	if (!getPlayerBalance || !session.providerPlayerId) {
 		throw new DemoGameError("The BigBang session cannot be reconciled");
 	}
 	const config = getBigBangEnv();
@@ -345,47 +367,69 @@ export async function closeCurrentPlayerGame(
 		);
 	}
 
-	const finalBalance = await provider.getPlayerBalance(
-		session.providerPlayerId,
-	);
-	if (finalBalance.currencyCode !== session.currencyCode) {
-		throw new DemoGameError("BigBang returned the wrong player currency");
-	}
-	if (session.providerBalanceBeforeMinor === null) {
-		throw new DemoGameError("The BigBang session has no balance baseline");
-	}
+	const closedSession = await db.transaction(async (transaction) => {
+		await transaction.execute(
+			sql`select pg_advisory_xact_lock(hashtext(${BIGBANG_SHARED_BALANCE_LOCK}))`,
+		);
+		const [currentSession] = await transaction
+			.select()
+			.from(gameSession)
+			.where(
+				and(
+					eq(gameSession.id, input.sessionId),
+					eq(gameSession.playerId, input.playerId),
+				),
+			)
+			.for("update");
+		if (!currentSession) throw new DemoGameError("Game session was not found");
+		if (
+			currentSession.providerReconciledAt &&
+			currentSession.providerBalanceAfterMinor !== null
+		) {
+			return currentSession;
+		}
+		if (!currentSession.providerPlayerId) {
+			throw new DemoGameError("The BigBang session cannot be reconciled");
+		}
+		if (currentSession.providerBalanceBeforeMinor === null) {
+			throw new DemoGameError("The BigBang session has no balance baseline");
+		}
 
-	const netDeltaMinor =
-		finalBalance.balanceMinor - session.providerBalanceBeforeMinor;
-	if (config.reconcileSandbox && netDeltaMinor !== 0) {
-		await applyWalletOperation({
-			playerId: input.playerId,
-			type: "provider_reconciliation",
-			idempotencyKey: `bigbang:sandbox:reconcile:${session.id}`,
-			movements: [{ bucket: "cash", amountMinor: netDeltaMinor }],
-			sourceType: "bigbang_sandbox_reconciliation",
-			sourceId: session.id,
-		});
-	}
+		const finalBalance = await getPlayerBalance(
+			currentSession.providerPlayerId,
+		);
+		if (finalBalance.currencyCode !== currentSession.currencyCode) {
+			throw new DemoGameError("BigBang returned the wrong player currency");
+		}
 
-	const reconciledAt = new Date();
-	const [closedSession] = await db
-		.update(gameSession)
-		.set({
-			status: "closed",
-			closedAt: session.closedAt ?? reconciledAt,
-			providerBalanceAfterMinor: finalBalance.balanceMinor,
-			providerReconciledAt: reconciledAt,
-		})
-		.where(
-			and(
-				eq(gameSession.id, input.sessionId),
-				eq(gameSession.playerId, input.playerId),
-			),
-		)
-		.returning();
-	if (!closedSession)
-		throw new DemoGameError("The BigBang session could not be closed");
+		const netDeltaMinor =
+			finalBalance.balanceMinor - currentSession.providerBalanceBeforeMinor;
+		if (config.reconcileSandbox && netDeltaMinor !== 0) {
+			await applyWalletOperationInTransaction(transaction, {
+				playerId: input.playerId,
+				type: "provider_reconciliation",
+				idempotencyKey: `bigbang:sandbox:reconcile:${currentSession.id}`,
+				movements: [{ bucket: "cash", amountMinor: netDeltaMinor }],
+				sourceType: "bigbang_sandbox_reconciliation",
+				sourceId: currentSession.id,
+			});
+		}
+
+		const reconciledAt = new Date();
+		const [updatedSession] = await transaction
+			.update(gameSession)
+			.set({
+				status: "closed",
+				closedAt: currentSession.closedAt ?? reconciledAt,
+				providerBalanceAfterMinor: finalBalance.balanceMinor,
+				providerReconciledAt: reconciledAt,
+			})
+			.where(eq(gameSession.id, currentSession.id))
+			.returning();
+		if (!updatedSession)
+			throw new DemoGameError("The BigBang session could not be closed");
+		return updatedSession;
+	});
 
 	const wallet = await getPlayableBalance(input.playerId);
 	return providerSessionSummary(

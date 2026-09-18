@@ -106,10 +106,10 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 
 ### 8a. BigBang sandbox proof
 
-- [x] **B01. Prove a BigBang sandbox launch.** Catalogue, player creation, signed non-demo session, and playable iframe were verified on 2026-09-17. The temporary `/bigbang-sandbox` route creates an isolated provider player and a callback-enabled sandbox launch without using Bearbet authentication, PostgreSQL, or wallet funds.
+- [x] **B01. Prove a BigBang sandbox launch.** Catalogue, player creation, signed non-demo session, and playable iframe were verified on 2026-09-17. The temporary `/bigbang-sandbox` route creates a provider player token and a callback-enabled sandbox launch without using Bearbet authentication, PostgreSQL, or wallet funds.
 - [~] **B02. Add BigBang seamless-wallet callback boundary.** The `user_data` and `balance_change` routes validate input, enforce a request-size limit, verify the documented HMAC, return the sandbox synthetic balance, and refuse live money changes. An append-only sandbox capture is available for provider evidence. A browser-controlled non-demo sandbox spin on 2026-09-18 changed BigBang's provider-held player balance but produced no wallet callback despite correctly saved RGS URLs. Provider clarification or repair is now required before retry-safe financial dispatch can be completed.
 - [ ] **B03. Resolve BigBang financial event mapping.** Standard games report net rounds; the current engine requires separate bet, win, and refund evidence. Requires a compatible live provider contract or provider guidance.
-- [x] **B04. Build the authenticated hybrid sandbox bridge.** Link a BigBang provider player to the signed-in BearBet player, store the launch balance snapshot, fetch the final balance on explicit session close, and apply only the idempotent net delta through a labelled `provider_reconciliation` operation. The public throwaway launcher remains read-only, and the bridge does not infer per-round activity without callbacks.
+- [x] **B04. Build the authenticated hybrid sandbox bridge.** Link a BigBang provider player to the signed-in BearBet player, store the shared-account balance immediately after launch, serialize the sandbox to one active BigBang session, fetch the final balance on explicit session close, and apply only the idempotent `final - launch snapshot` delta through a labelled `provider_reconciliation` operation. The public throwaway launcher remains read-only, and the bridge does not infer per-round activity without callbacks.
 
 ### 9. Release and handover
 

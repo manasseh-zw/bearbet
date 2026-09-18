@@ -159,9 +159,9 @@ test("BigBang launches an authenticated player with a balance snapshot", async (
 			providerCurrencyCode: "USD",
 		},
 	);
+	assert.equal(requests[1]?.url, "https://sandbox.example/api/v1/games/launch");
 	assert.equal(
-		requests[1]?.url,
+		requests[2]?.url,
 		"https://sandbox.example/api/v1/balance/player-42",
 	);
-	assert.equal(requests[2]?.url, "https://sandbox.example/api/v1/games/launch");
 });

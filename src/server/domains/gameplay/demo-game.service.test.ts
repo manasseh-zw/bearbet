@@ -130,6 +130,11 @@ test("starting a game resumes its active session across new launch keys", async 
 test("BigBang sessions reconcile one provider delta and resume without relaunching", {
 	skip: env.CASINO_PROVIDER !== "bigbang",
 }, async () => {
+	await db
+		.update(wallet)
+		.set({ cashBalanceMinor: 81_700, bonusBalanceMinor: 0 })
+		.where(eq(wallet.playerId, playerId));
+
 	let providerBalanceMinor = 10_000_000;
 	let launchCalls = 0;
 	let balanceReads = 0;
@@ -179,13 +184,13 @@ test("BigBang sessions reconcile one provider delta and resume without relaunchi
 	assert.equal(launchCalls, 1);
 	assert.equal(balanceReads, 1);
 
-	providerBalanceMinor = 9_999_850;
+	providerBalanceMinor = 10_081_700;
 	const closed = await closeCurrentPlayerGame(
 		{ playerId, sessionId: first.sessionId },
 		provider,
 	);
 	assert.equal(closed.kind, "provider");
-	assert.equal(closed.netDeltaMinor, -150);
+	assert.equal(closed.netDeltaMinor, 81_700);
 	assert.equal(closed.reconciliationApplied, true);
 	assert.equal(balanceReads, 2);
 
@@ -194,11 +199,11 @@ test("BigBang sessions reconcile one provider delta and resume without relaunchi
 		provider,
 	);
 	assert.equal(retried.kind, "provider");
-	assert.equal(retried.netDeltaMinor, -150);
+	assert.equal(retried.netDeltaMinor, 81_700);
 	assert.equal(balanceReads, 2);
 	assert.equal(
 		(await db.select().from(wallet).where(eq(wallet.playerId, playerId)))[0]
 			?.cashBalanceMinor,
-		9_850,
+		163_400,
 	);
 });

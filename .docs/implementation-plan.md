@@ -69,8 +69,9 @@ The first-party BearBet demo path authenticates an active player, resolves a per
 Authenticated browser functions now resolve Lucky Number wins and losses on the server and run them through the existing gameplay service. The interface labels the experience as a BearBet demo and refreshes wallet and transaction history after each round. The Bets tab groups persisted operations into round results. Starting the same game resumes the player's active session, including after refresh, while concurrent launches serialize so they cannot create competing sessions. Refund behavior remains implemented in the shared gameplay engine, but its browser proof is deferred until the live provider's cancellation and rollback contract is known.
 
 The BigBang sandbox path deliberately does not treat absent Standard-game
-callbacks as BearBet bet/win events. It fetches the provider-managed balance at
-close and, when sandbox reconciliation is enabled, records only the final minus
+callbacks as BearBet bet/win events. It takes the provider-account balance
+baseline immediately after launch, allows one active sandbox session at a time,
+and, when sandbox reconciliation is enabled, records only the final minus
 launch delta through the labelled idempotent wallet operation. The fixture
 simulator remains the authoritative demonstration for per-round wallet, bonus,
 ledger, and history behavior.
