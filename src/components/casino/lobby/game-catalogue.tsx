@@ -24,6 +24,7 @@ type GameCatalogueProps = {
 	includedCategories?: readonly string[];
 	title: string;
 	eyebrow?: string;
+	topMargin?: "mt-0" | "mt-12";
 };
 
 function useCatalogueColumns() {
@@ -75,6 +76,7 @@ export function GameCatalogue({
 	includedCategories,
 	title,
 	eyebrow = "Browse the catalogue",
+	topMargin = "mt-12",
 }: GameCatalogueProps) {
 	const [search, setSearch] = useState("");
 	const columns = useCatalogueColumns();
@@ -117,7 +119,10 @@ export function GameCatalogue({
 	}, [scopedGames, search]);
 
 	return (
-		<section className="mt-12 pb-12" aria-labelledby={`${searchId}-title`}>
+		<section
+			className={`${topMargin} pb-12`}
+			aria-labelledby={`${searchId}-title`}
+		>
 			<div className="mb-5">
 				<p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
 					{eyebrow}

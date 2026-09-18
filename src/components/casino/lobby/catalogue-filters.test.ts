@@ -65,7 +65,16 @@ test("promotions use a separate default and curated provider set", () => {
 	assert.deepEqual(catalogueViewConfig.promotions.includedCategories, [
 		"Evoplay",
 		"Booming",
+		"Playtech",
 		"Hacksaw",
 		"Spinomenal",
+		"Endorphina",
+		"Amatic",
+		"Pragmatic",
 	]);
+});
+
+test("casino uses different featured and default providers", () => {
+	assert.equal(catalogueViewConfig.casino.featuredCategory, "Playtech");
+	assert.equal(catalogueViewConfig.casino.defaultCategory, "Booming");
 });

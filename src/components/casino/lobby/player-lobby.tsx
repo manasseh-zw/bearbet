@@ -40,7 +40,7 @@ export function PlayerLobby() {
 		const featured = games.filter(
 			(game) =>
 				normalizeCatalogueCategory(game.category) ===
-				catalogueViewConfig.casino.defaultCategory,
+				catalogueViewConfig.casino.featuredCategory,
 		);
 
 		return (featured.length > 0 ? featured : games).slice(0, 6);
@@ -61,7 +61,7 @@ export function PlayerLobby() {
 							id="top-picks-title"
 							className="font-logo text-3xl text-foreground"
 						>
-							Booming games
+							{catalogueViewConfig.casino.featuredCategory} games
 						</h1>
 					</div>
 				</div>

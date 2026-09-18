@@ -5,12 +5,31 @@ export const uncategorizedGameLabel = "Other";
 export const catalogueViewConfig = {
 	casino: {
 		defaultCategory: "Booming",
+		featuredCategory: "Playtech",
 		priorityCategories: ["Booming", "Evoplay"],
 	},
 	promotions: {
 		defaultCategory: "Evoplay",
-		priorityCategories: ["Evoplay", "Booming", "Hacksaw", "Spinomenal"],
-		includedCategories: ["Evoplay", "Booming", "Hacksaw", "Spinomenal"],
+		priorityCategories: [
+			"Evoplay",
+			"Booming",
+			"Playtech",
+			"Hacksaw",
+			"Spinomenal",
+			"Endorphina",
+			"Amatic",
+			"Pragmatic",
+		],
+		includedCategories: [
+			"Evoplay",
+			"Booming",
+			"Playtech",
+			"Hacksaw",
+			"Spinomenal",
+			"Endorphina",
+			"Amatic",
+			"Pragmatic",
+		],
 	},
 } as const;
 

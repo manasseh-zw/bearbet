@@ -29,6 +29,7 @@ function PromotionsPage() {
 				includedCategories={catalogueViewConfig.promotions.includedCategories}
 				eyebrow="Selected providers"
 				title="Promotions"
+				topMargin="mt-0"
 			/>
 		</main>
 	);
