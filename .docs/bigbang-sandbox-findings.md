@@ -117,7 +117,18 @@ Bearbet now exposes separate `user_data` and `balance_change` routes. The balanc
 1. Capture BigBang-originated sandbox callbacks and verify the observed payload, signature string representation, player identity, retry behavior, and event types.
 2. Persist duplicate callback responses by `transaction_id` before enabling live money changes.
 3. Decide on the live contract before connecting monetary callbacks. Standard games provide signed balance deltas with `round` metadata; Premium can provide separate bet, win, and refund events. A live seamless-wallet key or provider confirmation is needed before Bearbet changes its round model.
-4. Synchronize the BigBang catalogue into PostgreSQL, expose it in the normal lobby, and replace the throwaway launcher with the persisted Bearbet game-session UI.
+4. Synchronize the BigBang catalogue into PostgreSQL, expose it in the normal lobby, and replace the throwaway launcher with the persisted Bearbet game-session UI. This authenticated hybrid bridge is now implemented; the configured sandbox catalogue currently imports 3,247 Standard games.
 5. Add provider-originated proof that a real callback produces one correct wallet operation, ledger movement, round result, and history entry.
 
 Do not use sandbox callbacks to alter BearBet balances. The fixture provider remains the repeatable, database-backed demo for the current project.
+
+## Authenticated hybrid bridge status
+
+The normal player route now uses BigBang when `CASINO_PROVIDER=bigbang`. It
+creates the provider player with the signed-in BearBet user ID, stores the
+signed launch URL and provider session ID, and captures the managed sandbox
+balance before play. Ending the iframe session fetches the provider balance and
+applies only `final - launch` as one idempotent `provider_reconciliation`
+operation when the key is a sandbox key. The provider's absolute synthetic
+balance is never copied into the BearBet wallet, and the existing public
+`/bigbang-sandbox` route remains capture-only.

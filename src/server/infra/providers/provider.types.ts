@@ -5,6 +5,7 @@ export type NormalizedGame = {
 	code?: string;
 	name: string;
 	provider: string;
+	category?: string;
 	type?: string;
 	description?: string;
 	rtp?: number;
@@ -32,11 +33,22 @@ export type LaunchGameInput = {
 
 export type LaunchGameResult = {
 	url: string;
+	externalSessionId?: string;
+	providerPlayerId?: string;
+	providerBalanceMinor?: number;
+	providerCurrencyCode?: string;
+};
+
+export type ProviderBalance = {
+	playerId: string;
+	balanceMinor: number;
+	currencyCode: string;
 };
 
 export type CasinoProvider = {
 	syncCatalogue: () => Promise<NormalizedCatalogue>;
 	launchGame: (input: LaunchGameInput) => Promise<LaunchGameResult>;
+	getPlayerBalance?: (playerId: string) => Promise<ProviderBalance>;
 };
 
 type CallbackIdentity = {

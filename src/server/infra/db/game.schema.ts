@@ -36,6 +36,7 @@ export const game = pgTable(
 		code: text("code"),
 		name: text("name").notNull(),
 		contentProvider: text("content_provider").notNull(),
+		category: text("category"),
 		type: text("type"),
 		description: text("description"),
 		rtp: real("rtp"),

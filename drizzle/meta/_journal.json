@@ -57,6 +57,20 @@
       "when": 1789376833268,
       "tag": "0007_tired_mockingbird",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789390800000,
+      "tag": "0008_bigbang_hybrid_session",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789768893291,
+      "tag": "0009_needy_loners",
+      "breakpoints": true
     }
   ]
 }

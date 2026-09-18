@@ -246,14 +246,15 @@ Callbacks use a provider-specific adapter that authenticates and normalizes the 
 BigBang is also available behind this contract for its Standard sandbox catalogue and player launch flow. Its demo launches are isolated from wallets. Its sandbox seamless-wallet callbacks must return BigBang's synthetic balance without changing BearBet money, and Standard games report a net round rather than the separate operations required by the current gameplay engine. Keep BigBang financial callbacks disabled until the provider confirms a compatible live event contract. See `bigbang-sandbox-findings.md`.
 
 For the submission, BearBet uses a deliberate hybrid boundary: the fixture
-provider is the authoritative, database-backed wallet/ledger proof, while
-BigBang supplies the genuine playable provider session. A future authenticated
-BigBang sandbox bridge may reconcile only the session-level provider balance
-delta (final minus launch snapshot) through an idempotent, explicitly labelled
-sandbox operation. It must never copy BigBang's absolute synthetic balance or
-invent per-round transactions when callbacks are absent. The public sandbox
-launcher remains read-only with respect to BearBet wallets until that mapping,
-baseline, close action, and retry-safe reconciliation are implemented.
+provider remains the authoritative, database-backed wallet/ledger proof, while
+BigBang supplies the genuine playable provider session. The authenticated
+BigBang bridge creates a provider player from the signed-in BearBet identity,
+stores the provider balance at launch, and reconciles only the session-level
+balance delta (final minus launch snapshot) through an idempotent,
+explicitly-labelled sandbox operation at close. It never copies BigBang's
+absolute synthetic balance or invents per-round transactions when callbacks are
+absent. The public sandbox launcher remains read-only with respect to BearBet
+wallets.
 
 The Greenbear V0 at `/Users/manasseh/Projects/work/greenbear-v0` is the behavioral reference for Drakon authentication, catalogue normalization, launch errors, callback probes, and refund edge cases.
 

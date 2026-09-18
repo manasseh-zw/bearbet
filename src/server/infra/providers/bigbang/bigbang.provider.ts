@@ -4,6 +4,7 @@ import { z } from "zod";
 import type {
 	LaunchGameInput,
 	NormalizedGame,
+	ProviderBalance,
 } from "#/server/infra/providers/provider.types";
 
 const REQUEST_TIMEOUT_MS = 20_000;
@@ -29,11 +30,22 @@ const bigBangLaunchResponseSchema = z.object({
 	game_url: z.string().url(),
 	game_id: z.number().int(),
 	game_name: z.string(),
+	session_id: z.string().min(1).optional(),
+});
+
+const bigBangBalanceResponseSchema = z.object({
+	success: z.literal(true),
+	data: z.object({
+		user_token: z.string().min(1),
+		balance: z.union([z.string(), z.number()]),
+		currency: z.string().length(3),
+	}),
 });
 
 export type BigBangConfig = {
 	baseUrl: string;
 	sandboxKey: string;
+	reconcileSandbox?: boolean;
 };
 
 export type BigBangSandboxGame = z.infer<typeof bigBangGameSchema>;
@@ -104,7 +116,10 @@ export function createBigBangProvider(
 				code: game.name,
 				name: game.title,
 				provider: game.provider,
-				type: game.game_type,
+				...(game.category_title || game.category
+					? { category: game.category_title ?? game.category }
+					: {}),
+				type: normalizeBigBangGameType(game.game_type),
 				coverUrl: game.thumbnail ?? undefined,
 				supportsFun: true,
 				isAvailable: true,
@@ -130,6 +145,12 @@ export function createBigBangProvider(
 					username: input.userName,
 				}),
 			});
+			const balance = await getPlayerBalance(input.userId);
+			if (balance.currencyCode !== input.currencyCode) {
+				throw new Error(
+					`BigBang player currency ${balance.currencyCode} does not match ${input.currencyCode}`,
+				);
+			}
 			const result = bigBangLaunchResponseSchema.safeParse(
 				await request("games/launch", {
 					method: "POST",
@@ -142,8 +163,15 @@ export function createBigBangProvider(
 				}),
 			);
 			if (!result.success) throw new Error("BigBang did not return a game URL");
-			return { url: assertLaunchUrl(result.data.game_url) };
+			return {
+				url: assertLaunchUrl(result.data.game_url),
+				externalSessionId: result.data.session_id,
+				providerPlayerId: input.userId,
+				providerBalanceMinor: balance.balanceMinor,
+				providerCurrencyCode: balance.currencyCode,
+			};
 		},
+		getPlayerBalance,
 		async listSandboxGames(limit = 9): Promise<BigBangSandboxGame[]> {
 			const result = bigBangGamesResponseSchema.safeParse(
 				await request(`games?type=standard&limit=${limit}`),
@@ -208,6 +236,21 @@ export function createBigBangProvider(
 			};
 		},
 	};
+
+	async function getPlayerBalance(playerId: string): Promise<ProviderBalance> {
+		const result = bigBangBalanceResponseSchema.safeParse(
+			await request(`balance/${encodeURIComponent(playerId)}`),
+		);
+		if (!result.success) {
+			throw new Error("BigBang did not return a valid player balance");
+		}
+
+		return {
+			playerId: result.data.data.user_token,
+			balanceMinor: decimalToMinorUnits(result.data.data.balance),
+			currencyCode: result.data.data.currency.toUpperCase(),
+		};
+	}
 }
 
 function assertLaunchUrl(value: string) {
@@ -216,4 +259,23 @@ function assertLaunchUrl(value: string) {
 		throw new Error("BigBang returned an unsupported game URL");
 	}
 	return url.href;
+}
+
+function normalizeBigBangGameType(type: BigBangSandboxGame["game_type"]) {
+	if (type === "slot") return "slots";
+	if (type === "crash") return "crashgame";
+	return "live";
+}
+
+function decimalToMinorUnits(value: string | number) {
+	const text = String(value);
+	const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(text);
+	if (!match) throw new Error("BigBang returned an invalid player balance");
+
+	const minor =
+		BigInt(match[1]) * 100n + BigInt((match[2] ?? "").padEnd(2, "0"));
+	if (minor > BigInt(Number.MAX_SAFE_INTEGER)) {
+		throw new Error("BigBang returned a player balance that is too large");
+	}
+	return Number(minor);
 }

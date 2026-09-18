@@ -54,6 +54,17 @@ export const gameSession = pgTable(
 		gameId: text("game_id").notNull(),
 		mode: gameSessionMode("mode").default("real").notNull(),
 		currencyCode: varchar("currency_code", { length: 3 }).notNull(),
+		launchUrl: text("launch_url"),
+		providerPlayerId: text("provider_player_id"),
+		providerBalanceBeforeMinor: bigint("provider_balance_before_minor", {
+			mode: "number",
+		}),
+		providerBalanceAfterMinor: bigint("provider_balance_after_minor", {
+			mode: "number",
+		}),
+		providerReconciledAt: timestamp("provider_reconciled_at", {
+			withTimezone: true,
+		}),
 		status: gameSessionStatus("status").default("active").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()

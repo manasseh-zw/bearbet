@@ -9,12 +9,19 @@ import {
 	game,
 	gameProvider,
 	gameSession,
+	ledgerEntry,
 	player,
 	user,
 	wallet,
+	walletOperation,
 } from "#/server/infra/db/schema";
 
-import { closeDemoGame, startDemoGame } from "./demo-game.service";
+import {
+	closeCurrentPlayerGame,
+	closeDemoGame,
+	startCurrentPlayerGame,
+	startDemoGame,
+} from "./demo-game.service";
 
 const playerId = `demo-session-test-${crypto.randomUUID()}`;
 const gameId = `demo-game-${crypto.randomUUID()}`;
@@ -59,6 +66,16 @@ before(async () => {
 
 after(async () => {
 	await db.delete(gameSession).where(eq(gameSession.playerId, playerId));
+	const [testWallet] = await db
+		.select({ id: wallet.id })
+		.from(wallet)
+		.where(eq(wallet.playerId, playerId));
+	if (testWallet) {
+		await db.delete(ledgerEntry).where(eq(ledgerEntry.walletId, testWallet.id));
+		await db
+			.delete(walletOperation)
+			.where(eq(walletOperation.walletId, testWallet.id));
+	}
 	await db.delete(wallet).where(eq(wallet.playerId, playerId));
 	await db.delete(player).where(eq(player.userId, playerId));
 	await db.delete(user).where(eq(user.id, playerId));
@@ -107,4 +124,81 @@ test("starting a game resumes its active session across new launch keys", async 
 		launchKey: crypto.randomUUID(),
 	});
 	assert.notEqual(next.sessionId, first.sessionId);
+	await closeDemoGame({ playerId, sessionId: next.sessionId });
+});
+
+test("BigBang sessions reconcile one provider delta and resume without relaunching", {
+	skip: env.CASINO_PROVIDER !== "bigbang",
+}, async () => {
+	let providerBalanceMinor = 10_000_000;
+	let launchCalls = 0;
+	let balanceReads = 0;
+	const provider = {
+		async syncCatalogue() {
+			throw new Error("Not used by this test");
+		},
+		async launchGame() {
+			launchCalls += 1;
+			balanceReads += 1;
+			return {
+				url: "https://games.example/real/session",
+				externalSessionId: "provider-session-test",
+				providerPlayerId: playerId,
+				providerBalanceMinor,
+				providerCurrencyCode: "USD",
+			};
+		},
+		async getPlayerBalance(playerId: string) {
+			balanceReads += 1;
+			return {
+				playerId,
+				balanceMinor: providerBalanceMinor,
+				currencyCode: "USD",
+			};
+		},
+	};
+
+	const first = await startCurrentPlayerGame(
+		{
+			playerId,
+			gameId,
+			launchKey: crypto.randomUUID(),
+		},
+		provider,
+	);
+	const refreshed = await startCurrentPlayerGame(
+		{
+			playerId,
+			gameId,
+			launchKey: crypto.randomUUID(),
+		},
+		provider,
+	);
+	assert.equal(first.launchMode, "provider");
+	assert.equal(refreshed.sessionId, first.sessionId);
+	assert.equal(launchCalls, 1);
+	assert.equal(balanceReads, 1);
+
+	providerBalanceMinor = 9_999_850;
+	const closed = await closeCurrentPlayerGame(
+		{ playerId, sessionId: first.sessionId },
+		provider,
+	);
+	assert.equal(closed.kind, "provider");
+	assert.equal(closed.netDeltaMinor, -150);
+	assert.equal(closed.reconciliationApplied, true);
+	assert.equal(balanceReads, 2);
+
+	const retried = await closeCurrentPlayerGame(
+		{ playerId, sessionId: first.sessionId },
+		provider,
+	);
+	assert.equal(retried.kind, "provider");
+	assert.equal(retried.netDeltaMinor, -150);
+	assert.equal(balanceReads, 2);
+	assert.equal(
+		(await db.select().from(wallet).where(eq(wallet.playerId, playerId)))[0]
+			?.cashBalanceMinor,
+		9_850,
+	);
 });

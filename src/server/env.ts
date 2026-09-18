@@ -7,16 +7,22 @@ const optionalServerString = z.preprocess(
 	z.string().min(1).optional(),
 );
 
+const providerName = z.preprocess(
+	(value) => (typeof value === "string" ? value.trim().toLowerCase() : value),
+	z.enum(["fixture", "drakon", "bigbang"]),
+);
+
+const enabledByDefault = z.preprocess((value) => {
+	if (value === undefined || value === "") return true;
+	if (typeof value === "boolean") return value;
+	return value === "true";
+}, z.boolean());
+
 const serverEnvSchema = z.object({
 	DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 	BETTER_AUTH_URL: z.string().url(),
 	BETTER_AUTH_SECRET: z.string().min(32),
-	CASINO_PROVIDER: z
-		.enum(["fixture", "drakon", "bigbang", "BIGBANG"])
-		.transform(
-			(value) => value.toLowerCase() as "fixture" | "drakon" | "bigbang",
-		)
-		.default("fixture"),
+	CASINO_PROVIDER: providerName.default("fixture"),
 	DRAKON_BASE_URL: z.url().default("https://gator.drakon.casino/api/v1/"),
 	DRAKON_AGENT_CODE: optionalServerString,
 	DRAKON_AGENT_TOKEN: optionalServerString,
@@ -28,6 +34,7 @@ const serverEnvSchema = z.object({
 	DRAKON_MODE: z.enum(["fun", "real"]).default("fun"),
 	BIGBANG_BASE_URL: z.url().default("https://api.bigbangcasino.bet/"),
 	BIGBANG_SANDBOX_KEY: optionalServerString,
+	BIGBANG_SANDBOX_RECONCILIATION: enabledByDefault,
 	FIXTURE_PROVIDER_DELAY_MS: z.coerce
 		.number()
 		.int()
@@ -77,17 +84,24 @@ export function getBigBangEnv() {
 		.object({
 			baseUrl: z.url(),
 			sandboxKey: z.string().min(1),
+			reconcileSandbox: z.boolean(),
 		})
 		.safeParse({
 			baseUrl: env.BIGBANG_BASE_URL,
 			sandboxKey: env.BIGBANG_SANDBOX_KEY,
+			reconcileSandbox: env.BIGBANG_SANDBOX_RECONCILIATION,
 		});
 
 	if (!result.success) {
 		throw new Error(
-			"BIGBANG_SANDBOX_KEY is required to use the BigBang sandbox launcher",
+			"BIGBANG_SANDBOX_KEY is required to use the BigBang provider",
 		);
 	}
 
-	return result.data;
+	return {
+		...result.data,
+		reconcileSandbox:
+			result.data.reconcileSandbox &&
+			result.data.sandboxKey.startsWith("ek_test_"),
+	};
 }

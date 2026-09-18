@@ -72,6 +72,7 @@ const transactionLabels: Record<HistoryOperationType, string> = {
 	bonus_conversion: "Bonus converted",
 	bonus_forfeit: "Bonus forfeited",
 	admin_adjustment: "Balance adjustment",
+	provider_reconciliation: "BigBang sandbox reconciliation",
 };
 
 type HistoryPageProps = {

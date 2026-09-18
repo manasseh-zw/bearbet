@@ -121,6 +121,9 @@ function normalizeGame(candidate: NormalizedGame): NormalizedGame {
 		name,
 		provider,
 		...(candidate.code?.trim() ? { code: candidate.code.trim() } : {}),
+		...(candidate.category?.trim()
+			? { category: candidate.category.trim() }
+			: {}),
 		...(candidate.type?.trim()
 			? { type: candidate.type.trim().toLowerCase() }
 			: {}),
@@ -141,6 +144,7 @@ function toGameRecord(
 		code: candidate.code,
 		name: candidate.name,
 		contentProvider: candidate.provider,
+		category: candidate.category,
 		type: candidate.type,
 		description: candidate.description,
 		rtp: candidate.rtp,
@@ -162,6 +166,7 @@ function toNormalizedGame(stored: typeof game.$inferSelect): NormalizedGame {
 		...(stored.code ? { code: stored.code } : {}),
 		name: stored.name,
 		provider: stored.contentProvider,
+		...(stored.category ? { category: stored.category } : {}),
 		...(stored.type ? { type: stored.type } : {}),
 		...(stored.description ? { description: stored.description } : {}),
 		...(stored.rtp !== null ? { rtp: stored.rtp } : {}),

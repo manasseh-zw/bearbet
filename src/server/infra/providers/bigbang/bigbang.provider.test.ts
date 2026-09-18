@@ -21,6 +21,8 @@ test("BigBang lists standard sandbox games and launches a demo URL", async () =>
 							name: "demo-game",
 							title: "Demo game",
 							provider: "Test provider",
+							category: "test-provider",
+							category_title: "Test category",
 							thumbnail: null,
 							game_type: "slot",
 						},
@@ -36,12 +38,17 @@ test("BigBang lists standard sandbox games and launches a demo URL", async () =>
 		},
 	);
 
+	const synced = await provider.syncCatalogue();
+	assert.equal(synced.games[0]?.type, "slots");
+	assert.equal(synced.games[0]?.category, "Test category");
 	assert.deepEqual(await provider.listSandboxGames(), [
 		{
 			id: 42,
 			name: "demo-game",
 			title: "Demo game",
 			provider: "Test provider",
+			category: "test-provider",
+			category_title: "Test category",
 			thumbnail: null,
 			game_type: "slot",
 		},
@@ -53,11 +60,15 @@ test("BigBang lists standard sandbox games and launches a demo URL", async () =>
 	});
 	assert.equal(
 		requests[0]?.url,
+		"https://sandbox.example/api/v1/games?type=standard&limit=5000",
+	);
+	assert.equal(
+		requests[1]?.url,
 		"https://sandbox.example/api/v1/games?type=standard&limit=9",
 	);
-	assert.equal(requests[1]?.url, "https://sandbox.example/api/v1/games/launch");
+	assert.equal(requests[2]?.url, "https://sandbox.example/api/v1/games/launch");
 	assert.equal(
-		requests[1]?.init?.body,
+		requests[2]?.init?.body,
 		'{"game_id":42,"demo":true,"language":"en"}',
 	);
 });
@@ -99,4 +110,58 @@ test("BigBang creates an isolated sandbox player and launches callback-enabled p
 		requests[1]?.init?.body,
 		'{"game_id":42,"user_token":"capture-player","language":"en"}',
 	);
+});
+
+test("BigBang launches an authenticated player with a balance snapshot", async () => {
+	const requests: Array<{ url: string; init?: RequestInit }> = [];
+	const provider = createBigBangProvider(
+		{
+			baseUrl: "https://sandbox.example/api/v1",
+			sandboxKey: "ek_test_example",
+		},
+		async (url, init) => {
+			requests.push({ url: String(url), init });
+			if (String(url).endsWith("users/create")) {
+				return Response.json({ success: true, data: {} }, { status: 201 });
+			}
+			if (String(url).includes("balance/")) {
+				return Response.json({
+					success: true,
+					data: {
+						user_token: "player-42",
+						balance: "100000.00",
+						currency: "USD",
+					},
+				});
+			}
+			return Response.json({
+				success: true,
+				game_url: "https://games.example/real/42",
+				session_id: "provider-session-42",
+				game_id: 42,
+				game_name: "Callback game",
+			});
+		},
+	);
+
+	assert.deepEqual(
+		await provider.launchGame({
+			gameId: "42",
+			userId: "player-42",
+			userName: "Player 42",
+			currencyCode: "USD",
+		}),
+		{
+			url: "https://games.example/real/42",
+			externalSessionId: "provider-session-42",
+			providerPlayerId: "player-42",
+			providerBalanceMinor: 10_000_000,
+			providerCurrencyCode: "USD",
+		},
+	);
+	assert.equal(
+		requests[1]?.url,
+		"https://sandbox.example/api/v1/balance/player-42",
+	);
+	assert.equal(requests[2]?.url, "https://sandbox.example/api/v1/games/launch");
 });

@@ -35,6 +35,7 @@ export const ledgerEntryType = pgEnum("ledger_entry_type", [
 	"bonus_conversion",
 	"bonus_forfeit",
 	"admin_adjustment",
+	"provider_reconciliation",
 ]);
 
 export const wallet = pgTable(

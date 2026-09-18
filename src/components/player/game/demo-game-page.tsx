@@ -30,9 +30,9 @@ import { historyQueries } from "#/lib/queries/history.queries";
 import { walletQueries } from "#/lib/queries/wallet.queries";
 import { cn } from "#/lib/utils";
 import {
-	closeCurrentPlayerDemoGame,
+	closeCurrentPlayerGame,
 	playCurrentPlayerDemoGame,
-	startCurrentPlayerDemoGame,
+	startCurrentPlayerGame,
 } from "#/server/domains/gameplay/gameplay.functions";
 
 type DemoGamePageProps = { gameId: string };
@@ -43,12 +43,12 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 	const roundKey = useRef<string | null>(null);
 	const [stake, setStake] = useState("10.00");
 	const [summary, setSummary] = useState<Awaited<
-		ReturnType<typeof closeCurrentPlayerDemoGame>
+		ReturnType<typeof closeCurrentPlayerGame>
 	> | null>(null);
 
 	const start = useMutation({
 		mutationFn: () =>
-			startCurrentPlayerDemoGame({
+			startCurrentPlayerGame({
 				data: { gameId, launchKey: launchKey.current },
 			}),
 	});
@@ -78,7 +78,7 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 	});
 	const close = useMutation({
 		mutationFn: (sessionId: string) =>
-			closeCurrentPlayerDemoGame({ data: { sessionId } }),
+			closeCurrentPlayerGame({ data: { sessionId } }),
 		onSuccess: async (result) => {
 			setSummary(result);
 			await Promise.all([
@@ -132,6 +132,17 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 				onRetry={() => start.mutate()}
 			/>
 		);
+	if (session.launchMode === "provider")
+		return (
+			<BigBangProviderGame
+				session={session}
+				onClose={() => close.mutate(session.sessionId)}
+				isClosing={close.isPending}
+				error={close.isError ? errorMessage(close.error) : null}
+			/>
+		);
+	if (summary?.kind === "provider")
+		return <BigBangGameSummary summary={summary} />;
 	if (summary)
 		return (
 			<GameSummary
@@ -330,7 +341,10 @@ function GameSummary({
 	money,
 	gameName,
 }: {
-	summary: Awaited<ReturnType<typeof closeCurrentPlayerDemoGame>>;
+	summary: Extract<
+		Awaited<ReturnType<typeof closeCurrentPlayerGame>>,
+		{ kind: "demo" }
+	>;
 	money: Intl.NumberFormat;
 	gameName: string;
 }) {
@@ -367,6 +381,168 @@ function GameSummary({
 			</Card>
 		</main>
 	);
+}
+
+type BigBangProviderSession = Extract<
+	Awaited<ReturnType<typeof startCurrentPlayerGame>>,
+	{ launchMode: "provider" }
+>;
+
+function BigBangProviderGame({
+	session,
+	onClose,
+	isClosing,
+	error,
+}: {
+	session: BigBangProviderSession;
+	onClose: () => void;
+	isClosing: boolean;
+	error: string | null;
+}) {
+	return (
+		<main className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+			<header className="mb-5 flex items-center justify-between gap-3">
+				<Link
+					to="/"
+					className={cn(buttonVariants({ variant: "ghost" }), "-ml-2")}
+				>
+					<ArrowLeftIcon /> Games
+				</Link>
+				<Button variant="outline" onClick={onClose} disabled={isClosing}>
+					{isClosing ? (
+						<LoaderCircleIcon className="animate-spin" />
+					) : (
+						<XIcon />
+					)}
+					End and reconcile
+				</Button>
+			</header>
+
+			<Card className="overflow-hidden border border-primary/20 bg-[radial-gradient(circle_at_top,var(--color-primary)/12%,transparent_52%)]">
+				<CardHeader>
+					<div className="flex flex-wrap gap-2">
+						<Badge variant="secondary">BigBang provider sandbox</Badge>
+						<Badge variant="outline">Provider-managed funds</Badge>
+					</div>
+					<CardTitle className="font-logo text-3xl sm:text-4xl">
+						{session.game.name}
+					</CardTitle>
+					<CardDescription>
+						{[session.game.category, session.game.provider]
+							.filter(Boolean)
+							.join(" · ")}
+						<br />
+						Live gameplay is hosted by BigBang. BearBet reconciles only the net
+						provider balance change when you end the session.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="overflow-hidden rounded-2xl border bg-black shadow-2xl">
+						<iframe
+							title={`${session.game.name} BigBang provider sandbox`}
+							src={session.launchUrl}
+							allow="autoplay; fullscreen"
+							className="aspect-video min-h-[26rem] w-full border-0 sm:min-h-[36rem]"
+						/>
+					</div>
+					<div className="mt-4 flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+						<p>
+							Provider balance at launch:{" "}
+							{formatMoney(session.balanceMinor, session.currencyCode)}
+						</p>
+						<a
+							href={session.launchUrl}
+							target="_blank"
+							rel="noreferrer"
+							className="font-medium text-primary hover:underline"
+						>
+							Open game in a new tab
+						</a>
+					</div>
+					{error ? (
+						<p className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+							{error}
+						</p>
+					) : null}
+				</CardContent>
+			</Card>
+		</main>
+	);
+}
+
+type BigBangGameSummaryResult = Extract<
+	Awaited<ReturnType<typeof closeCurrentPlayerGame>>,
+	{ kind: "provider" }
+>;
+
+function BigBangGameSummary({
+	summary,
+}: {
+	summary: BigBangGameSummaryResult;
+}) {
+	return (
+		<main className="grid min-h-[70vh] place-items-center px-4 py-8">
+			<Card className="w-full max-w-lg">
+				<CardHeader className="text-center">
+					<div className="mb-2 flex justify-center gap-2">
+						<Badge variant="secondary">BigBang sandbox</Badge>
+						<Badge variant="outline">Session reconciliation</Badge>
+					</div>
+					<CardTitle className="font-logo text-3xl">Session complete</CardTitle>
+					<CardDescription>
+						The provider balance was reconciled at session close.
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="grid grid-cols-2 gap-3">
+					<Metric
+						label="Provider balance at launch"
+						value={formatMoney(
+							summary.providerBalanceBeforeMinor,
+							summary.currencyCode,
+						)}
+					/>
+					<Metric
+						label="Provider balance at close"
+						value={formatMoney(
+							summary.providerBalanceAfterMinor,
+							summary.currencyCode,
+						)}
+					/>
+					<Metric
+						label="Net provider change"
+						value={`${summary.netDeltaMinor >= 0 ? "+" : ""}${formatMoney(summary.netDeltaMinor, summary.currencyCode)}`}
+					/>
+					<Metric
+						label="BearBet wallet"
+						value={formatMoney(
+							summary.walletBalanceMinor,
+							summary.currencyCode,
+						)}
+					/>
+				</CardContent>
+				<CardFooter className="flex-col gap-3">
+					<p className="text-center text-sm text-muted-foreground">
+						{summary.netDeltaMinor === 0
+							? "There was no net provider balance change for this session."
+							: summary.reconciliationApplied
+								? "The net change was recorded as one BigBang sandbox reconciliation."
+								: "Wallet reconciliation is disabled; the provider result was recorded for reference."}
+					</p>
+					<Link to="/" className={cn(buttonVariants({ size: "lg" }), "w-full")}>
+						Back to games
+					</Link>
+				</CardFooter>
+			</Card>
+		</main>
+	);
+}
+
+function formatMoney(amountMinor: number, currencyCode: string) {
+	return new Intl.NumberFormat("en-US", {
+		style: "currency",
+		currency: currencyCode,
+		minimumFractionDigits: 2,
+	}).format(amountMinor / 100);
 }
 
 function parseMoneyInput(value: string) {

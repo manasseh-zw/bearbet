@@ -5,6 +5,7 @@ export type GameCardGame = {
 	id: string;
 	name: string;
 	provider: string;
+	category?: string;
 	type?: string;
 	imageUrl?: string;
 };
@@ -47,7 +48,10 @@ export function GameCard({
 				{game.name}
 			</span>
 			<span className="mt-0.5 block truncate text-xs capitalize text-muted-foreground">
-				{game.provider}
+				{game.category ?? game.provider}
+				{game.category && game.category !== game.provider
+					? ` · ${game.provider}`
+					: ""}
 				{game.type ? ` · ${game.type.replaceAll("game", " game")}` : ""}
 			</span>
 		</>

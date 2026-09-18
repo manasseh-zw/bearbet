@@ -23,6 +23,7 @@ export const historyOperationTypes = [
 	"bonus_conversion",
 	"bonus_forfeit",
 	"admin_adjustment",
+	"provider_reconciliation",
 ] as const;
 
 const dateSchema = z

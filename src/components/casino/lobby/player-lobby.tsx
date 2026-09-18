@@ -109,7 +109,9 @@ export function PlayerLobby() {
 		const query = search.trim().toLocaleLowerCase();
 		if (!query) return games;
 		return games.filter((game) =>
-			`${game.name} ${game.provider}`.toLocaleLowerCase().includes(query),
+			`${game.name} ${game.provider} ${game.category ?? ""}`
+				.toLocaleLowerCase()
+				.includes(query),
 		);
 	}, [games, search]);
 

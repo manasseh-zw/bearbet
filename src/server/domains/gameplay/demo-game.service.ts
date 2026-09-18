@@ -7,14 +7,19 @@ import {
 	recordBet,
 	recordWin,
 } from "#/server/domains/gameplay/gameplay.service";
-import { getPlayableBalance } from "#/server/domains/wallet/wallet.service";
-import { env } from "#/server/env";
+import {
+	applyWalletOperation,
+	getPlayableBalance,
+} from "#/server/domains/wallet/wallet.service";
+import { env, getBigBangEnv } from "#/server/env";
 import { db } from "#/server/infra/db";
 import {
 	gameRound,
 	gameSession,
 	providerOperation,
 } from "#/server/infra/db/schema";
+import { createCasinoProvider } from "#/server/infra/providers";
+import type { CasinoProvider } from "#/server/infra/providers/provider.types";
 import { resolveDemoGameOutcome } from "./demo-game.policy";
 
 export class DemoGameError extends Error {
@@ -87,7 +92,118 @@ export async function startDemoGame(input: {
 	});
 	if (!session)
 		throw new DemoGameError("The game session could not be started");
-	return sessionResult(session, game, wallet.balanceMinor);
+	return sessionResult(session, game, wallet.balanceMinor, "demo");
+}
+
+export async function startCurrentPlayerGame(
+	input: {
+		playerId: string;
+		gameId: string;
+		launchKey: string;
+		userName?: string;
+	},
+	providerOverride?: CasinoProvider,
+) {
+	if (env.CASINO_PROVIDER !== "bigbang") {
+		return startDemoGame(input);
+	}
+
+	const provider = providerOverride ?? createCasinoProvider();
+	if (!provider.getPlayerBalance) {
+		throw new DemoGameError(
+			"The BigBang provider does not support player balances",
+		);
+	}
+
+	const [game, wallet] = await Promise.all([
+		findGame(env.CASINO_PROVIDER, input.gameId),
+		getPlayableBalance(input.playerId),
+	]);
+	if (!game?.isAvailable) throw new DemoGameError("This game is unavailable");
+	if (wallet.balanceMinor <= 0)
+		throw new DemoGameError("Add funds to your wallet before playing");
+
+	const session = await db.transaction(async (transaction) => {
+		await transaction.execute(
+			sql`select pg_advisory_xact_lock(hashtext(${`${env.CASINO_PROVIDER}:${input.playerId}:${input.gameId}`}))`,
+		);
+
+		const [activeSession] = await transaction
+			.select()
+			.from(gameSession)
+			.where(
+				and(
+					eq(gameSession.integrationProvider, env.CASINO_PROVIDER),
+					eq(gameSession.playerId, input.playerId),
+					eq(gameSession.gameId, input.gameId),
+					eq(gameSession.status, "active"),
+				),
+			)
+			.orderBy(desc(gameSession.createdAt))
+			.limit(1);
+		if (activeSession) {
+			if (!activeSession.launchUrl || !activeSession.providerPlayerId) {
+				throw new DemoGameError("The active BigBang session is unavailable");
+			}
+			return activeSession;
+		}
+
+		const launch = await provider.launchGame({
+			gameId: input.gameId,
+			userId: input.playerId,
+			userName: input.userName ?? input.playerId,
+			currencyCode: wallet.currencyCode,
+		});
+		if (
+			!launch.providerPlayerId ||
+			launch.providerBalanceMinor === undefined ||
+			!launch.providerCurrencyCode
+		) {
+			throw new DemoGameError(
+				"BigBang did not return a player balance snapshot",
+			);
+		}
+		if (launch.providerCurrencyCode !== wallet.currencyCode) {
+			throw new DemoGameError("BigBang returned the wrong player currency");
+		}
+
+		const [createdSession] = await transaction
+			.insert(gameSession)
+			.values({
+				playerId: input.playerId,
+				integrationProvider: env.CASINO_PROVIDER,
+				externalSessionId:
+					launch.externalSessionId ?? `bigbang:${input.launchKey}`,
+				gameId: input.gameId,
+				mode: "real",
+				currencyCode: wallet.currencyCode,
+				launchUrl: launch.url,
+				providerPlayerId: launch.providerPlayerId,
+				providerBalanceBeforeMinor: launch.providerBalanceMinor,
+			})
+			.onConflictDoNothing()
+			.returning();
+		if (createdSession) return createdSession;
+
+		const [existingSession] = await transaction
+			.select()
+			.from(gameSession)
+			.where(
+				and(
+					eq(gameSession.integrationProvider, env.CASINO_PROVIDER),
+					eq(gameSession.playerId, input.playerId),
+					eq(
+						gameSession.externalSessionId,
+						launch.externalSessionId ?? `bigbang:${input.launchKey}`,
+					),
+				),
+			);
+		return existingSession;
+	});
+
+	if (!session)
+		throw new DemoGameError("The BigBang game session could not be started");
+	return sessionResult(session, game, wallet.balanceMinor, "provider");
 }
 
 export async function playDemoGame(input: {
@@ -181,6 +297,7 @@ export async function closeDemoGame(input: {
 	const returnedMinor = Number(totals?.returnedMinor ?? 0);
 
 	return {
+		kind: "demo" as const,
 		sessionId: input.sessionId,
 		currencyCode: wallet.currencyCode,
 		balanceMinor: wallet.balanceMinor,
@@ -189,6 +306,93 @@ export async function closeDemoGame(input: {
 		netMinor: returnedMinor - stakedMinor,
 		roundsPlayed: Number(totals?.roundsPlayed ?? 0),
 	};
+}
+
+export async function closeCurrentPlayerGame(
+	input: {
+		playerId: string;
+		sessionId: string;
+	},
+	providerOverride?: CasinoProvider,
+) {
+	const [session] = await db
+		.select()
+		.from(gameSession)
+		.where(
+			and(
+				eq(gameSession.id, input.sessionId),
+				eq(gameSession.playerId, input.playerId),
+			),
+		);
+	if (!session) throw new DemoGameError("Game session was not found");
+	if (session.integrationProvider !== "bigbang") return closeDemoGame(input);
+
+	const provider = providerOverride ?? createCasinoProvider();
+	if (!provider.getPlayerBalance || !session.providerPlayerId) {
+		throw new DemoGameError("The BigBang session cannot be reconciled");
+	}
+	const config = getBigBangEnv();
+
+	if (
+		session.providerReconciledAt &&
+		session.providerBalanceAfterMinor !== null
+	) {
+		const wallet = await getPlayableBalance(input.playerId);
+		return providerSessionSummary(
+			session,
+			wallet.balanceMinor,
+			config.reconcileSandbox,
+		);
+	}
+
+	const finalBalance = await provider.getPlayerBalance(
+		session.providerPlayerId,
+	);
+	if (finalBalance.currencyCode !== session.currencyCode) {
+		throw new DemoGameError("BigBang returned the wrong player currency");
+	}
+	if (session.providerBalanceBeforeMinor === null) {
+		throw new DemoGameError("The BigBang session has no balance baseline");
+	}
+
+	const netDeltaMinor =
+		finalBalance.balanceMinor - session.providerBalanceBeforeMinor;
+	if (config.reconcileSandbox && netDeltaMinor !== 0) {
+		await applyWalletOperation({
+			playerId: input.playerId,
+			type: "provider_reconciliation",
+			idempotencyKey: `bigbang:sandbox:reconcile:${session.id}`,
+			movements: [{ bucket: "cash", amountMinor: netDeltaMinor }],
+			sourceType: "bigbang_sandbox_reconciliation",
+			sourceId: session.id,
+		});
+	}
+
+	const reconciledAt = new Date();
+	const [closedSession] = await db
+		.update(gameSession)
+		.set({
+			status: "closed",
+			closedAt: session.closedAt ?? reconciledAt,
+			providerBalanceAfterMinor: finalBalance.balanceMinor,
+			providerReconciledAt: reconciledAt,
+		})
+		.where(
+			and(
+				eq(gameSession.id, input.sessionId),
+				eq(gameSession.playerId, input.playerId),
+			),
+		)
+		.returning();
+	if (!closedSession)
+		throw new DemoGameError("The BigBang session could not be closed");
+
+	const wallet = await getPlayableBalance(input.playerId);
+	return providerSessionSummary(
+		closedSession,
+		wallet.balanceMinor,
+		config.reconcileSandbox,
+	);
 }
 
 async function getActiveSession(playerId: string, sessionId: string) {
@@ -210,17 +414,72 @@ function sessionResult(
 	session: typeof gameSession.$inferSelect,
 	game: NonNullable<Awaited<ReturnType<typeof findGame>>>,
 	balanceMinor: number,
+	launchMode: "demo" | "provider",
 ) {
+	if (launchMode === "provider") {
+		if (
+			!session.launchUrl ||
+			!session.providerPlayerId ||
+			session.providerBalanceBeforeMinor === null
+		) {
+			throw new DemoGameError("The BigBang session is missing launch details");
+		}
+		return {
+			launchMode: "provider" as const,
+			sessionId: session.id,
+			game: gameSummary(game),
+			currencyCode: session.currencyCode,
+			balanceMinor: session.providerBalanceBeforeMinor,
+			walletBalanceMinor: balanceMinor,
+			launchUrl: session.launchUrl,
+			providerPlayerId: session.providerPlayerId,
+		};
+	}
+
 	return {
+		launchMode: "demo" as const,
 		sessionId: session.id,
-		game: {
-			id: game.id,
-			name: game.name,
-			provider: game.provider,
-			type: game.type,
-			imageUrl: game.bannerUrl ?? game.coverUrl,
-		},
+		game: gameSummary(game),
 		currencyCode: session.currencyCode,
 		balanceMinor,
+	};
+}
+
+function gameSummary(game: NonNullable<Awaited<ReturnType<typeof findGame>>>) {
+	return {
+		id: game.id,
+		name: game.name,
+		provider: game.provider,
+		category: game.category,
+		type: game.type,
+		imageUrl: game.bannerUrl ?? game.coverUrl,
+	};
+}
+
+function providerSessionSummary(
+	session: typeof gameSession.$inferSelect,
+	walletBalanceMinor: number,
+	reconciliationEnabled: boolean,
+) {
+	if (
+		session.providerBalanceBeforeMinor === null ||
+		session.providerBalanceAfterMinor === null
+	) {
+		throw new DemoGameError(
+			"The BigBang session has no reconciliation summary",
+		);
+	}
+	return {
+		kind: "provider" as const,
+		sessionId: session.id,
+		currencyCode: session.currencyCode,
+		providerBalanceBeforeMinor: session.providerBalanceBeforeMinor,
+		providerBalanceAfterMinor: session.providerBalanceAfterMinor,
+		netDeltaMinor:
+			session.providerBalanceAfterMinor - session.providerBalanceBeforeMinor,
+		walletBalanceMinor,
+		reconciliationApplied:
+			reconciliationEnabled &&
+			session.providerBalanceAfterMinor !== session.providerBalanceBeforeMinor,
 	};
 }
