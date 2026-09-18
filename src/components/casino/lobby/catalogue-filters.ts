@@ -4,7 +4,7 @@ export const uncategorizedGameLabel = "Other";
 
 export const catalogueViewConfig = {
 	casino: {
-		defaultCategory: "Booming",
+		defaultCategory: "all",
 		featuredCategory: "Playtech",
 		priorityCategories: ["Booming", "Evoplay"],
 	},

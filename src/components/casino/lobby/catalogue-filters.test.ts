@@ -92,5 +92,5 @@ test("priority categories sort games within the All categories result", () => {
 
 test("casino uses different featured and default providers", () => {
 	assert.equal(catalogueViewConfig.casino.featuredCategory, "Playtech");
-	assert.equal(catalogueViewConfig.casino.defaultCategory, "Booming");
+	assert.equal(catalogueViewConfig.casino.defaultCategory, "all");
 });
