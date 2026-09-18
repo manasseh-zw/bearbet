@@ -1,40 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { FlameIcon, Grid2X2Icon, SearchIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { FlameIcon } from "lucide-react";
+import { useMemo } from "react";
 
-import {
-	type FilterDefinition,
-	FilterGrid,
-} from "#/components/casino/catalogue-filter-grid";
 import { GameCard } from "#/components/casino/game-card";
 import {
-	getCatalogueCategories,
+	catalogueViewConfig,
 	normalizeCatalogueCategory,
 } from "#/components/casino/lobby/catalogue-filters";
-import { Input } from "#/components/ui/input";
+import { GameCatalogue } from "#/components/casino/lobby/game-catalogue";
 import { Skeleton } from "#/components/ui/skeleton";
 import { catalogueQueries } from "#/lib/queries/catalogue.queries";
-import type { NormalizedGame } from "#/server/infra/providers/provider.types";
-
-function useCatalogueColumns() {
-	const [columns, setColumns] = useState(2);
-
-	useEffect(() => {
-		const update = () => {
-			if (window.innerWidth >= 1536) setColumns(6);
-			else if (window.innerWidth >= 1280) setColumns(5);
-			else if (window.innerWidth >= 1024) setColumns(4);
-			else if (window.innerWidth >= 640) setColumns(3);
-			else setColumns(2);
-		};
-
-		update();
-		window.addEventListener("resize", update);
-		return () => window.removeEventListener("resize", update);
-	}, []);
-
-	return columns;
-}
 
 const catalogueSkeletonKeys = Array.from(
 	{ length: 12 },
@@ -56,40 +31,20 @@ function CatalogueSkeleton() {
 }
 
 export function PlayerLobby() {
-	const [search, setSearch] = useState("");
-	const columns = useCatalogueColumns();
 	const catalogue = useQuery(catalogueQueries.games());
 	const games = useMemo(
 		() => catalogue.data?.filter((game) => game.isAvailable) ?? [],
 		[catalogue.data],
 	);
-	const topPicks = games.slice(0, 6);
-	const categories = useMemo<FilterDefinition<NormalizedGame>[]>(
-		() => [
-			{
-				id: "all",
-				label: "All categories",
-				icon: <Grid2X2Icon className="size-4" />,
-				match: () => true,
-			},
-			...getCatalogueCategories(games).map((category) => ({
-				id: category.id,
-				label: category.label,
-				match: (game: NormalizedGame) =>
-					normalizeCatalogueCategory(game.category) === category.value,
-			})),
-		],
-		[games],
-	);
-	const searchedGames = useMemo(() => {
-		const query = search.trim().toLocaleLowerCase();
-		if (!query) return games;
-		return games.filter((game) =>
-			`${game.name} ${game.provider} ${game.category ?? ""}`
-				.toLocaleLowerCase()
-				.includes(query),
+	const topPicks = useMemo(() => {
+		const featured = games.filter(
+			(game) =>
+				normalizeCatalogueCategory(game.category) ===
+				catalogueViewConfig.casino.defaultCategory,
 		);
-	}, [games, search]);
+
+		return (featured.length > 0 ? featured : games).slice(0, 6);
+	}, [games]);
 
 	return (
 		<main className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">
@@ -100,13 +55,13 @@ export function PlayerLobby() {
 					</span>
 					<div>
 						<p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
-							Your casino
+							Featured provider
 						</p>
 						<h1
 							id="top-picks-title"
 							className="font-logo text-3xl text-foreground"
 						>
-							Top picks for you
+							Booming games
 						</h1>
 					</div>
 				</div>
@@ -127,71 +82,16 @@ export function PlayerLobby() {
 				)}
 			</section>
 
-			<section className="mt-12 pb-12" aria-labelledby="catalogue-title">
-				<div className="mb-5">
-					<p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
-						Find your game
-					</p>
-					<h2
-						id="catalogue-title"
-						className="mt-1 font-logo text-3xl text-foreground sm:text-4xl"
-					>
-						Casino catalogue
-					</h2>
-				</div>
-
-				<label htmlFor="catalogue-search" className="relative mb-5 block">
-					<span className="sr-only">Search games</span>
-					<SearchIcon className="pointer-events-none absolute top-1/2 left-5 size-5 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						id="catalogue-search"
-						type="search"
-						value={search}
-						onChange={(event) => setSearch(event.target.value)}
-						placeholder="Search games..."
-						className="h-12 rounded-xl border-white/8 bg-card pr-4 pl-12 text-sm shadow-none placeholder:text-muted-foreground/65"
-					/>
-				</label>
-
-				{catalogue.isPending ? (
-					<CatalogueSkeleton />
-				) : catalogue.isError ? (
-					<div className="grid min-h-64 place-items-center rounded-xl border border-destructive/30 bg-destructive/5 px-6 text-center">
-						<div>
-							<p className="font-semibold text-foreground">
-								The catalogue could not be loaded.
-							</p>
-							<button
-								type="button"
-								onClick={() => catalogue.refetch()}
-								className="mt-2 text-sm font-semibold text-primary hover:underline"
-							>
-								Try again
-							</button>
-						</div>
-					</div>
-				) : (
-					<FilterGrid
-						items={searchedGames}
-						filters={categories}
-						label="Game category"
-						getKey={(game) => game.id}
-						columns={columns}
-						gap={columns === 2 ? 20 : 24}
-						emptyLabel={
-							search
-								? `No games found for “${search}”`
-								: "No games in this category"
-						}
-						renderItem={(game) => (
-							<GameCard
-								playable
-								game={{ ...game, imageUrl: game.bannerUrl ?? game.coverUrl }}
-							/>
-						)}
-					/>
-				)}
-			</section>
+			<GameCatalogue
+				games={games}
+				isPending={catalogue.isPending}
+				isError={catalogue.isError}
+				onRetry={() => catalogue.refetch()}
+				defaultCategory={catalogueViewConfig.casino.defaultCategory}
+				priorityCategories={catalogueViewConfig.casino.priorityCategories}
+				eyebrow="Find your game"
+				title="Casino catalogue"
+			/>
 		</main>
 	);
 }
