@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -14,6 +15,11 @@ export const getBigBangSandboxGames = createServerFn({ method: "GET" }).handler(
 	() => bigBangSandbox().listSandboxGames(),
 );
 
-export const launchBigBangSandboxDemo = createServerFn({ method: "POST" })
+export const launchBigBangSandboxGame = createServerFn({ method: "POST" })
 	.validator(launchDemoSchema)
-	.handler(({ data }) => bigBangSandbox().launchDemoGame(data.gameId));
+	.handler(({ data }) =>
+		bigBangSandbox().launchSandboxGame(
+			data.gameId,
+			`bearbet-sandbox-${randomUUID()}`,
+		),
+	);

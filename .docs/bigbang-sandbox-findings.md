@@ -8,7 +8,7 @@ Observed on 2026-09-17 with a BearBet BigBang sandbox key. Credentials and signe
 - `POST /api/v1/users/create` accepted a BearBet-owned player ID and returned a sandbox USD player.
 - `POST /api/v1/games/launch` for that player returned a signed session URL.
 - The returned URL loaded a playable BigBang game in an iframe and in a browser tab.
-- BearBet has a temporary public route at `/bigbang-sandbox`. It lists nine sandbox games, creates a fresh demo URL server-side, and embeds it in an iframe. It does not read or change the BearBet database or wallet.
+- BearBet has a temporary public route at `/bigbang-sandbox`. It lists nine sandbox games, creates an isolated provider-side player, launches a non-demo sandbox session, and embeds it in an iframe so genuine Wallet RGS callbacks can be captured. It does not read or change the BearBet database or wallet.
 - `CASINO_PROVIDER=BIGBANG` is accepted. The BigBang adapter can synchronize the Standard catalogue and create a provider player plus a non-demo sandbox launch URL through the shared `CasinoProvider` contract.
 
 ## Verified contract

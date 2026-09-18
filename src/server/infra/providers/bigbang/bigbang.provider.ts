@@ -41,6 +41,7 @@ export type BigBangSandboxGame = z.infer<typeof bigBangGameSchema>;
 export type BigBangSandboxLaunch = {
 	gameId: number;
 	gameName: string;
+	playerId?: string;
 	url: string;
 };
 
@@ -166,6 +167,43 @@ export function createBigBangProvider(
 			return {
 				gameId: result.data.game_id,
 				gameName: result.data.game_name,
+				url: assertLaunchUrl(result.data.game_url),
+			};
+		},
+
+		async launchSandboxGame(
+			gameId: number,
+			playerId: string,
+		): Promise<BigBangSandboxLaunch> {
+			if (!config.sandboxKey.startsWith("ek_test_")) {
+				throw new Error(
+					"Callback capture is available only with a sandbox key",
+				);
+			}
+
+			await request("users/create", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ user_token: playerId, username: playerId }),
+			});
+			const result = bigBangLaunchResponseSchema.safeParse(
+				await request("games/launch", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						game_id: gameId,
+						user_token: playerId,
+						language: "en",
+					}),
+				}),
+			);
+			if (!result.success)
+				throw new Error("BigBang did not return a sandbox game URL");
+
+			return {
+				gameId: result.data.game_id,
+				gameName: result.data.game_name,
+				playerId,
 				url: assertLaunchUrl(result.data.game_url),
 			};
 		},

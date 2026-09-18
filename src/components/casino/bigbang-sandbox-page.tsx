@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { cn } from "#/lib/utils";
 import {
 	getBigBangSandboxGames,
-	launchBigBangSandboxDemo,
+	launchBigBangSandboxGame,
 } from "#/server/domains/game/bigbang-sandbox.functions";
 
 export function BigBangSandboxPage() {
@@ -26,7 +26,7 @@ export function BigBangSandboxPage() {
 	});
 	const launch = useMutation({
 		mutationFn: (gameId: number) =>
-			launchBigBangSandboxDemo({ data: { gameId } }),
+			launchBigBangSandboxGame({ data: { gameId } }),
 	});
 
 	return (
@@ -43,11 +43,11 @@ export function BigBangSandboxPage() {
 						BigBang sandbox
 					</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
-						Temporary provider launch check. Demo play uses BigBang virtual
-						funds only.
+						Non-demo sandbox play uses BigBang virtual funds and exercises the
+						Wallet RGS callbacks.
 					</p>
 				</div>
-				<Badge variant="outline">No BearBet wallet activity</Badge>
+				<Badge variant="outline">Free sandbox funds only</Badge>
 			</header>
 
 			{launch.data ? (
@@ -56,8 +56,13 @@ export function BigBangSandboxPage() {
 						<div>
 							<p className="font-semibold">{launch.data.gameName}</p>
 							<p className="text-sm text-muted-foreground">
-								Demo session ready · Game #{launch.data.gameId}
+								Callback capture session · Game #{launch.data.gameId}
 							</p>
+							{launch.data.playerId ? (
+								<p className="mt-1 break-all font-mono text-xs text-muted-foreground">
+									Player: {launch.data.playerId}
+								</p>
+							) : null}
 						</div>
 						<a
 							href={launch.data.url}
@@ -69,7 +74,7 @@ export function BigBangSandboxPage() {
 						</a>
 					</div>
 					<iframe
-						title={`${launch.data.gameName} demo game`}
+						title={`${launch.data.gameName} sandbox game`}
 						src={launch.data.url}
 						className="h-[720px] w-full bg-background"
 						allow="autoplay; fullscreen"
@@ -127,7 +132,7 @@ export function BigBangSandboxPage() {
 										) : (
 											<PlayIcon />
 										)}
-										Launch demo
+										Launch callback test
 									</Button>
 								</CardContent>
 							</Card>

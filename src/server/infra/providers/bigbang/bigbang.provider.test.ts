@@ -61,3 +61,42 @@ test("BigBang lists standard sandbox games and launches a demo URL", async () =>
 		'{"game_id":42,"demo":true,"language":"en"}',
 	);
 });
+
+test("BigBang creates an isolated sandbox player and launches callback-enabled play", async () => {
+	const requests: Array<{ url: string; init?: RequestInit }> = [];
+	const provider = createBigBangProvider(
+		{
+			baseUrl: "https://sandbox.example/api/v1",
+			sandboxKey: "ek_test_example",
+		},
+		async (url, init) => {
+			requests.push({ url: String(url), init });
+			if (String(url).endsWith("users/create")) {
+				return Response.json({ success: true, data: {} }, { status: 201 });
+			}
+			return Response.json({
+				success: true,
+				game_url: "https://games.example/real/42",
+				game_id: 42,
+				game_name: "Callback game",
+			});
+		},
+	);
+
+	assert.deepEqual(await provider.launchSandboxGame(42, "capture-player"), {
+		gameId: 42,
+		gameName: "Callback game",
+		playerId: "capture-player",
+		url: "https://games.example/real/42",
+	});
+	assert.equal(requests[0]?.url, "https://sandbox.example/api/v1/users/create");
+	assert.equal(
+		requests[0]?.init?.body,
+		'{"user_token":"capture-player","username":"capture-player"}',
+	);
+	assert.equal(requests[1]?.url, "https://sandbox.example/api/v1/games/launch");
+	assert.equal(
+		requests[1]?.init?.body,
+		'{"game_id":42,"user_token":"capture-player","language":"en"}',
+	);
+});
