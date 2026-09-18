@@ -33,10 +33,12 @@ The working iframe proof does not prove BearBet money movement.
 
 ## Remaining integration work
 
-1. Add BigBang `user_data` and `balance_change` routes, HMAC validation, size limits, safe error responses, and duplicate-callback tests.
-2. Implement sandbox handling that verifies callbacks but returns the BigBang synthetic balance without touching BearBet funds.
-3. Decide on the live contract before connecting monetary callbacks. A live seamless-wallet key and provider confirmation are needed to map Standard net rounds or to use Premium's separate bet, win, and refund events.
-4. Synchronize the BigBang catalogue into PostgreSQL, expose it in the normal lobby, and replace the throwaway launcher with the persisted BearBet game-session UI.
+Bearbet now exposes separate `user_data` and `balance_change` routes. The balance-change boundary limits request size, validates the documented HMAC, parses signed decimal amounts into integer minor units, and rejects live money changes until the financial mapping is complete. Sandbox callbacks return the synthetic balance without touching Bearbet funds. A public ngrok probe confirmed both routes return successful responses, but a provider-originated callback still needs to be captured.
+
+1. Capture BigBang-originated sandbox callbacks and verify the observed payload, signature string representation, player identity, retry behavior, and event types.
+2. Persist duplicate callback responses by `transaction_id` before enabling live money changes.
+3. Decide on the live contract before connecting monetary callbacks. Standard games provide signed balance deltas with `round` metadata; Premium can provide separate bet, win, and refund events. A live seamless-wallet key or provider confirmation is needed before Bearbet changes its round model.
+4. Synchronize the BigBang catalogue into PostgreSQL, expose it in the normal lobby, and replace the throwaway launcher with the persisted Bearbet game-session UI.
 5. Add provider-originated proof that a real callback produces one correct wallet operation, ledger movement, round result, and history entry.
 
 Do not use sandbox callbacks to alter BearBet balances. The fixture provider remains the repeatable, database-backed demo for the current project.

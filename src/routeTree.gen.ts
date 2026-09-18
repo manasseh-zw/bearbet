@@ -25,6 +25,8 @@ import { Route as AppPlayerHistoryRouteImport } from './routes/_app/_player/hist
 import { Route as AppPlayerProfileRouteImport } from './routes/_app/_player/profile'
 import { Route as AppPlayerWalletRouteImport } from './routes/_app/_player/wallet'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiBigbangBalanceChangeRouteImport } from './routes/api/bigbang/balance-change'
+import { Route as ApiBigbangUserDataRouteImport } from './routes/api/bigbang/user-data'
 import { Route as ApiDrakonKeyRouteImport } from './routes/api/drakon/$key'
 import { Route as AppPlayerGamesGameIdRouteImport } from './routes/_app/_player/games/$gameId'
 
@@ -104,6 +106,16 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBigbangBalanceChangeRoute = ApiBigbangBalanceChangeRouteImport.update({
+  id: '/api/bigbang/balance-change',
+  path: '/api/bigbang/balance-change',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBigbangUserDataRoute = ApiBigbangUserDataRouteImport.update({
+  id: '/api/bigbang/user-data',
+  path: '/api/bigbang/user-data',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDrakonKeyRoute = ApiDrakonKeyRouteImport.update({
   id: '/api/drakon/$key',
   path: '/api/drakon/$key',
@@ -128,6 +140,8 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AppPlayerProfileRoute
   '/wallet': typeof AppPlayerWalletRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/bigbang/balance-change': typeof ApiBigbangBalanceChangeRoute
+  '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/games/$gameId': typeof AppPlayerGamesGameIdRoute
 }
@@ -144,6 +158,8 @@ export interface FileRoutesByTo {
   '/profile': typeof AppPlayerProfileRoute
   '/wallet': typeof AppPlayerWalletRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/bigbang/balance-change': typeof ApiBigbangBalanceChangeRoute
+  '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/games/$gameId': typeof AppPlayerGamesGameIdRoute
 }
@@ -165,6 +181,8 @@ export interface FileRoutesById {
   '/_app/_player/profile': typeof AppPlayerProfileRoute
   '/_app/_player/wallet': typeof AppPlayerWalletRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/bigbang/balance-change': typeof ApiBigbangBalanceChangeRoute
+  '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/_app/_player/games/$gameId': typeof AppPlayerGamesGameIdRoute
 }
@@ -183,6 +201,8 @@ export interface FileRouteTypes {
     | '/profile'
     | '/wallet'
     | '/api/auth/$'
+    | '/api/bigbang/balance-change'
+    | '/api/bigbang/user-data'
     | '/api/drakon/$key'
     | '/games/$gameId'
   fileRoutesByTo: FileRoutesByTo
@@ -199,6 +219,8 @@ export interface FileRouteTypes {
     | '/profile'
     | '/wallet'
     | '/api/auth/$'
+    | '/api/bigbang/balance-change'
+    | '/api/bigbang/user-data'
     | '/api/drakon/$key'
     | '/games/$gameId'
   id:
@@ -219,6 +241,8 @@ export interface FileRouteTypes {
     | '/_app/_player/profile'
     | '/_app/_player/wallet'
     | '/api/auth/$'
+    | '/api/bigbang/balance-change'
+    | '/api/bigbang/user-data'
     | '/api/drakon/$key'
     | '/_app/_player/games/$gameId'
   fileRoutesById: FileRoutesById
@@ -228,6 +252,8 @@ export interface RootRouteChildren {
   AppRouteRoute: typeof AppRouteRouteWithChildren
   GuestRouteRoute: typeof GuestRouteRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiBigbangBalanceChangeRoute: typeof ApiBigbangBalanceChangeRoute
+  ApiBigbangUserDataRoute: typeof ApiBigbangUserDataRoute
   ApiDrakonKeyRoute: typeof ApiDrakonKeyRoute
 }
 
@@ -345,6 +371,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/bigbang/balance-change': {
+      id: '/api/bigbang/balance-change'
+      path: '/api/bigbang/balance-change'
+      fullPath: '/api/bigbang/balance-change'
+      preLoaderRoute: typeof ApiBigbangBalanceChangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/bigbang/user-data': {
+      id: '/api/bigbang/user-data'
+      path: '/api/bigbang/user-data'
+      fullPath: '/api/bigbang/user-data'
+      preLoaderRoute: typeof ApiBigbangUserDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/drakon/$key': {
       id: '/api/drakon/$key'
       path: '/api/drakon/$key'
@@ -433,6 +473,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   GuestRouteRoute: GuestRouteRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiBigbangBalanceChangeRoute: ApiBigbangBalanceChangeRoute,
+  ApiBigbangUserDataRoute: ApiBigbangUserDataRoute,
   ApiDrakonKeyRoute: ApiDrakonKeyRoute,
 }
 export const routeTree = rootRouteImport
