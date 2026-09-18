@@ -16,6 +16,20 @@ Observed on 2026-09-17 with a BearBet BigBang sandbox key. Credentials and signe
 BigBang's public documentation is at <https://api.bigbangcasino.bet/docs/>.
 
 - The REST base is `https://api.bigbangcasino.bet/api/v1`.
+
+## Event-webhook fallback
+
+Provider-originated seamless wallet callbacks did not reach the configured public
+receiver during repeated sandbox rounds, even though direct probes through the
+same ngrok tunnel succeeded. BearBet therefore has a capture-only
+`POST /api/bigbang/webhook` route for the separate event webhook stream. It records
+`session.started`, `round.completed`, and `session.ended` payloads without changing
+wallet funds.
+
+BigBang documents HMAC-SHA256 webhook signing but does not document the exact
+canonical input. The route must remain capture-only until a genuine event exposes
+the payload and signature placement. After that evidence is recorded, add signature
+verification and map `round.completed` into an idempotent reconciliation command.
 - A sandbox key has the `ek_test_` prefix, costs nothing, has an automatic virtual balance, and is limited to Standard games.
 - The game catalogue comes from `GET /games`; a launch is created by `POST /games/launch`.
 - A non-demo launch requires a provider player created through `POST /users/create`. Demo launch uses `demo: true` and does not require a player.

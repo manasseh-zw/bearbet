@@ -27,6 +27,7 @@ import { Route as AppPlayerWalletRouteImport } from './routes/_app/_player/walle
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiBigbangBalanceChangeRouteImport } from './routes/api/bigbang/balance-change'
 import { Route as ApiBigbangUserDataRouteImport } from './routes/api/bigbang/user-data'
+import { Route as ApiBigbangWebhookRouteImport } from './routes/api/bigbang/webhook'
 import { Route as ApiDrakonKeyRouteImport } from './routes/api/drakon/$key'
 import { Route as AppPlayerGamesGameIdRouteImport } from './routes/_app/_player/games/$gameId'
 
@@ -116,6 +117,11 @@ const ApiBigbangUserDataRoute = ApiBigbangUserDataRouteImport.update({
   path: '/api/bigbang/user-data',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBigbangWebhookRoute = ApiBigbangWebhookRouteImport.update({
+  id: '/api/bigbang/webhook',
+  path: '/api/bigbang/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDrakonKeyRoute = ApiDrakonKeyRouteImport.update({
   id: '/api/drakon/$key',
   path: '/api/drakon/$key',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/bigbang/balance-change': typeof ApiBigbangBalanceChangeRoute
   '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
+  '/api/bigbang/webhook': typeof ApiBigbangWebhookRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/games/$gameId': typeof AppPlayerGamesGameIdRoute
 }
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/bigbang/balance-change': typeof ApiBigbangBalanceChangeRoute
   '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
+  '/api/bigbang/webhook': typeof ApiBigbangWebhookRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/games/$gameId': typeof AppPlayerGamesGameIdRoute
 }
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/bigbang/balance-change': typeof ApiBigbangBalanceChangeRoute
   '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
+  '/api/bigbang/webhook': typeof ApiBigbangWebhookRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/_app/_player/games/$gameId': typeof AppPlayerGamesGameIdRoute
 }
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/bigbang/balance-change'
     | '/api/bigbang/user-data'
+    | '/api/bigbang/webhook'
     | '/api/drakon/$key'
     | '/games/$gameId'
   fileRoutesByTo: FileRoutesByTo
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/bigbang/balance-change'
     | '/api/bigbang/user-data'
+    | '/api/bigbang/webhook'
     | '/api/drakon/$key'
     | '/games/$gameId'
   id:
@@ -243,6 +254,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/bigbang/balance-change'
     | '/api/bigbang/user-data'
+    | '/api/bigbang/webhook'
     | '/api/drakon/$key'
     | '/_app/_player/games/$gameId'
   fileRoutesById: FileRoutesById
@@ -254,6 +266,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBigbangBalanceChangeRoute: typeof ApiBigbangBalanceChangeRoute
   ApiBigbangUserDataRoute: typeof ApiBigbangUserDataRoute
+  ApiBigbangWebhookRoute: typeof ApiBigbangWebhookRoute
   ApiDrakonKeyRoute: typeof ApiDrakonKeyRoute
 }
 
@@ -385,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBigbangUserDataRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/bigbang/webhook': {
+      id: '/api/bigbang/webhook'
+      path: '/api/bigbang/webhook'
+      fullPath: '/api/bigbang/webhook'
+      preLoaderRoute: typeof ApiBigbangWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/drakon/$key': {
       id: '/api/drakon/$key'
       path: '/api/drakon/$key'
@@ -475,6 +495,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBigbangBalanceChangeRoute: ApiBigbangBalanceChangeRoute,
   ApiBigbangUserDataRoute: ApiBigbangUserDataRoute,
+  ApiBigbangWebhookRoute: ApiBigbangWebhookRoute,
   ApiDrakonKeyRoute: ApiDrakonKeyRoute,
 }
 export const routeTree = rootRouteImport
