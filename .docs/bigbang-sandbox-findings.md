@@ -40,6 +40,7 @@ On 2026-09-18, BearBet repeated the sandbox test with an append-only receiver ca
 - BearBet created player `bearbet-sandbox-d40e3bf0-dd35-4a15-bb2a-83bb0e9a6d00`, launched Amusnet game `333854` without `demo: true`, and completed a 1.50 USD spin.
 - BigBang's player API reported the provider-held balance changed from 100000.00 to 99998.50 USD.
 - BigBang sent no `user_data` or `balance_change` request. BearBet's receiver file and ngrok inspector both recorded zero provider callbacks for the player.
+- BearBet repeated the test with a previously unknown `bearbet-seamless-*` token and deliberately skipped `POST /users/create` in case explicit player creation selected managed-wallet mode. BigBang still auto-created the provider player, processed the 1.50 USD debit in its own wallet, and sent zero callbacks.
 
 This contradicts the dashboard statement that sandbox wallet callbacks fire with `sandbox: true`. The tested sandbox session used BigBang's managed synthetic wallet even though Wallet RGS URLs were saved. Treat sandbox Wallet RGS support as a provider-side blocker until BigBang fixes or explains the account configuration. Do not redesign BearBet's money engine around the documented callback shape without provider-originated evidence.
 
