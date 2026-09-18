@@ -5,6 +5,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
 	ArrowLeftIcon,
 	CircleDollarSignIcon,
+	ExternalLinkIcon,
 	LoaderCircleIcon,
 	RotateCcwIcon,
 	SparklesIcon,
@@ -410,82 +411,72 @@ function BigBangProviderGame({
 	error: string | null;
 }) {
 	return (
-		<main className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-			<header className="mb-5 flex items-center justify-between gap-3">
+		<main className="mx-auto w-full max-w-7xl px-4 py-3 sm:px-6 sm:py-6 lg:px-10">
+			<header className="mb-3 flex items-center">
 				<Link
 					to="/"
 					className={cn(buttonVariants({ variant: "ghost" }), "-ml-2")}
 				>
 					<ArrowLeftIcon /> Games
 				</Link>
-				<Button variant="outline" onClick={onClose} disabled={isClosing}>
-					{isClosing ? (
-						<LoaderCircleIcon className="animate-spin" />
-					) : (
-						<XIcon />
-					)}
-					End and reconcile
-				</Button>
 			</header>
 
-			<Card className="overflow-hidden border border-primary/20 bg-[radial-gradient(circle_at_top,var(--color-primary)/12%,transparent_52%)]">
-				<CardHeader>
-					<div className="flex flex-wrap gap-2">
-						<Badge variant="secondary">BigBang provider sandbox</Badge>
-						<Badge variant="outline">Provider-managed funds</Badge>
-					</div>
-					<CardTitle className="font-logo text-3xl sm:text-4xl">
+			<div className="overflow-hidden rounded-2xl bg-black">
+				<iframe
+					title={`${session.game.name} BigBang provider sandbox`}
+					src={session.launchUrl}
+					allow="autoplay; fullscreen"
+					className="aspect-video min-h-[26rem] w-full border-0 sm:min-h-[34rem] lg:min-h-[38rem]"
+				/>
+			</div>
+
+			<div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+				<div className="min-w-0">
+					<h1 className="font-logo text-2xl tracking-tight sm:text-3xl">
 						{session.game.name}
-					</CardTitle>
-					<CardDescription>
+					</h1>
+					<p className="mt-1 text-sm text-muted-foreground">
 						{[session.game.category, session.game.provider]
 							.filter(Boolean)
 							.join(" · ")}
-						<br />
-						Live gameplay is hosted by BigBang. BearBet reconciles only the net
-						provider balance change when you end the session.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="overflow-hidden rounded-2xl border bg-black shadow-2xl">
-						<iframe
-							title={`${session.game.name} BigBang provider sandbox`}
-							src={session.launchUrl}
-							allow="autoplay; fullscreen"
-							className="aspect-video min-h-[26rem] w-full border-0 sm:min-h-[36rem]"
-						/>
-					</div>
-					<div className="mt-4 flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-						<p>
-							Provider balance at launch:{" "}
-							{formatMoney(session.balanceMinor, session.currencyCode)}
-						</p>
-						<a
-							href={session.launchUrl}
-							target="_blank"
-							rel="noreferrer"
-							className="font-medium text-primary hover:underline"
-						>
-							Open game in a new tab
-						</a>
-					</div>
-					{error ? (
-						<p className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-							{error}
-						</p>
-					) : null}
-				</CardContent>
-			</Card>
+					</p>
+				</div>
+
+				<div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+					<a
+						href={session.launchUrl}
+						target="_blank"
+						rel="noreferrer"
+						aria-label="Open game in a new tab"
+						title="Open game in a new tab"
+						className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
+					>
+						<span>Open</span>
+						<ExternalLinkIcon />
+					</a>
+					<Button size="lg" onClick={onClose} disabled={isClosing}>
+						{isClosing ? (
+							<LoaderCircleIcon className="animate-spin" />
+						) : (
+							<XIcon />
+						)}
+						End and reconcile
+					</Button>
+				</div>
+			</div>
+
+			<p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
+				Gameplay is hosted in the BigBang provider window. BearBet reconciles
+				the net provider balance when you end the session.
+			</p>
+
+			{error ? (
+				<p className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+					{error}
+				</p>
+			) : null}
 		</main>
 	);
-}
-
-function formatMoney(amountMinor: number, currencyCode: string) {
-	return new Intl.NumberFormat("en-US", {
-		style: "currency",
-		currency: currencyCode,
-		minimumFractionDigits: 2,
-	}).format(amountMinor / 100);
 }
 
 function parseMoneyInput(value: string) {
