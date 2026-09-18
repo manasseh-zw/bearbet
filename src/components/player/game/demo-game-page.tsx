@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
 	ArrowLeftIcon,
 	CircleDollarSignIcon,
@@ -24,7 +24,10 @@ import {
 } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
-import { emitBonusCompletion } from "#/lib/bonus-events";
+import {
+	type BonusCompletionEvent,
+	emitBonusCompletion,
+} from "#/lib/bonus-events";
 import { bonusQueries } from "#/lib/queries/bonus.queries";
 import { historyQueries } from "#/lib/queries/history.queries";
 import { walletQueries } from "#/lib/queries/wallet.queries";
@@ -39,8 +42,10 @@ type DemoGamePageProps = { gameId: string };
 
 export function DemoGamePage({ gameId }: DemoGamePageProps) {
 	const queryClient = useQueryClient();
+	const navigate = useNavigate();
 	const launchKey = useRef(crypto.randomUUID());
 	const roundKey = useRef<string | null>(null);
+	const pendingBonusCompletion = useRef<BonusCompletionEvent | null>(null);
 	const [stake, setStake] = useState("10.00");
 	const [summary, setSummary] = useState<Awaited<
 		ReturnType<typeof closeCurrentPlayerGame>
@@ -60,11 +65,11 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 		}) => playCurrentPlayerDemoGame({ data: input }),
 		onSuccess: async (result) => {
 			if (result.bonusTransition?.status === "completed") {
-				emitBonusCompletion({
+				pendingBonusCompletion.current = {
 					awardId: result.bonusTransition.awardId,
 					convertedAmountMinor: result.bonusTransition.convertedAmountMinor,
 					currencyCode: result.currencyCode,
-				});
+				};
 			}
 			await Promise.all([
 				queryClient.invalidateQueries({ queryKey: bonusQueries.all }),
@@ -80,12 +85,19 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 		mutationFn: (sessionId: string) =>
 			closeCurrentPlayerGame({ data: { sessionId } }),
 		onSuccess: async (result) => {
-			setSummary(result);
 			await Promise.all([
 				queryClient.invalidateQueries({ queryKey: bonusQueries.all }),
 				queryClient.invalidateQueries({ queryKey: walletQueries.all }),
 				queryClient.invalidateQueries({ queryKey: historyQueries.all }),
 			]);
+			if (result.kind === "provider") {
+				await navigate({ to: "/", replace: true });
+				return;
+			}
+			setSummary(result);
+			const completion = pendingBonusCompletion.current;
+			pendingBonusCompletion.current = null;
+			if (completion) emitBonusCompletion(completion);
 		},
 	});
 
@@ -141,9 +153,7 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 				error={close.isError ? errorMessage(close.error) : null}
 			/>
 		);
-	if (summary?.kind === "provider")
-		return <BigBangGameSummary summary={summary} />;
-	if (summary)
+	if (summary?.kind === "demo")
 		return (
 			<GameSummary
 				summary={summary}
@@ -465,73 +475,6 @@ function BigBangProviderGame({
 						</p>
 					) : null}
 				</CardContent>
-			</Card>
-		</main>
-	);
-}
-
-type BigBangGameSummaryResult = Extract<
-	Awaited<ReturnType<typeof closeCurrentPlayerGame>>,
-	{ kind: "provider" }
->;
-
-function BigBangGameSummary({
-	summary,
-}: {
-	summary: BigBangGameSummaryResult;
-}) {
-	return (
-		<main className="grid min-h-[70vh] place-items-center px-4 py-8">
-			<Card className="w-full max-w-lg">
-				<CardHeader className="text-center">
-					<div className="mb-2 flex justify-center gap-2">
-						<Badge variant="secondary">BigBang sandbox</Badge>
-						<Badge variant="outline">Session reconciliation</Badge>
-					</div>
-					<CardTitle className="font-logo text-3xl">Session complete</CardTitle>
-					<CardDescription>
-						The provider balance was reconciled at session close.
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="grid grid-cols-2 gap-3">
-					<Metric
-						label="Provider balance at launch"
-						value={formatMoney(
-							summary.providerBalanceBeforeMinor,
-							summary.currencyCode,
-						)}
-					/>
-					<Metric
-						label="Provider balance at close"
-						value={formatMoney(
-							summary.providerBalanceAfterMinor,
-							summary.currencyCode,
-						)}
-					/>
-					<Metric
-						label="Net provider change"
-						value={`${summary.netDeltaMinor >= 0 ? "+" : ""}${formatMoney(summary.netDeltaMinor, summary.currencyCode)}`}
-					/>
-					<Metric
-						label="BearBet wallet"
-						value={formatMoney(
-							summary.walletBalanceMinor,
-							summary.currencyCode,
-						)}
-					/>
-				</CardContent>
-				<CardFooter className="flex-col gap-3">
-					<p className="text-center text-sm text-muted-foreground">
-						{summary.netDeltaMinor === 0
-							? "There was no net provider balance change for this session."
-							: summary.reconciliationApplied
-								? "The net change was recorded as one BigBang sandbox reconciliation."
-								: "Wallet reconciliation is disabled; the provider result was recorded for reference."}
-					</p>
-					<Link to="/" className={cn(buttonVariants({ size: "lg" }), "w-full")}>
-						Back to games
-					</Link>
-				</CardFooter>
 			</Card>
 		</main>
 	);
