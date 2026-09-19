@@ -423,13 +423,9 @@ function DefinitionRowView({
 				</div>
 				<div className="min-w-0">
 					<div className="flex flex-wrap items-center gap-2">
-						<code className="rounded-md bg-muted/70 px-2 py-1 text-xs font-semibold tracking-[0.08em] text-muted-foreground">
-							{row.code}
-						</code>
 						<Badge variant={row.isActive ? "default" : "secondary"}>
 							{row.isActive ? "Active" : "Inactive"}
 						</Badge>
-						<Badge variant="outline">{typeLabels[row.type]}</Badge>
 					</div>
 					<h2 className="mt-3 text-xl font-semibold tracking-tight">
 						{row.name}
@@ -439,26 +435,6 @@ function DefinitionRowView({
 							{row.description}
 						</p>
 					) : null}
-					<dl className="mt-5 grid gap-x-5 gap-y-4 border-t border-border/70 pt-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
-						<Rule label="Award">
-							{formatMinor(row.amountMinor)}
-							{row.matchPercentageBps
-								? ` · ${row.matchPercentageBps / 100}% match`
-								: ""}
-						</Rule>
-						<Rule label="Wagering">{row.wageringMultiplier}x</Rule>
-						<Rule label="Expires">{row.expiresAfterDays} days</Rule>
-						<Rule label="Minimum deposit">
-							{row.minimumDepositMinor == null
-								? "No minimum"
-								: formatMinor(row.minimumDepositMinor)}
-						</Rule>
-					</dl>
-					<div className="mt-4 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
-						<RulePill label="Games" values={row.eligibleGameIds} />
-						<RulePill label="Categories" values={row.eligibleCategories} />
-						<RulePill label="Providers" values={row.eligibleProviders} />
-					</div>
 				</div>
 				<div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
 					<Button onClick={onEdit} size="sm" variant="outline">
@@ -1058,23 +1034,6 @@ function Field({
 	);
 }
 
-function Rule({ label, children }: { label: string; children: ReactNode }) {
-	return (
-		<div className="min-w-0">
-			<dt className="text-xs text-muted-foreground">{label}</dt>
-			<dd className="mt-1 font-medium tabular-nums">{children}</dd>
-		</div>
-	);
-}
-
-function RulePill({ label, values }: { label: string; values: string[] }) {
-	return (
-		<span className="rounded-md bg-muted/60 px-2 py-1">
-			{label}: {values.length ? values.join(", ") : "All"}
-		</span>
-	);
-}
-
 function DefinitionListSkeleton() {
 	return (
 		<output
@@ -1203,13 +1162,6 @@ function splitList(value: string) {
 		.split(",")
 		.map((item) => item.trim())
 		.filter(Boolean);
-}
-
-function formatMinor(value: number) {
-	return new Intl.NumberFormat("en-US", {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(value / 100);
 }
 
 function errorMessage(error: unknown, fallback: string) {
