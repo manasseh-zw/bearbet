@@ -594,8 +594,8 @@ function BonusDefinitionDialog({
 
 	return (
 		<Dialog open onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[92vh] overflow-y-auto p-0 sm:max-w-4xl">
-				<DialogHeader className="sticky top-0 z-10 border-b border-border bg-popover px-5 py-5 sm:px-7">
+			<DialogContent className="max-h-[92vh] sm:max-w-4xl">
+				<DialogHeader>
 					<DialogTitle>
 						{isCreate ? "Create bonus definition" : "Edit bonus definition"}
 					</DialogTitle>
@@ -605,7 +605,7 @@ function BonusDefinitionDialog({
 							: "Changes apply to future awards. Existing awards keep their snapshot."}
 					</DialogDescription>
 				</DialogHeader>
-				<div className="space-y-8 px-5 py-6 sm:px-7">
+				<div className="flex flex-col gap-8">
 					<section
 						aria-labelledby="bonus-artwork-heading"
 						className="space-y-3"
@@ -945,11 +945,11 @@ function BonusDefinitionDialog({
 					</section>
 				</div>
 				{validationError || uploadError || error ? (
-					<p className="mx-5 mb-5 text-sm text-destructive sm:mx-7">
+					<p className="text-sm text-destructive">
 						{validationError ?? uploadError ?? error}
 					</p>
 				) : null}
-				<DialogFooter className="sticky bottom-0 z-10 mt-0 border-t border-border bg-popover px-5 py-4 sm:px-7">
+				<DialogFooter>
 					<Button
 						disabled={pending || uploading}
 						onClick={() => onOpenChange(false)}
