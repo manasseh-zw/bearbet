@@ -7,13 +7,15 @@ import {
 	BadgeDollarSignIcon,
 	CirclePlusIcon,
 	Edit3Icon,
+	ImagePlusIcon,
 	LoaderCircleIcon,
 	SearchIcon,
 	ShieldCheckIcon,
+	Trash2Icon,
 	XIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -35,6 +37,7 @@ import {
 	SelectValue,
 } from "#/components/ui/select";
 import { Textarea } from "#/components/ui/textarea";
+import { uploadBonusThumbnail } from "#/lib/blob-upload";
 import { adminBonusQueries } from "#/lib/queries/admin-bonus.queries";
 import {
 	type AdminBonusQuery,
@@ -405,41 +408,56 @@ function DefinitionRowView({
 	return (
 		<article className="rounded-xl border border-border bg-card/40 p-4">
 			<div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-				<div className="min-w-0 flex-1">
-					<div className="flex flex-wrap items-center gap-2">
-						<code className="text-sm font-semibold tracking-wide">
-							{row.code}
-						</code>
-						<Badge variant={row.isActive ? "default" : "secondary"}>
-							{row.isActive ? "Active" : "Inactive"}
-						</Badge>
-						<Badge variant="outline">{typeLabels[row.type]}</Badge>
+				<div className="flex min-w-0 flex-1 gap-4">
+					<div className="size-20 shrink-0 overflow-hidden rounded-lg border border-border bg-muted sm:size-24">
+						{row.thumbnailUrl ? (
+							<img
+								alt=""
+								className="size-full object-cover"
+								src={row.thumbnailUrl}
+							/>
+						) : (
+							<div className="grid size-full place-items-center px-2 text-center text-[11px] text-muted-foreground">
+								No image
+							</div>
+						)}
 					</div>
-					<h2 className="mt-2 text-lg font-semibold">{row.name}</h2>
-					{row.description ? (
-						<p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-							{row.description}
-						</p>
-					) : null}
-					<div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-						<Rule label="Award">
-							{formatMinor(row.amountMinor)}
-							{row.matchPercentageBps
-								? ` · ${row.matchPercentageBps / 100}% match`
-								: ""}
-						</Rule>
-						<Rule label="Wagering">{row.wageringMultiplier}x</Rule>
-						<Rule label="Expires">{row.expiresAfterDays} days</Rule>
-						<Rule label="Minimum deposit">
-							{row.minimumDepositMinor == null
-								? "No minimum"
-								: formatMinor(row.minimumDepositMinor)}
-						</Rule>
-					</div>
-					<div className="mt-3 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
-						<RulePill label="Games" values={row.eligibleGameIds} />
-						<RulePill label="Categories" values={row.eligibleCategories} />
-						<RulePill label="Providers" values={row.eligibleProviders} />
+					<div className="min-w-0 flex-1">
+						<div className="flex flex-wrap items-center gap-2">
+							<code className="text-sm font-semibold tracking-wide">
+								{row.code}
+							</code>
+							<Badge variant={row.isActive ? "default" : "secondary"}>
+								{row.isActive ? "Active" : "Inactive"}
+							</Badge>
+							<Badge variant="outline">{typeLabels[row.type]}</Badge>
+						</div>
+						<h2 className="mt-2 text-lg font-semibold">{row.name}</h2>
+						{row.description ? (
+							<p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+								{row.description}
+							</p>
+						) : null}
+						<div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+							<Rule label="Award">
+								{formatMinor(row.amountMinor)}
+								{row.matchPercentageBps
+									? ` · ${row.matchPercentageBps / 100}% match`
+									: ""}
+							</Rule>
+							<Rule label="Wagering">{row.wageringMultiplier}x</Rule>
+							<Rule label="Expires">{row.expiresAfterDays} days</Rule>
+							<Rule label="Minimum deposit">
+								{row.minimumDepositMinor == null
+									? "No minimum"
+									: formatMinor(row.minimumDepositMinor)}
+							</Rule>
+						</div>
+						<div className="mt-3 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
+							<RulePill label="Games" values={row.eligibleGameIds} />
+							<RulePill label="Categories" values={row.eligibleCategories} />
+							<RulePill label="Providers" values={row.eligibleProviders} />
+						</div>
 					</div>
 				</div>
 				<div className="flex shrink-0 flex-wrap gap-2 xl:justify-end">
@@ -504,9 +522,15 @@ function BonusDefinitionDialog({
 }) {
 	const [values, setValues] = useState<BonusFormValues>(emptyForm());
 	const [validationError, setValidationError] = useState<string | null>(null);
+	const [uploadError, setUploadError] = useState<string | null>(null);
+	const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+	const [uploading, setUploading] = useState(false);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 	useEffect(() => {
 		setValues(editor?.mode === "edit" ? rowToForm(editor.row) : emptyForm());
 		setValidationError(null);
+		setUploadError(null);
+		setUploadProgress(null);
 	}, [editor]);
 	if (!editor) return null;
 	const currentEditor = editor;
@@ -515,6 +539,7 @@ function BonusDefinitionDialog({
 		setValues((current) => ({ ...current, [key]: value }));
 
 	function submit() {
+		if (uploading) return;
 		if (currentEditor.mode === "create") {
 			const parsed = toDefinitionInput(values, currentEditor);
 			if (!parsed.success) {
@@ -542,6 +567,29 @@ function BonusDefinitionDialog({
 			mode: "edit",
 			input: parsed.data as UpdateAdminBonusDefinitionInput,
 		});
+	}
+
+	async function uploadThumbnail(file: File) {
+		setUploading(true);
+		setUploadError(null);
+		setUploadProgress(0);
+		try {
+			const blob = await uploadBonusThumbnail({
+				file,
+				code: values.code,
+				onUploadProgress: setUploadProgress,
+			});
+			set("thumbnailUrl", blob.url);
+			setUploadProgress(100);
+		} catch (error) {
+			setUploadError(
+				error instanceof Error
+					? error.message
+					: "The thumbnail could not be uploaded.",
+			);
+		} finally {
+			setUploading(false);
+		}
 	}
 
 	return (
@@ -665,6 +713,66 @@ function BonusDefinitionDialog({
 							/>
 						</Field>
 					</div>
+					<div className="sm:col-span-2">
+						<Field label="Thumbnail" hint="JPEG, PNG, or WebP · 5 MB maximum">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+								<div className="size-28 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
+									{values.thumbnailUrl ? (
+										<img
+											alt="Bonus thumbnail preview"
+											className="size-full object-cover"
+											src={values.thumbnailUrl}
+										/>
+									) : (
+										<div className="grid size-full place-items-center px-3 text-center text-xs text-muted-foreground">
+											No thumbnail
+										</div>
+									)}
+								</div>
+								<div className="flex flex-wrap gap-2">
+									<input
+										accept="image/jpeg,image/png,image/webp"
+										className="sr-only"
+										onChange={(event) => {
+											const file = event.target.files?.[0];
+											if (file) void uploadThumbnail(file);
+											event.target.value = "";
+										}}
+										ref={fileInputRef}
+										type="file"
+									/>
+									<Button
+										disabled={uploading}
+										onClick={() => fileInputRef.current?.click()}
+										type="button"
+										variant="outline"
+									>
+										{uploading ? (
+											<LoaderCircleIcon className="animate-spin" />
+										) : (
+											<ImagePlusIcon />
+										)}
+										{uploading
+											? `Uploading ${uploadProgress ?? 0}%`
+											: "Upload image"}
+									</Button>
+									{values.thumbnailUrl ? (
+										<Button
+											disabled={uploading}
+											onClick={() => set("thumbnailUrl", "")}
+											type="button"
+											variant="ghost"
+										>
+											<Trash2Icon /> Remove
+										</Button>
+									) : null}
+								</div>
+							</div>
+							{uploadError ? (
+								<p className="mt-2 text-sm text-destructive">{uploadError}</p>
+							) : null}
+						</Field>
+					</div>
 					<Field
 						label="Eligible game IDs"
 						hint="Comma-separated. Leave blank for all games."
@@ -708,19 +816,24 @@ function BonusDefinitionDialog({
 						</Field>
 					</div>
 				</div>
-				{validationError || error ? (
-					<p className="text-sm text-destructive">{validationError ?? error}</p>
+				{validationError || uploadError || error ? (
+					<p className="text-sm text-destructive">
+						{validationError ?? uploadError ?? error}
+					</p>
 				) : null}
 				<DialogFooter>
 					<Button
-						disabled={pending}
+						disabled={pending || uploading}
 						onClick={() => onOpenChange(false)}
 						variant="ghost"
 					>
 						Cancel
 					</Button>
-					<Button disabled={pending || !values.reason.trim()} onClick={submit}>
-						{pending ? (
+					<Button
+						disabled={pending || uploading || !values.reason.trim()}
+						onClick={submit}
+					>
+						{pending || uploading ? (
 							<LoaderCircleIcon className="animate-spin" />
 						) : (
 							<ShieldCheckIcon />
@@ -853,6 +966,7 @@ type BonusFormValues = {
 	code: string;
 	name: string;
 	description: string;
+	thumbnailUrl: string;
 	type: string;
 	amountMajor: string;
 	matchPercentage: string;
@@ -871,6 +985,7 @@ function emptyForm(): BonusFormValues {
 		code: "",
 		name: "",
 		description: "",
+		thumbnailUrl: "",
 		type: "welcome",
 		amountMajor: "",
 		matchPercentage: "",
@@ -890,6 +1005,7 @@ function rowToForm(row: DefinitionRow): BonusFormValues {
 		code: row.code,
 		name: row.name,
 		description: row.description ?? "",
+		thumbnailUrl: row.thumbnailUrl ?? "",
 		type: row.type,
 		amountMajor: (row.amountMinor / 100).toString(),
 		matchPercentage:
@@ -917,6 +1033,7 @@ function toDefinitionInput(values: BonusFormValues, editor: Editor) {
 	const base = {
 		name: values.name,
 		description: values.description || undefined,
+		thumbnailUrl: values.thumbnailUrl || null,
 		type: values.type,
 		amountMinor: toMinor(values.amountMajor),
 		matchPercentageBps:

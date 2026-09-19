@@ -16,6 +16,7 @@ import {
 	assertActiveAdminInTransaction,
 } from "#/server/domains/admin/admin-auth.service";
 import { recordAuditEntryInTransaction } from "#/server/domains/audit/audit.service";
+import { isManagedPublicAssetUrl } from "#/server/infra/blob/blob-storage";
 import { db } from "#/server/infra/db";
 import type { DatabaseTransaction } from "#/server/infra/db/database.types";
 import { bonusDefinition } from "#/server/infra/db/schema";
@@ -42,6 +43,7 @@ export async function createAdminBonusDefinition(
 			code: input.code,
 			name: input.name,
 			description: input.description,
+			thumbnailUrl: input.thumbnailUrl,
 			type: input.type,
 			amountMinor: input.amountMinor,
 			matchPercentageBps: input.matchPercentageBps,
@@ -55,6 +57,7 @@ export async function createAdminBonusDefinition(
 			reason: input.reason,
 		}),
 	);
+	assertThumbnailUrl(command.thumbnailUrl);
 	return db.transaction(async (transaction) => {
 		await assertAdmin(transaction, input.actorUserId);
 		const [existing] = await transaction
@@ -74,6 +77,7 @@ export async function createAdminBonusDefinition(
 				code: command.code,
 				name: command.name,
 				description: command.description,
+				thumbnailUrl: command.thumbnailUrl,
 				type: command.type,
 				amountMinor: command.amountMinor,
 				matchPercentageBps: command.matchPercentageBps,
@@ -113,6 +117,7 @@ export async function updateAdminBonusDefinition(
 			definitionId: input.definitionId,
 			name: input.name,
 			description: input.description,
+			thumbnailUrl: input.thumbnailUrl,
 			type: input.type,
 			amountMinor: input.amountMinor,
 			matchPercentageBps: input.matchPercentageBps,
@@ -126,6 +131,7 @@ export async function updateAdminBonusDefinition(
 			reason: input.reason,
 		}),
 	);
+	assertThumbnailUrl(command.thumbnailUrl);
 	return db.transaction(async (transaction) => {
 		await assertAdmin(transaction, input.actorUserId);
 		const current = await lockDefinition(transaction, command.definitionId);
@@ -134,6 +140,7 @@ export async function updateAdminBonusDefinition(
 		const next = {
 			name: command.name,
 			description: command.description ?? null,
+			thumbnailUrl: command.thumbnailUrl ?? null,
 			type: command.type,
 			amountMinor: command.amountMinor,
 			matchPercentageBps: command.matchPercentageBps ?? null,
@@ -263,6 +270,16 @@ function bonusNotFound() {
 	);
 }
 
+function assertThumbnailUrl(thumbnailUrl: string | null | undefined) {
+	if (!thumbnailUrl) return;
+	if (!isManagedPublicAssetUrl(thumbnailUrl)) {
+		throw new AdminBonusServiceError(
+			"Bonus thumbnails must be uploaded to the public Vercel Blob store",
+			"INVALID_INPUT",
+		);
+	}
+}
+
 function sameDefinition(
 	current: typeof bonusDefinition.$inferSelect,
 	next: Omit<typeof bonusDefinition.$inferInsert, "id" | "code">,
@@ -270,6 +287,7 @@ function sameDefinition(
 	return (
 		current.name === next.name &&
 		current.description === next.description &&
+		current.thumbnailUrl === next.thumbnailUrl &&
 		current.type === next.type &&
 		current.amountMinor === next.amountMinor &&
 		current.matchPercentageBps === next.matchPercentageBps &&
@@ -290,6 +308,7 @@ function auditDefinition(definition: typeof bonusDefinition.$inferSelect) {
 	return {
 		code: definition.code,
 		name: definition.name,
+		thumbnailUrl: definition.thumbnailUrl,
 		type: definition.type,
 		amountMinor: definition.amountMinor,
 		matchPercentageBps: definition.matchPercentageBps,

@@ -32,6 +32,7 @@ import { Route as AppPlayerBonusesRouteImport } from './routes/_app/_player/bonu
 import { Route as AppPlayerHistoryRouteImport } from './routes/_app/_player/history'
 import { Route as AppPlayerProfileRouteImport } from './routes/_app/_player/profile'
 import { Route as AppPlayerWalletRouteImport } from './routes/_app/_player/wallet'
+import { Route as ApiAdminBonusThumbnailRouteImport } from './routes/api/admin/bonus-thumbnail'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiBigbangBalanceChangeRouteImport } from './routes/api/bigbang/balance-change'
 import { Route as ApiBigbangUserDataRouteImport } from './routes/api/bigbang/user-data'
@@ -151,6 +152,11 @@ const AppPlayerWalletRoute = AppPlayerWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AppPlayerRouteRoute,
 } as any)
+const ApiAdminBonusThumbnailRoute = ApiAdminBonusThumbnailRouteImport.update({
+  id: '/api/admin/bonus-thumbnail',
+  path: '/api/admin/bonus-thumbnail',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof AppPlayerHistoryRoute
   '/profile': typeof AppPlayerProfileRoute
   '/wallet': typeof AppPlayerWalletRoute
+  '/api/admin/bonus-thumbnail': typeof ApiAdminBonusThumbnailRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/bigbang/balance-change': typeof ApiBigbangBalanceChangeRoute
   '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/history': typeof AppPlayerHistoryRoute
   '/profile': typeof AppPlayerProfileRoute
   '/wallet': typeof AppPlayerWalletRoute
+  '/api/admin/bonus-thumbnail': typeof ApiAdminBonusThumbnailRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/bigbang/balance-change': typeof ApiBigbangBalanceChangeRoute
   '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
@@ -267,6 +275,7 @@ export interface FileRoutesById {
   '/_app/_player/history': typeof AppPlayerHistoryRoute
   '/_app/_player/profile': typeof AppPlayerProfileRoute
   '/_app/_player/wallet': typeof AppPlayerWalletRoute
+  '/api/admin/bonus-thumbnail': typeof ApiAdminBonusThumbnailRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/bigbang/balance-change': typeof ApiBigbangBalanceChangeRoute
   '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
@@ -297,6 +306,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/profile'
     | '/wallet'
+    | '/api/admin/bonus-thumbnail'
     | '/api/auth/$'
     | '/api/bigbang/balance-change'
     | '/api/bigbang/user-data'
@@ -324,6 +334,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/profile'
     | '/wallet'
+    | '/api/admin/bonus-thumbnail'
     | '/api/auth/$'
     | '/api/bigbang/balance-change'
     | '/api/bigbang/user-data'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/_app/_player/history'
     | '/_app/_player/profile'
     | '/_app/_player/wallet'
+    | '/api/admin/bonus-thumbnail'
     | '/api/auth/$'
     | '/api/bigbang/balance-change'
     | '/api/bigbang/user-data'
@@ -370,6 +382,7 @@ export interface RootRouteChildren {
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AppRouteRoute: typeof AppRouteRouteWithChildren
   GuestRouteRoute: typeof GuestRouteRouteWithChildren
+  ApiAdminBonusThumbnailRoute: typeof ApiAdminBonusThumbnailRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBigbangBalanceChangeRoute: typeof ApiBigbangBalanceChangeRoute
   ApiBigbangUserDataRoute: typeof ApiBigbangUserDataRoute
@@ -541,6 +554,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPlayerWalletRouteImport
       parentRoute: typeof AppPlayerRouteRoute
     }
+    '/api/admin/bonus-thumbnail': {
+      id: '/api/admin/bonus-thumbnail'
+      path: '/api/admin/bonus-thumbnail'
+      fullPath: '/api/admin/bonus-thumbnail'
+      preLoaderRoute: typeof ApiAdminBonusThumbnailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -689,6 +709,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRouteRoute: AdminRouteRouteWithChildren,
   AppRouteRoute: AppRouteRouteWithChildren,
   GuestRouteRoute: GuestRouteRouteWithChildren,
+  ApiAdminBonusThumbnailRoute: ApiAdminBonusThumbnailRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBigbangBalanceChangeRoute: ApiBigbangBalanceChangeRoute,
   ApiBigbangUserDataRoute: ApiBigbangUserDataRoute,

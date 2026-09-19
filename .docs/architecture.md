@@ -51,6 +51,7 @@ src/
       game.ts
       bonus.ts
     auth-client.ts
+    blob-upload.ts               # browser asset-upload adapter
     utils.ts
     format.ts
   routes/
@@ -92,6 +93,8 @@ src/
       auth/
         auth.ts
         auth.middleware.ts
+      blob/
+        blob-storage.ts       # normalized public asset upload boundary
       providers/
         provider.types.ts
         drakon/
@@ -133,6 +136,7 @@ routes and components → server/domains/<domain>/*.service.ts
                                 server/infra/db
 
 provider callbacks → gameplay service → server/infra/db
+browser asset upload → authenticated route → server/infra/blob → external blob store
 ```
 
 1. Routes contain TanStack wiring and page composition, not wallet, bonus, or provider rules.
@@ -140,10 +144,11 @@ provider callbacks → gameplay service → server/infra/db
 3. Services own business rules and call Drizzle directly. Database transactions begin in the service operation that owns the complete business action.
 4. Every untrusted entry point validates input with Zod before a service changes state. Browser-facing operations share portable schemas; server-only operations keep their schemas in the domain that owns them.
 5. Provider payloads stay inside their adapter. The rest of Bearbet uses normalized types.
-6. Database rows do not become public response types by default.
-7. Use `type` declarations unless a library requires an `interface` or declaration merging.
-8. Prefer functions and explicit parameters. Add a class only when a library contract requires one.
-9. Use TanStack server functions as the browser boundary for Bearbet-owned operations. Better Auth already provides its own typed client and HTTP endpoints, so authentication forms call `authClient` rather than wrapping those endpoints in `*.functions.ts`.
+6. External asset providers stay behind `server/infra` adapters. Domain services consume normalized URLs and storage policies rather than importing provider SDKs or handling provider tokens.
+7. Database rows do not become public response types by default.
+8. Use `type` declarations unless a library requires an `interface` or declaration merging.
+9. Prefer functions and explicit parameters. Add a class only when a library contract requires one.
+10. Use TanStack server functions as the browser boundary for Bearbet-owned operations. Better Auth already provides its own typed client and HTTP endpoints, so authentication forms call `authClient` rather than wrapping those endpoints in `*.functions.ts`.
 
 ## Type placement
 
@@ -221,6 +226,7 @@ The idempotency key is provider plus operation type plus external transaction ID
 ### Bonuses
 
 - `bonus_definition` stores reusable rules and eligibility.
+- `bonus_definition.thumbnail_url` stores the normalized public thumbnail URL for the offer. Administrators upload JPEG, PNG, or WebP assets through the authenticated blob-storage route; the Vercel Blob SDK and token policy stay inside `server/infra/blob`.
 - `bonus_award` stores a user's granted amount, expiry, status, and conversion state.
 - `bonus_award` stores required and completed wagering for the MVP.
 - Qualifying provider bets advance progress in the same database transaction as the bet.

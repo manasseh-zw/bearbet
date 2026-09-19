@@ -64,6 +64,7 @@ export async function listActiveBonusDefinitions() {
 			id: bonusDefinition.id,
 			code: bonusDefinition.code,
 			name: bonusDefinition.name,
+			thumbnailUrl: bonusDefinition.thumbnailUrl,
 			amountMinor: bonusDefinition.amountMinor,
 			matchPercentageBps: bonusDefinition.matchPercentageBps,
 			type: bonusDefinition.type,

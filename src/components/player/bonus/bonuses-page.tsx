@@ -265,7 +265,11 @@ function BonusOfferCard({
 			<h3 className="sr-only">{offer.name}</h3>
 			<div className="relative aspect-3/2 overflow-hidden border-b bg-muted">
 				<img
-					src={offerArtwork[offer.code] ?? "/images/bonus_bear.png"}
+					src={
+						offer.thumbnailUrl ??
+						offerArtwork[offer.code] ??
+						"/images/bonus_bear.png"
+					}
 					alt={`${offer.name} campaign artwork`}
 					className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.015] motion-reduce:transform-none"
 				/>

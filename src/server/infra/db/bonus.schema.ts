@@ -39,6 +39,7 @@ export const bonusDefinition = pgTable(
 		code: varchar("code", { length: 64 }).notNull(),
 		name: varchar("name", { length: 120 }).notNull(),
 		description: text("description"),
+		thumbnailUrl: text("thumbnail_url"),
 		type: bonusDefinitionType("type").notNull(),
 		amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
 		matchPercentageBps: integer("match_percentage_bps"),

@@ -39,6 +39,7 @@ The Phase 3 foundation and UI closeout, the Phase 4 game-management slice, and t
 - The protected admin shell and users slice are live. Admin users can search and filter accounts, inspect player and wallet projections, suspend or activate accounts, adjust cash, and assign bonuses with reasons and audit evidence.
 - The admin Games route is live. Administrators can sync the provider catalogue, search and filter by provider, availability, status, and curation, edit local category and curation fields with reason-confirmed audit entries, and preserve local fields across syncs.
 - The admin Bonuses route is live. Administrators can search and filter definitions, create and edit future-offer rules, activate or deactivate definitions with a reason, and inspect stable codes and eligibility while issued awards retain their snapshots.
+- Bonus definitions now support administrator-managed public thumbnails. The upload token route authenticates a fresh administrator, delegates Vercel Blob policy to the blob-storage infrastructure adapter, and stores only the resulting normalized URL in PostgreSQL for admin and player rendering.
 - Better Auth owns password recovery and password change. Development logs a local reset-email preview when Resend is not configured.
 
 ### The current gap

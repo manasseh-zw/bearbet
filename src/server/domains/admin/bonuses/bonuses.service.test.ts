@@ -30,6 +30,8 @@ test("bonus definition mutations are audited and preserve issued award snapshots
 		code: `NEW_${ids.definitionId.slice(0, 8)}`,
 		name: "New campaign",
 		description: "A new campaign",
+		thumbnailUrl:
+			"https://assets.public.blob.vercel-storage.com/new-campaign.png",
 		type: "promotional",
 		amountMinor: 7500,
 		wageringMultiplier: 4,
@@ -37,6 +39,10 @@ test("bonus definition mutations are audited and preserve issued award snapshots
 		reason: "Launch a new campaign",
 	});
 	assert.equal(created.isDuplicate, false);
+	assert.equal(
+		created.definition.thumbnailUrl,
+		"https://assets.public.blob.vercel-storage.com/new-campaign.png",
+	);
 	context.after(() =>
 		cleanupFixture({ ...ids, createdDefinitionId: created.definition.id }),
 	);
@@ -46,6 +52,8 @@ test("bonus definition mutations are audited and preserve issued award snapshots
 		definitionId: ids.definitionId,
 		name: "Updated campaign",
 		description: "Updated rules",
+		thumbnailUrl:
+			"https://assets.public.blob.vercel-storage.com/updated-campaign.webp",
 		type: "promotional",
 		amountMinor: 12_000,
 		wageringMultiplier: 8,
@@ -53,6 +61,10 @@ test("bonus definition mutations are audited and preserve issued award snapshots
 		reason: "Refresh the campaign rules",
 	});
 	assert.equal(updated.isDuplicate, false);
+	assert.equal(
+		updated.definition.thumbnailUrl,
+		"https://assets.public.blob.vercel-storage.com/updated-campaign.webp",
+	);
 
 	const [award] = await db
 		.select({
@@ -78,6 +90,25 @@ test("bonus definition mutations are audited and preserve issued award snapshots
 		reason: "Pause the campaign",
 	});
 	assert.equal(deactivated.definition.isActive, false);
+
+	await assert.rejects(
+		() =>
+			updateAdminBonusDefinition({
+				actorUserId: ids.adminId,
+				definitionId: ids.definitionId,
+				name: "External image",
+				type: "promotional",
+				amountMinor: 12_000,
+				wageringMultiplier: 8,
+				expiresAfterDays: 45,
+				thumbnailUrl: "https://images.example.com/bonus.png",
+				reason: "Reject external image storage",
+			}),
+		(error: unknown) =>
+			error instanceof Error &&
+			"code" in error &&
+			error.code === "INVALID_INPUT",
+	);
 
 	await assert.rejects(
 		() =>

@@ -30,6 +30,7 @@ export const bonusDefinitionFieldsSchema = z.object({
 		.string()
 		.optional()
 		.transform((value) => value?.trim() || undefined),
+	thumbnailUrl: z.url().nullable().optional(),
 	type: z.enum(bonusDefinitionTypes),
 	amountMinor: positiveSafeIntegerSchema,
 	matchPercentageBps: z.number().int().positive().max(10_000).optional(),
