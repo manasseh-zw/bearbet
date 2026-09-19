@@ -4,6 +4,20 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 
 `master-task-list.md` is the active checklist. This file records delivery order, dependencies, and checkpoints.
 
+## Current delivery phases
+
+This is the current administration and release sequence. Update this section when a phase changes status. The task checklist remains the detailed source for individual items.
+
+- **Phase 1, shared admin foundations, complete.** TanStack admin table primitives, responsive states, URL query contracts, cursor conventions, password recovery, password reset, password change, and the local reset-email preview are in place.
+- **Phase 2, users, complete.** Admin user queries, URL-backed filters and sorting, responsive users UI, detail actions, wallet adjustments, bonus assignment, fresh-session authorization, session revocation, and transaction-scoped audits are implemented and tested.
+- **Phase 3, withdrawals and operations, current.** Add paginated withdrawal and operations queries first, then build the withdrawal review and activity tables on top of the existing audited review mutation.
+- **Phase 4, games, next.** Add audited game curation mutations, provider/category/status filters, sync feedback, and safe curation actions.
+- **Phase 5, bonuses, follows games.** Add bonus-definition management and the definition table without changing already-issued awards.
+- **Phase 6, live overview and player gaps, follows administration.** Replace illustrative overview data with live operational counts, then finish favorites, recently played, profile reads and edits, and lifecycle/access-boundary proof.
+- **Phase 7, release gate, final.** Complete rate limits, redacted logs, secure headers, health checks, clean-install verification, accessibility checks, and reviewer evidence.
+
+The next implementation stops after the Phase 3 foundation is complete and verified. It does not begin games or bonus-definition work in the same slice.
+
 ## Where the project stands
 
 ### Working product pieces
@@ -21,16 +35,20 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 - The deterministic fixture runner exercises production gameplay logic. The Drakon and BigBang adapters and callback boundaries have contract tests.
 - The configured BigBang sandbox catalogue has been synchronized into PostgreSQL. Authenticated game cards can open a signed BigBang Standard session, preserve the provider-managed balance baseline, and reconcile only the final session delta at explicit close.
 - Catalogue synchronization persists provider data and preserves Bearbet-owned availability and curation fields.
+- The protected admin shell and users slice are live. Admin users can search and filter accounts, inspect player and wallet projections, suspend or activate accounts, adjust cash, and assign bonuses with reasons and audit evidence.
+- Better Auth owns password recovery and password change. Development logs a local reset-email preview when Resend is not configured.
 
 ### The current gap
 
-The core Wallet and History routes are connected to the money engine, and the app shell now reads their shared wallet query to show the persisted playable balance with cash and bonus detail. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, and refresh persistence. Authenticated game cards now choose between the persisted BearBet simulator and the configured BigBang provider session. The Lucky Number player accepts a virtual stake, resolves a server-controlled outcome, records the bet and settlement through the production gameplay engine, refreshes wallet, bonus, and history data, restores the player's active session after a browser refresh, and closes with a session summary. The BigBang player embeds the genuine signed provider URL, keeps provider-managed funds clearly labelled, and reconciles only the session-level net delta on explicit close. History shows friendly operation references, game names on financial activity, and round-level won, lost, refunded, and pending results in its Bets tab. The Bonuses route reads three persisted offers, activates them through the wallet engine, restores the active award after refresh, and shows its balance, wagering progress, and expiry. Promotions, VIP, Profile, and Admin remain incomplete or placeholders; live Drakon play remains separately blocked by provider launch behavior.
+The player wallet, game, history, and bonus journeys are connected to the domain services. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, password lifecycle behavior, and refresh persistence. Profile reads and safe edits are still pending.
 
-A reviewer can now drive top-ups and withdrawal reservations from the Wallet. The next work completes that loop across the shell and transaction history, then records repeatable proof.
+The admin shell, shared table foundation, password security flows, and users slice are complete. The existing withdrawal review mutation already locks the withdrawal, moves or releases reserved cash through the wallet engine, and writes one audit entry. The remaining Phase 3 work is read-side: withdrawal queue/history projections, cursor-based wallet and gameplay activity queries, the responsive review UI, and the read-only activity tabs. Games and bonus-definition routes remain placeholders. Live Drakon play remains separately blocked by provider launch behavior.
+
+A reviewer can now drive top-ups and withdrawal reservations from the Wallet and manage users from the admin portal. The next reviewer-visible outcome is an administrator opening the withdrawal queue, reviewing a pending request, and inspecting the resulting wallet, withdrawal, and audit activity.
 
 ### Agreed delivery direction
 
-Finish the visible money loop first, then make the fixture game playable before adding its bonus UI. Follow that with account and catalogue completion, then administration, release work, and live Drakon proof. Do not let Profile, password recovery, favourites, or VIP delay the first playable game. Promotions and VIP remain honest unavailable states until they have a defined product scope.
+The original player-first order has delivered the wallet, playable fixture, history, and bonus journeys. The remaining work now follows the current delivery phases above: finish admin withdrawals and operations, then games, bonus definitions, the live overview and remaining player gaps, and finally release hardening. Promotions and VIP remain honest unavailable states until a later scope defines them.
 
 ## Delivery rules
 
@@ -108,22 +126,16 @@ This stage delivers tasks P19 through P21. It depends on wallet and gameplay. Ad
 
 ## Stage 4: account, catalogue completion, and administration
 
-Complete the player profile and verify the password recovery journey. Forgot-password and reset-password are now wired through Better Auth with a server-only Resend transport, while the authenticated profile provides a current-password change that revokes other sessions. Profile edits must exclude role, status, balances, and audit fields; lifecycle and fresh-session behavior still need browser proof.
+The player account work is split. Password recovery and password change are complete through Better Auth, while profile reads and safe edits and browser lifecycle proof remain in the task list. Favorites and recently played projections exist but still need their player-facing reads, writes, lobby sections, and empty states.
 
-Use the persisted player–game favorite and recent-game projections, then move catalogue filtering to indexed, paginated PostgreSQL reads with provider filters, URL state, and the local featured, popular, and new curation flags. These close the original product brief, but they follow the playable and bonus journeys.
+The admin route group, fresh-session checks, transaction-scoped authorization, audit writer, shared table primitives, and users slice are complete. The existing withdrawal review mutation is the first finished operations mutation. Continue administration in this order:
 
-Add a nested administrator route group with a fresh-session server-side role check on every function. Mutations must re-read and lock the active admin inside their transaction, and transaction-scoped audit writes must commit or roll back with the mutation. The first withdrawal-review slice now follows this boundary. Build the remaining operations in this order:
+1. **Phase 3, withdrawals and operations.** Add explicit withdrawal queue/history projections, cursor-based wallet and gameplay activity projections, then build review and activity tables with URL-backed filters and responsive states.
+2. **Phase 4, games.** Add audited enable/disable, category, featured, popular, and new curation mutations. Preserve local fields during provider sync and show sync progress, errors, unavailable games, and artwork fallbacks.
+3. **Phase 5, bonuses.** Add audited definition list, create, edit, activate, and deactivate operations. Existing player awards keep their snapshotted rules.
+4. **Phase 6, live overview and player gaps.** Replace illustrative overview values with live operational counts, link cards to filtered admin pages, then finish favorites, recently played, profile reads and edits, and access-boundary proof.
 
-1. User search, inspection, suspension, activation, and bonus assignment.
-2. Audited balance adjustments through the wallet engine.
-3. Game sync, availability, categories, and collection curation.
-4. Bonus definition management.
-5. Wallet and gameplay inspection plus withdrawal review.
-6. Extend the transaction-scoped audit writer over the new admin-audit table for every administrator mutation.
-
-The user slice is now implemented: the users query returns explicit identity, player, wallet, and balance projections; the page keeps search, filters, sorting, and pagination in the URL; and the detail sheet exposes suspend, activate, audited cash adjustment, and bonus assignment actions. Shared admin table states, mobile row rendering, toolbar layout, and bounded cursor-query contracts are now available for the remaining operations pages. Remaining administration work starts with withdrawal and activity reads, followed by games and bonus-definition management.
-
-The overview comes from those operational reads. It should report useful counts and recent events, not invented gambling revenue.
+The overview must report useful operational counts and recent events, not invented gambling revenue.
 
 Checkpoint:
 
@@ -175,4 +187,6 @@ Favourites, recently played games, notifications, advanced filters, two-factor a
 
 ## Immediate task
 
-Finish P04 and P10 with access-boundary and wallet-journey tests covering duplicate requests, invalid and excessive withdrawals, suspension, cross-user isolation, and refresh persistence. The next vertical slice is fixture launch, play, settlement, and history refresh. Bonus activation and visible wagering progress follow it.
+Start Phase 3 with the admin withdrawal and operations queries. Return explicit withdrawal, player, wallet, reviewer, and decision projections. Use offset pagination for the review queue and cursor pagination for continuously growing wallet, gameplay, withdrawal, and audit activity. Then build the responsive review and activity tables on top of the existing audited review mutation.
+
+Keep P04, P10, P22, and P24 in the verification queue. They are important release evidence, but they do not change the next implementation slice.
