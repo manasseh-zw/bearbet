@@ -305,8 +305,9 @@ Borrow the session-query and middleware split from `/Users/manasseh/Projects/wor
 - Local development uses the pinned PostgreSQL image in `docker-compose.yml`.
 - The hosted deployment runs on Vercel through the existing Nitro integration and a managed Neon PostgreSQL project.
 - Serverless database connections use Neon's pooled endpoint, while Drizzle migrations use the direct Neon endpoint.
+- Vercel's Nitro output gives the TanStack server-function RPC namespace a 45-second maximum duration. This covers the BigBang adapter's 20-second upstream request timeout plus database and response overhead while remaining within Hobby limits.
 - Active provider boundaries remain short request-response functions: authenticate, validate, capture or execute one database transaction, persist the idempotent result, and respond. BigBang sandbox callbacks are capture-only for the current provider limitation; the authenticated close path owns session-level reconciliation.
-- Catalogue synchronization is chunked and resumable. It is triggered manually for the first demo and may later run as a scheduled job.
+- Catalogue synchronization is triggered manually for the first demo with `npm run catalogue:sync` (the same domain service used by the protected admin action) and may later run as a scheduled job.
 - Better Auth rate limiting uses database-backed storage in production because in-memory state is not shared across serverless instances.
 - Bearbet does not require a WebSocket server for the MVP.
 
