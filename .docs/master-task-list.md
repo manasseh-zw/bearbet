@@ -113,7 +113,7 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 
 ### 9. Release and handover
 
-- [ ] **R01. Add repeatable seed and reset commands.** Create known player, administrator, wallet, bonus, and fixture catalogue state. Document reviewer credentials and reset behavior.
+- [~] **R01. Add repeatable seed and reset commands.** The local `auth:seed-admin` command now creates or promotes a credential account with the `admin` role and resets its password. Known player, wallet, bonus, catalogue, and full reset state remain to be added.
 - [~] **R02. Finish abuse protection.** Better Auth has database-backed limits for registration and login. Add targeted limits for password reset, launch, top-up, withdrawal, and callbacks without breaking provider retries.
 - [ ] **R03. Add structured redacted logs.** Cover authentication, launches, callbacks, wallet changes, bonuses, admin actions, latency, and failures without storing credentials or sensitive payloads.
 - [ ] **R04. Harden browser and response behavior.** Add secure headers, a game-compatible frame policy, CSRF protection where needed, no-store wallet responses, and safe error mapping.

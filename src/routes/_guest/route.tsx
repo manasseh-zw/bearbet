@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
-import { getInternalRedirect } from "#/lib/navigation";
+import { getInternalRedirect, getPostLoginRedirect } from "#/lib/navigation";
 import { getRouteSession } from "#/server/infra/auth/session.functions";
 
 export const Route = createFileRoute("/_guest")({
@@ -11,7 +11,12 @@ export const Route = createFileRoute("/_guest")({
 			const redirectTo = getInternalRedirect(
 				new URLSearchParams(location.searchStr).get("redirect"),
 			);
-			throw redirect({ href: redirectTo ?? "/" });
+			throw redirect({
+				href: getPostLoginRedirect({
+					redirectTo,
+					role: session.user.role,
+				}),
+			});
 		}
 	},
 	component: GuestLayout,

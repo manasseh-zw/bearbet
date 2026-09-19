@@ -9,6 +9,7 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { signInPlayer } from "#/lib/auth-client";
+import { getPostLoginRedirect } from "#/lib/navigation";
 import {
 	type LoginFormInput,
 	loginFormSchema,
@@ -37,8 +38,14 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 
 	const login = useMutation({
 		mutationFn: signInPlayer,
-		onSuccess: async () => {
-			await navigate({ href: redirectTo ?? "/", replace: true });
+		onSuccess: async (result) => {
+			await navigate({
+				href: getPostLoginRedirect({
+					redirectTo,
+					role: result.user.role,
+				}),
+				replace: true,
+			});
 		},
 	});
 

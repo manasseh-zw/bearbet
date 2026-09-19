@@ -15,3 +15,13 @@ export function getInternalRedirect(value: unknown) {
 
 	return `${redirect.pathname}${redirect.search}${redirect.hash}`;
 }
+
+export function getPostLoginRedirect({
+	redirectTo,
+	role,
+}: {
+	redirectTo?: string;
+	role?: string | null;
+}) {
+	return redirectTo ?? (role === "admin" ? "/admin" : "/");
+}

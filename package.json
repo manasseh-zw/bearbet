@@ -25,7 +25,8 @@
     "db:studio": "drizzle-kit studio",
     "catalogue:sync": "tsx --env-file=.env.local scripts/sync-game-catalogue.ts",
     "catalogue:benchmark": "tsx --env-file=.env.local scripts/benchmark-catalogue-search.ts",
-    "provider:capture": "tsx scripts/capture-drakon-catalogue.ts"
+    "provider:capture": "tsx scripts/capture-drakon-catalogue.ts",
+    "auth:seed-admin": "tsx --env-file=.env.local scripts/seed-admin.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
