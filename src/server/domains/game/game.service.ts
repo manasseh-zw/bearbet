@@ -3,6 +3,7 @@ import "@tanstack/react-start/server-only";
 import { and, asc, eq, notInArray, sql } from "drizzle-orm";
 import {
 	type CatalogueSearch,
+	catalogueScopePriorityCategories,
 	promotionCatalogueCategories,
 } from "#/lib/schemas/catalogue.schema";
 import { env } from "#/server/env";
@@ -136,6 +137,14 @@ export async function searchGames(
 		and ${searchCondition}
 	`;
 	const offset = (input.page - 1) * input.pageSize;
+	const scopePriority = catalogueScopePriorityCategories[input.scope];
+	const priorityOrder = sql`case ${sql.join(
+		scopePriority.map(
+			(category, index) =>
+				sql`when ${game.category} = ${category} then ${index}`,
+		),
+		sql` `,
+	)} else ${scopePriority.length} end`;
 	const rank = query
 		? sql`greatest(
 			similarity(lower(${game.name}), ${query}),
@@ -150,12 +159,14 @@ export async function searchGames(
 			.from(game)
 			.where(baseCondition)
 			.orderBy(
-				query ? sql`lower(${game.name}) = ${query} desc` : asc(game.name),
-				query
-					? sql`lower(${game.name}) like ${`${escapedQuery}%`} desc`
-					: asc(game.externalId),
-				query ? sql`${rank} desc` : asc(game.name),
-				asc(game.name),
+				...(query
+					? [
+							sql`lower(${game.name}) = ${query} desc`,
+							sql`lower(${game.name}) like ${`${escapedQuery}%`} desc`,
+							sql`${rank} desc`,
+							asc(game.name),
+						]
+					: [priorityOrder, asc(game.name), asc(game.externalId)]),
 			)
 			.limit(input.pageSize)
 			.offset(offset),

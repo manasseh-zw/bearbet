@@ -13,6 +13,11 @@ export const promotionCatalogueCategories = [
 	"Amatic",
 ] as const;
 
+export const catalogueScopePriorityCategories = {
+	casino: ["Booming", "Evoplay"],
+	promotions: promotionCatalogueCategories,
+} as const;
+
 export const catalogueSearchSchema = z.object({
 	q: z.string().trim().max(80).default(""),
 	category: z.string().trim().min(1).max(120).optional(),

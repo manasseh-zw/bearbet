@@ -1,4 +1,7 @@
-import { promotionCatalogueCategories } from "#/lib/schemas/catalogue.schema";
+import {
+	catalogueScopePriorityCategories,
+	promotionCatalogueCategories,
+} from "#/lib/schemas/catalogue.schema";
 import type { NormalizedGame } from "#/server/infra/providers/provider.types";
 
 export const uncategorizedGameLabel = "Other";
@@ -7,12 +10,12 @@ export const catalogueViewConfig = {
 	casino: {
 		defaultCategory: "all",
 		featuredCategory: "Playtech",
-		priorityCategories: ["Booming", "Evoplay"],
+		priorityCategories: catalogueScopePriorityCategories.casino,
 	},
 	promotions: {
 		defaultCategory: "all",
 		maxItems: 100,
-		priorityCategories: promotionCatalogueCategories,
+		priorityCategories: catalogueScopePriorityCategories.promotions,
 		includedCategories: promotionCatalogueCategories,
 	},
 } as const;

@@ -43,7 +43,9 @@ function CasinoLobby() {
 	return session?.user ? (
 		<PlayerLobby
 			query={query}
-			onQueryChange={(search) => navigate({ search, replace: true })}
+			onQueryChange={(search) =>
+				navigate({ search, replace: true, resetScroll: false })
+			}
 		/>
 	) : (
 		<GuestLobby />

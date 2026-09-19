@@ -83,6 +83,32 @@ test("catalogue sync persists provider games and marks missing games unavailable
 						hasLobby: false,
 						hasTables: false,
 					},
+					{
+						id: "game-booming",
+						name: "Zulu Booming game",
+						provider: "updated-studio",
+						category: "Booming",
+						type: "slots",
+						supportsFun: true,
+						isAvailable: true,
+						isMobile: true,
+						hasFreeSpins: false,
+						hasLobby: false,
+						hasTables: false,
+					},
+					{
+						id: "game-pragmatic",
+						name: "Alpha Pragmatic game",
+						provider: "updated-studio",
+						category: "Pragmatic",
+						type: "slots",
+						supportsFun: true,
+						isAvailable: true,
+						isMobile: true,
+						hasFreeSpins: false,
+						hasLobby: false,
+						hasTables: false,
+					},
 				],
 			};
 		},
@@ -94,7 +120,7 @@ test("catalogue sync persists provider games and marks missing games unavailable
 	});
 
 	const games = await listGames(integrationProvider);
-	assert.equal(games.length, 2);
+	assert.equal(games.length, 4);
 	assert.equal(
 		games.find((candidate) => candidate.id === "game-1")?.name,
 		"Renamed game",
@@ -108,13 +134,18 @@ test("catalogue sync persists provider games and marks missing games unavailable
 	assert.equal(stored?.type, "roulette");
 });
 
-test("catalogue search ranks fuzzy matches and respects promotion scope", async () => {
+test("catalogue search ranks fuzzy matches and configured scope priorities", async () => {
 	const fuzzy = await searchGames(
 		{ q: "renamd", scope: "casino", page: 1, pageSize: 20 },
 		integrationProvider,
 	);
 	assert.equal(fuzzy.games[0]?.name, "Renamed game");
 	assert.equal(fuzzy.total, 1);
+	const casino = await searchGames(
+		{ q: "", scope: "casino", page: 1, pageSize: 20 },
+		integrationProvider,
+	);
+	assert.equal(casino.games[0]?.name, "Zulu Booming game");
 
 	const promotions = await searchGames(
 		{ q: "", scope: "promotions", page: 1, pageSize: 20 },
@@ -122,7 +153,7 @@ test("catalogue search ranks fuzzy matches and respects promotion scope", async 
 	);
 	assert.deepEqual(
 		promotions.games.map((candidate) => candidate.name),
-		["Renamed game"],
+		["Alpha Pragmatic game", "Zulu Booming game", "Renamed game"],
 	);
 
 	const cached = await searchGames(
