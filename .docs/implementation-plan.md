@@ -10,13 +10,13 @@ This is the current administration and release sequence. Update this section whe
 
 - **Phase 1, shared admin foundations, complete.** TanStack admin table primitives, responsive states, URL query contracts, cursor conventions, password recovery, password reset, password change, and the local reset-email preview are in place.
 - **Phase 2, users, complete.** Admin user queries, URL-backed filters and sorting, responsive users UI, detail actions, wallet adjustments, bonus assignment, fresh-session authorization, session revocation, and transaction-scoped audits are implemented and tested.
-- **Phase 3, withdrawals and operations, complete.** Admin withdrawal projections, offset-paginated review queue, cursor-paginated wallet/gameplay/withdrawal/audit activity, responsive review controls, and URL-backed operational filters are implemented and tested on top of the audited review mutation.
+- **Phase 3, withdrawals and operations, complete.** Admin withdrawal projections, offset-paginated review queue, cursor-paginated wallet/gameplay/withdrawal/audit activity, responsive review controls, and URL-backed operational filters are implemented and tested on top of the audited review mutation. The UI closeout puts search first in the Users, Withdrawals, and Activity toolbars and uses input-sized search icons throughout.
 - **Phase 4, games, current.** Add audited game curation mutations, provider/category/status filters, sync feedback, and safe curation actions.
 - **Phase 5, bonuses, follows games.** Add bonus-definition management and the definition table without changing already-issued awards.
 - **Phase 6, live overview and player gaps, follows administration.** Replace illustrative overview data with live operational counts, then finish favorites, recently played, profile reads and edits, and lifecycle/access-boundary proof.
 - **Phase 7, release gate, final.** Complete rate limits, redacted logs, secure headers, health checks, clean-install verification, accessibility checks, and reviewer evidence.
 
-The Phase 3 foundation is complete and verified. The next slice begins game management; bonus-definition work remains separate.
+The Phase 3 foundation and UI closeout are complete and verified. The next slice begins game management; bonus-definition work remains separate.
 
 ## Where the project stands
 
@@ -42,7 +42,7 @@ The Phase 3 foundation is complete and verified. The next slice begins game mana
 
 The player wallet, game, history, and bonus journeys are connected to the domain services. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, password lifecycle behavior, and refresh persistence. Profile reads and safe edits are still pending.
 
-The admin shell, shared table foundation, password security flows, users slice, and withdrawals/operations slice are complete. The withdrawal queue returns explicit player, wallet, reviewer, and decision projections. Activity reads cover immutable wallet operations, provider gameplay operations, withdrawal history, and admin audit entries with cursor pagination. Games and bonus-definition routes remain placeholders. Live Drakon play remains separately blocked by provider launch behavior.
+The admin shell, shared table foundation, password security flows, users slice, and withdrawals/operations slice are complete. The withdrawal queue returns explicit player, wallet, reviewer, and decision projections. Activity reads cover immutable wallet operations, provider gameplay operations, withdrawal history, and admin audit entries with cursor pagination. Admin filter toolbars now use a consistent search-first order with compact search affordances. Games and bonus-definition routes remain placeholders. Live Drakon play remains separately blocked by provider launch behavior.
 
 A reviewer can now drive top-ups and withdrawal reservations from the Wallet, manage users, review pending withdrawals, and inspect the resulting wallet, withdrawal, gameplay, and audit activity from the admin portal. The next reviewer-visible outcome is game curation.
 
@@ -186,6 +186,6 @@ Favourites, recently played games, notifications, advanced filters, two-factor a
 
 ## Immediate task
 
-Phase 3 is complete: the admin withdrawal and operations queries return explicit withdrawal, player, wallet, reviewer, and decision projections; the review queue uses offset pagination; and wallet, gameplay, withdrawal, and audit activity use opaque cursors. The responsive review and activity tables sit on top of the existing audited review mutation.
+Phase 3 is complete, including its UI closeout: the admin withdrawal and operations queries return explicit withdrawal, player, wallet, reviewer, and decision projections; the review queue uses offset pagination; wallet, gameplay, withdrawal, and audit activity use opaque cursors; and the Users, Withdrawals, and Activity toolbars put search first with input-sized search icons. The responsive review and activity tables sit on top of the existing audited review mutation.
 
 Keep P04, P10, P22, and P24 in the verification queue. They are important release evidence, but they do not change the next implementation slice.
