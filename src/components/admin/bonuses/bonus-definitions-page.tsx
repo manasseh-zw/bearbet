@@ -406,61 +406,61 @@ function DefinitionRowView({
 	onStatus: () => void;
 }) {
 	return (
-		<article className="rounded-xl border border-border bg-card/40 p-4">
-			<div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-				<div className="flex min-w-0 flex-1 gap-4">
-					<div className="size-20 shrink-0 overflow-hidden rounded-lg border border-border bg-muted sm:size-24">
-						{row.thumbnailUrl ? (
-							<img
-								alt=""
-								className="size-full object-cover"
-								src={row.thumbnailUrl}
-							/>
-						) : (
-							<div className="grid size-full place-items-center px-2 text-center text-[11px] text-muted-foreground">
-								No image
-							</div>
-						)}
+		<article className="group rounded-2xl border border-border bg-card/40 p-4 transition-colors hover:border-foreground/20 sm:p-5">
+			<div className="grid gap-5 lg:grid-cols-[9.5rem_minmax(0,1fr)_auto] lg:items-start">
+				<div className="aspect-[4/3] w-full overflow-hidden rounded-xl border border-border bg-muted sm:max-w-40 lg:aspect-[4/3]">
+					{row.thumbnailUrl ? (
+						<img
+							alt=""
+							className="size-full object-cover"
+							src={row.thumbnailUrl}
+						/>
+					) : (
+						<div className="grid size-full place-items-center px-2 text-center text-[11px] text-muted-foreground">
+							No image
+						</div>
+					)}
+				</div>
+				<div className="min-w-0">
+					<div className="flex flex-wrap items-center gap-2">
+						<code className="rounded-md bg-muted/70 px-2 py-1 text-xs font-semibold tracking-[0.08em] text-muted-foreground">
+							{row.code}
+						</code>
+						<Badge variant={row.isActive ? "default" : "secondary"}>
+							{row.isActive ? "Active" : "Inactive"}
+						</Badge>
+						<Badge variant="outline">{typeLabels[row.type]}</Badge>
 					</div>
-					<div className="min-w-0 flex-1">
-						<div className="flex flex-wrap items-center gap-2">
-							<code className="text-sm font-semibold tracking-wide">
-								{row.code}
-							</code>
-							<Badge variant={row.isActive ? "default" : "secondary"}>
-								{row.isActive ? "Active" : "Inactive"}
-							</Badge>
-							<Badge variant="outline">{typeLabels[row.type]}</Badge>
-						</div>
-						<h2 className="mt-2 text-lg font-semibold">{row.name}</h2>
-						{row.description ? (
-							<p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-								{row.description}
-							</p>
-						) : null}
-						<div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-							<Rule label="Award">
-								{formatMinor(row.amountMinor)}
-								{row.matchPercentageBps
-									? ` · ${row.matchPercentageBps / 100}% match`
-									: ""}
-							</Rule>
-							<Rule label="Wagering">{row.wageringMultiplier}x</Rule>
-							<Rule label="Expires">{row.expiresAfterDays} days</Rule>
-							<Rule label="Minimum deposit">
-								{row.minimumDepositMinor == null
-									? "No minimum"
-									: formatMinor(row.minimumDepositMinor)}
-							</Rule>
-						</div>
-						<div className="mt-3 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
-							<RulePill label="Games" values={row.eligibleGameIds} />
-							<RulePill label="Categories" values={row.eligibleCategories} />
-							<RulePill label="Providers" values={row.eligibleProviders} />
-						</div>
+					<h2 className="mt-3 text-xl font-semibold tracking-tight">
+						{row.name}
+					</h2>
+					{row.description ? (
+						<p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
+							{row.description}
+						</p>
+					) : null}
+					<dl className="mt-5 grid gap-x-5 gap-y-4 border-t border-border/70 pt-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
+						<Rule label="Award">
+							{formatMinor(row.amountMinor)}
+							{row.matchPercentageBps
+								? ` · ${row.matchPercentageBps / 100}% match`
+								: ""}
+						</Rule>
+						<Rule label="Wagering">{row.wageringMultiplier}x</Rule>
+						<Rule label="Expires">{row.expiresAfterDays} days</Rule>
+						<Rule label="Minimum deposit">
+							{row.minimumDepositMinor == null
+								? "No minimum"
+								: formatMinor(row.minimumDepositMinor)}
+						</Rule>
+					</dl>
+					<div className="mt-4 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
+						<RulePill label="Games" values={row.eligibleGameIds} />
+						<RulePill label="Categories" values={row.eligibleCategories} />
+						<RulePill label="Providers" values={row.eligibleProviders} />
 					</div>
 				</div>
-				<div className="flex shrink-0 flex-wrap gap-2 xl:justify-end">
+				<div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
 					<Button onClick={onEdit} size="sm" variant="outline">
 						<Edit3Icon data-icon="inline-start" /> Edit
 					</Button>
@@ -594,8 +594,8 @@ function BonusDefinitionDialog({
 
 	return (
 		<Dialog open onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
-				<DialogHeader>
+			<DialogContent className="max-h-[92vh] overflow-y-auto p-0 sm:max-w-4xl">
+				<DialogHeader className="sticky top-0 z-10 border-b border-border bg-popover px-5 py-5 sm:px-7">
 					<DialogTitle>
 						{isCreate ? "Create bonus definition" : "Edit bonus definition"}
 					</DialogTitle>
@@ -605,118 +605,23 @@ function BonusDefinitionDialog({
 							: "Changes apply to future awards. Existing awards keep their snapshot."}
 					</DialogDescription>
 				</DialogHeader>
-				<div className="grid gap-4 sm:grid-cols-2">
-					{isCreate ? (
-						<Field label="Code" hint="Stable identifier, 3–64 characters">
-							<Input
-								value={values.code}
-								onChange={(event) => set("code", event.target.value)}
-								placeholder="WELCOME_2026"
-							/>
-						</Field>
-					) : (
-						<Field label="Code" hint="Stable after creation">
-							<Input disabled value={values.code} />
-						</Field>
-					)}
-					<Field label="Name">
-						<Input
-							value={values.name}
-							onChange={(event) => set("name", event.target.value)}
-							placeholder="Welcome bonus"
-						/>
-					</Field>
-					<Field label="Type">
-						<Select
-							value={values.type}
-							onValueChange={(value) => set("type", value ?? "welcome")}
-						>
-							<SelectTrigger>
-								<SelectValue>
-									{typeLabels[values.type as AdminBonusType]}
-								</SelectValue>
-							</SelectTrigger>
-							<SelectContent>
-								{bonusDefinitionTypes.map((type) => (
-									<SelectItem key={type} value={type}>
-										{typeLabels[type]}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</Field>
-					<Field
-						label="Award amount"
-						hint="Major currency units, for example 100 = 100.00 in the player's currency"
+				<div className="space-y-8 px-5 py-6 sm:px-7">
+					<section
+						aria-labelledby="bonus-artwork-heading"
+						className="space-y-3"
 					>
-						<Input
-							inputMode="decimal"
-							value={values.amountMajor}
-							onChange={(event) => set("amountMajor", event.target.value)}
-							placeholder="100"
-						/>
-					</Field>
-					<Field label="Wagering multiplier">
-						<Input
-							inputMode="numeric"
-							value={values.wageringMultiplier}
-							onChange={(event) =>
-								set("wageringMultiplier", event.target.value)
-							}
-							placeholder="5"
-						/>
-					</Field>
-					<Field label="Expires after (days)">
-						<Input
-							inputMode="numeric"
-							value={values.expiresAfterDays}
-							onChange={(event) => set("expiresAfterDays", event.target.value)}
-							placeholder="30"
-						/>
-					</Field>
-					<Field
-						label="Match percentage"
-						hint="Deposit bonuses only. Leave blank for a fixed award."
-					>
-						<Input
-							disabled={values.type !== "deposit"}
-							inputMode="decimal"
-							value={values.matchPercentage}
-							onChange={(event) => set("matchPercentage", event.target.value)}
-							placeholder="25"
-						/>
-					</Field>
-					<Field label="Minimum deposit" hint="Optional major currency units">
-						<Input
-							inputMode="decimal"
-							value={values.minimumDepositMajor}
-							onChange={(event) =>
-								set("minimumDepositMajor", event.target.value)
-							}
-							placeholder="50"
-						/>
-					</Field>
-					<Field label="Maximum award" hint="Optional major currency units">
-						<Input
-							inputMode="decimal"
-							value={values.maximumAwardMajor}
-							onChange={(event) => set("maximumAwardMajor", event.target.value)}
-							placeholder="500"
-						/>
-					</Field>
-					<div className="sm:col-span-2">
-						<Field label="Description">
-							<Textarea
-								value={values.description}
-								onChange={(event) => set("description", event.target.value)}
-								placeholder="Explain the offer in the player-facing campaign."
-							/>
-						</Field>
-					</div>
-					<div className="sm:col-span-2">
+						<div>
+							<h3 className="text-sm font-semibold" id="bonus-artwork-heading">
+								Offer artwork
+							</h3>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Give the offer a visual anchor players can recognize at a
+								glance.
+							</p>
+						</div>
 						<Field label="Thumbnail" hint="JPEG, PNG, or WebP · 5 MB maximum">
-							<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-								<div className="size-28 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
+							<div className="flex flex-col gap-4 rounded-2xl border border-border bg-muted/20 p-3 sm:flex-row sm:items-center sm:p-4">
+								<div className="aspect-[4/3] w-full max-w-52 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
 									{values.thumbnailUrl ? (
 										<img
 											alt="Bonus thumbnail preview"
@@ -725,103 +630,326 @@ function BonusDefinitionDialog({
 										/>
 									) : (
 										<div className="grid size-full place-items-center px-3 text-center text-xs text-muted-foreground">
-											No thumbnail
+											No thumbnail yet
 										</div>
 									)}
 								</div>
-								<div className="flex flex-wrap gap-2">
-									<input
-										accept="image/jpeg,image/png,image/webp"
-										className="sr-only"
-										onChange={(event) => {
-											const file = event.target.files?.[0];
-											if (file) void uploadThumbnail(file);
-											event.target.value = "";
-										}}
-										ref={fileInputRef}
-										type="file"
-									/>
-									<Button
-										disabled={uploading}
-										onClick={() => fileInputRef.current?.click()}
-										type="button"
-										variant="outline"
-									>
-										{uploading ? (
-											<LoaderCircleIcon className="animate-spin" />
-										) : (
-											<ImagePlusIcon />
-										)}
-										{uploading
-											? `Uploading ${uploadProgress ?? 0}%`
-											: "Upload image"}
-									</Button>
-									{values.thumbnailUrl ? (
+								<div className="min-w-0 space-y-2">
+									<p className="text-sm font-medium">
+										{values.thumbnailUrl
+											? "Thumbnail ready"
+											: "Add a thumbnail"}
+									</p>
+									<p className="max-w-sm text-sm leading-5 text-muted-foreground">
+										Use a clear campaign image with enough contrast to read in
+										the player lobby.
+									</p>
+									<div className="flex flex-wrap gap-2">
+										<input
+											accept="image/jpeg,image/png,image/webp"
+											className="sr-only"
+											onChange={(event) => {
+												const file = event.target.files?.[0];
+												if (file) void uploadThumbnail(file);
+												event.target.value = "";
+											}}
+											ref={fileInputRef}
+											type="file"
+										/>
 										<Button
 											disabled={uploading}
-											onClick={() => set("thumbnailUrl", "")}
+											onClick={() => fileInputRef.current?.click()}
 											type="button"
-											variant="ghost"
+											variant="outline"
 										>
-											<Trash2Icon /> Remove
+											{uploading ? (
+												<LoaderCircleIcon className="animate-spin" />
+											) : (
+												<ImagePlusIcon />
+											)}
+											{uploading
+												? `Uploading ${uploadProgress ?? 0}%`
+												: values.thumbnailUrl
+													? "Replace image"
+													: "Upload image"}
 										</Button>
+										{values.thumbnailUrl ? (
+											<Button
+												disabled={uploading}
+												onClick={() => set("thumbnailUrl", "")}
+												type="button"
+												variant="ghost"
+											>
+												<Trash2Icon /> Remove
+											</Button>
+										) : null}
+									</div>
+									{uploadError ? (
+										<p className="text-sm text-destructive">{uploadError}</p>
 									) : null}
 								</div>
 							</div>
-							{uploadError ? (
-								<p className="mt-2 text-sm text-destructive">{uploadError}</p>
-							) : null}
 						</Field>
-					</div>
-					<Field
-						label="Eligible game IDs"
-						hint="Comma-separated. Leave blank for all games."
+					</section>
+
+					<section
+						aria-labelledby="bonus-details-heading"
+						className="space-y-4"
 					>
-						<Input
-							value={values.eligibleGameIds}
-							onChange={(event) => set("eligibleGameIds", event.target.value)}
-							placeholder="game-id-1, game-id-2"
-						/>
-					</Field>
-					<Field
-						label="Eligible categories"
-						hint="Comma-separated. Leave blank for all categories."
+						<div className="border-b border-border pb-3">
+							<h3 className="text-sm font-semibold" id="bonus-details-heading">
+								Offer details
+							</h3>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Set the name and the player-facing message for this campaign.
+							</p>
+						</div>
+						<div className="grid gap-4 sm:grid-cols-2">
+							{isCreate ? (
+								<Field
+									id="bonus-code"
+									label="Code"
+									hint="Stable identifier, 3–64 characters"
+								>
+									<Input
+										id="bonus-code"
+										value={values.code}
+										onChange={(event) => set("code", event.target.value)}
+										placeholder="WELCOME_2026"
+									/>
+								</Field>
+							) : (
+								<Field
+									id="bonus-code"
+									label="Code"
+									hint="Stable after creation"
+								>
+									<Input disabled id="bonus-code" value={values.code} />
+								</Field>
+							)}
+							<Field id="bonus-name" label="Name">
+								<Input
+									id="bonus-name"
+									value={values.name}
+									onChange={(event) => set("name", event.target.value)}
+									placeholder="Welcome bonus"
+								/>
+							</Field>
+							<Field id="bonus-type" label="Type">
+								<Select
+									value={values.type}
+									onValueChange={(value) => set("type", value ?? "welcome")}
+								>
+									<SelectTrigger aria-label="Bonus type" id="bonus-type">
+										<SelectValue>
+											{typeLabels[values.type as AdminBonusType]}
+										</SelectValue>
+									</SelectTrigger>
+									<SelectContent>
+										{bonusDefinitionTypes.map((type) => (
+											<SelectItem key={type} value={type}>
+												{typeLabels[type]}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</Field>
+							<div className="sm:col-span-2">
+								<Field id="bonus-description" label="Description">
+									<Textarea
+										id="bonus-description"
+										value={values.description}
+										onChange={(event) => set("description", event.target.value)}
+										placeholder="Explain the offer in the player-facing campaign."
+									/>
+								</Field>
+							</div>
+						</div>
+					</section>
+
+					<section aria-labelledby="bonus-rules-heading" className="space-y-4">
+						<div className="border-b border-border pb-3">
+							<h3 className="text-sm font-semibold" id="bonus-rules-heading">
+								Bonus rules
+							</h3>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Control the award value, wagering commitment, and deposit
+								limits.
+							</p>
+						</div>
+						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+							<Field
+								id="bonus-amount"
+								label="Award amount"
+								hint="Major currency units, for example 100 = 100.00 in the player's currency"
+							>
+								<Input
+									id="bonus-amount"
+									inputMode="decimal"
+									value={values.amountMajor}
+									onChange={(event) => set("amountMajor", event.target.value)}
+									placeholder="100"
+								/>
+							</Field>
+							<Field id="bonus-wagering" label="Wagering multiplier">
+								<Input
+									id="bonus-wagering"
+									inputMode="numeric"
+									value={values.wageringMultiplier}
+									onChange={(event) =>
+										set("wageringMultiplier", event.target.value)
+									}
+									placeholder="5"
+								/>
+							</Field>
+							<Field id="bonus-expires" label="Expires after (days)">
+								<Input
+									id="bonus-expires"
+									inputMode="numeric"
+									value={values.expiresAfterDays}
+									onChange={(event) =>
+										set("expiresAfterDays", event.target.value)
+									}
+									placeholder="30"
+								/>
+							</Field>
+							<Field
+								id="bonus-match"
+								label="Match percentage"
+								hint="Deposit bonuses only. Leave blank for a fixed award."
+							>
+								<Input
+									id="bonus-match"
+									disabled={values.type !== "deposit"}
+									inputMode="decimal"
+									value={values.matchPercentage}
+									onChange={(event) =>
+										set("matchPercentage", event.target.value)
+									}
+									placeholder="25"
+								/>
+							</Field>
+							<Field
+								id="bonus-minimum-deposit"
+								label="Minimum deposit"
+								hint="Optional major currency units"
+							>
+								<Input
+									id="bonus-minimum-deposit"
+									inputMode="decimal"
+									value={values.minimumDepositMajor}
+									onChange={(event) =>
+										set("minimumDepositMajor", event.target.value)
+									}
+									placeholder="50"
+								/>
+							</Field>
+							<Field
+								id="bonus-maximum-award"
+								label="Maximum award"
+								hint="Optional major currency units"
+							>
+								<Input
+									id="bonus-maximum-award"
+									inputMode="decimal"
+									value={values.maximumAwardMajor}
+									onChange={(event) =>
+										set("maximumAwardMajor", event.target.value)
+									}
+									placeholder="500"
+								/>
+							</Field>
+						</div>
+					</section>
+
+					<section
+						aria-labelledby="bonus-eligibility-heading"
+						className="space-y-4"
 					>
-						<Input
-							value={values.eligibleCategories}
-							onChange={(event) =>
-								set("eligibleCategories", event.target.value)
-							}
-							placeholder="Slots, Table"
-						/>
-					</Field>
-					<Field
-						label="Eligible providers"
-						hint="Comma-separated. Leave blank for all providers."
-					>
-						<Input
-							value={values.eligibleProviders}
-							onChange={(event) => set("eligibleProviders", event.target.value)}
-							placeholder="BigBang"
-						/>
-					</Field>
-					<div className="sm:col-span-2">
-						<Field label="Reason for change">
+						<div className="border-b border-border pb-3">
+							<h3
+								className="text-sm font-semibold"
+								id="bonus-eligibility-heading"
+							>
+								Eligibility
+							</h3>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Leave a field blank to make this offer available across the full
+								catalogue.
+							</p>
+						</div>
+						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+							<Field
+								id="bonus-game-ids"
+								label="Eligible game IDs"
+								hint="Comma-separated. Leave blank for all games."
+							>
+								<Input
+									id="bonus-game-ids"
+									value={values.eligibleGameIds}
+									onChange={(event) =>
+										set("eligibleGameIds", event.target.value)
+									}
+									placeholder="game-id-1, game-id-2"
+								/>
+							</Field>
+							<Field
+								id="bonus-categories"
+								label="Eligible categories"
+								hint="Comma-separated. Leave blank for all categories."
+							>
+								<Input
+									id="bonus-categories"
+									value={values.eligibleCategories}
+									onChange={(event) =>
+										set("eligibleCategories", event.target.value)
+									}
+									placeholder="Slots, Table"
+								/>
+							</Field>
+							<Field
+								id="bonus-providers"
+								label="Eligible providers"
+								hint="Comma-separated. Leave blank for all providers."
+							>
+								<Input
+									id="bonus-providers"
+									value={values.eligibleProviders}
+									onChange={(event) =>
+										set("eligibleProviders", event.target.value)
+									}
+									placeholder="BigBang"
+								/>
+							</Field>
+						</div>
+					</section>
+
+					<section aria-labelledby="bonus-audit-heading" className="space-y-4">
+						<div className="border-b border-border pb-3">
+							<h3 className="text-sm font-semibold" id="bonus-audit-heading">
+								Audit note
+							</h3>
+							<p className="mt-1 text-sm text-muted-foreground">
+								A short reason is required so campaign changes stay traceable.
+							</p>
+						</div>
+						<Field id="bonus-reason" label="Reason for change">
 							<Textarea
+								id="bonus-reason"
 								value={values.reason}
 								onChange={(event) => set("reason", event.target.value)}
 								placeholder="Explain the campaign or rule change"
 								maxLength={500}
 							/>
 						</Field>
-					</div>
+					</section>
 				</div>
 				{validationError || uploadError || error ? (
-					<p className="text-sm text-destructive">
+					<p className="mx-5 mb-5 text-sm text-destructive sm:mx-7">
 						{validationError ?? uploadError ?? error}
 					</p>
 				) : null}
-				<DialogFooter>
+				<DialogFooter className="sticky bottom-0 z-10 mt-0 border-t border-border bg-popover px-5 py-4 sm:px-7">
 					<Button
 						disabled={pending || uploading}
 						onClick={() => onOpenChange(false)}
@@ -911,17 +1039,19 @@ function StatusDialog({
 }
 
 function Field({
+	id,
 	label,
 	hint,
 	children,
 }: {
+	id?: string;
 	label: string;
 	hint?: string;
 	children: ReactNode;
 }) {
 	return (
 		<div className="space-y-2">
-			<Label>{label}</Label>
+			<Label htmlFor={id}>{label}</Label>
 			{children}
 			{hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
 		</div>
@@ -930,7 +1060,7 @@ function Field({
 
 function Rule({ label, children }: { label: string; children: ReactNode }) {
 	return (
-		<div>
+		<div className="min-w-0">
 			<dt className="text-xs text-muted-foreground">{label}</dt>
 			<dd className="mt-1 font-medium tabular-nums">{children}</dd>
 		</div>
