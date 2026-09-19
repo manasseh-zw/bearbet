@@ -12,11 +12,11 @@ This is the current administration and release sequence. Update this section whe
 - **Phase 2, users, complete.** Admin user queries, URL-backed filters and sorting, responsive users UI, detail actions, wallet adjustments, bonus assignment, fresh-session authorization, session revocation, and transaction-scoped audits are implemented and tested.
 - **Phase 3, withdrawals and operations, complete.** Admin withdrawal projections, offset-paginated review queue, cursor-paginated wallet/gameplay/withdrawal/audit activity, responsive review controls, and URL-backed operational filters are implemented and tested on top of the audited review mutation. The UI closeout puts search first in the Users, Withdrawals, and Activity toolbars and uses input-sized search icons throughout.
 - **Phase 4, games, complete.** The admin Games route now syncs the provider catalogue, filters and paginates the local catalogue, and applies reason-confirmed audited enable/disable, category, featured, popular, and new curation changes while preserving local fields during sync.
-- **Phase 5, bonuses, current.** Add bonus-definition management and the definition table without changing already-issued awards.
-- **Phase 6, live overview and player gaps, follows administration.** Replace illustrative overview data with live operational counts, then finish profile reads and edits and lifecycle/access-boundary proof.
+- **Phase 5, bonuses, complete.** The admin Bonuses route lists, creates, edits, activates, and deactivates audited definitions while preserving the rules snapshotted into existing awards.
+- **Phase 6, live overview and player gaps, current.** Replace illustrative overview data with live operational counts, then finish profile reads and edits and lifecycle/access-boundary proof.
 - **Phase 7, release gate, final.** Complete rate limits, redacted logs, secure headers, health checks, clean-install verification, accessibility checks, and reviewer evidence.
 
-The Phase 3 foundation and UI closeout, plus the Phase 4 game-management slice, are complete and verified. The next slice is bonus-definition management; remaining player profile and access-boundary proof stays in the verification queue.
+The Phase 3 foundation and UI closeout, the Phase 4 game-management slice, and the Phase 5 bonus-definition slice are complete and verified. The next slice is the live admin overview; remaining player profile and access-boundary proof stays in the verification queue.
 
 ## Where the project stands
 
@@ -38,19 +38,20 @@ The Phase 3 foundation and UI closeout, plus the Phase 4 game-management slice, 
 - Catalogue synchronization persists provider data and preserves Bearbet-owned availability and curation fields.
 - The protected admin shell and users slice are live. Admin users can search and filter accounts, inspect player and wallet projections, suspend or activate accounts, adjust cash, and assign bonuses with reasons and audit evidence.
 - The admin Games route is live. Administrators can sync the provider catalogue, search and filter by provider, availability, status, and curation, edit local category and curation fields with reason-confirmed audit entries, and preserve local fields across syncs.
+- The admin Bonuses route is live. Administrators can search and filter definitions, create and edit future-offer rules, activate or deactivate definitions with a reason, and inspect stable codes and eligibility while issued awards retain their snapshots.
 - Better Auth owns password recovery and password change. Development logs a local reset-email preview when Resend is not configured.
 
 ### The current gap
 
 The player wallet, game, history, and bonus journeys are connected to the domain services. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, password lifecycle behavior, and refresh persistence. Profile reads and safe edits are still pending.
 
-The admin shell, shared table foundation, password security flows, users slice, withdrawals/operations slice, and Games slice are complete. The withdrawal queue returns explicit player, wallet, reviewer, and decision projections. Activity reads cover immutable wallet operations, provider gameplay operations, withdrawal history, and admin audit entries with cursor pagination. Admin filter toolbars now use a consistent search-first order with compact search affordances, and the admin page headings use the standard bold text treatment with tighter header spacing. The bonus-definition route remains a placeholder. Live Drakon play remains separately blocked by provider launch behavior.
+The admin shell, shared table foundation, password security flows, users slice, withdrawals/operations slice, Games slice, and bonus-definition slice are complete. The withdrawal queue returns explicit player, wallet, reviewer, and decision projections. Activity reads cover immutable wallet operations, provider gameplay operations, withdrawal history, and admin audit entries with cursor pagination. Admin filter toolbars now use a consistent search-first order with compact search affordances, and the admin page headings use the standard bold text treatment with tighter header spacing. Live Drakon play remains separately blocked by provider launch behavior.
 
-A reviewer can now drive top-ups and withdrawal reservations from the Wallet, manage users, review pending withdrawals, curate the provider game catalogue, and inspect the resulting wallet, withdrawal, gameplay, and audit activity from the admin portal. The next reviewer-visible outcome is bonus-definition management.
+A reviewer can now drive top-ups and withdrawal reservations from the Wallet, manage users, review pending withdrawals, curate the provider game catalogue, manage bonus definitions, and inspect the resulting wallet, withdrawal, gameplay, and audit activity from the admin portal. The next reviewer-visible outcome is a live operational overview.
 
 ### Agreed delivery direction
 
-The original player-first order has delivered the wallet, playable fixture, history, bonus, game catalogue, and player collection journeys. The remaining work now follows the current delivery phases above: build bonus definitions, then the live overview and remaining player gaps, and finally release hardening. Promotions and VIP remain honest unavailable states until a later scope defines them.
+The original player-first order has delivered the wallet, playable fixture, history, bonus, game catalogue, and player collection journeys. The remaining work now follows the current delivery phases above: build the live overview and remaining player gaps, then complete release hardening. Promotions and VIP remain honest unavailable states until a later scope defines them.
 
 ## Delivery rules
 
@@ -130,9 +131,9 @@ This stage delivers tasks P19 through P21. It depends on wallet and gameplay. Ad
 
 The player account work is split. Password recovery and password change are complete through Better Auth, while profile reads and safe edits and browser lifecycle proof remain in the task list. Favorites and recently played now have authenticated reads/writes, launch-time recent projections, lobby collections, URL-backed priority filters, empty states, and card-level favorite controls.
 
-The admin route group, fresh-session checks, transaction-scoped authorization, audit writer, shared table primitives, users slice, operations slice, and game-management slice are complete. The Games route preserves local availability and curation fields during provider sync, and its player-facing admin controls now use the standard page-title treatment and compact header rhythm. Continue administration in this order:
+The admin route group, fresh-session checks, transaction-scoped authorization, audit writer, shared table primitives, users slice, operations slice, game-management slice, and bonus-definition slice are complete. The Games route preserves local availability and curation fields during provider sync, and its player-facing admin controls now use the standard page-title treatment and compact header rhythm. Continue administration in this order:
 
-1. **Phase 5, bonuses.** Add audited definition list, create, edit, activate, and deactivate operations. Existing player awards keep their snapshotted rules.
+1. **Phase 5, bonuses, complete.** The audited definition list, create, edit, activate, and deactivate operations preserve snapshotted rules on existing player awards.
 2. **Phase 6, live overview and player gaps.** Replace illustrative overview values with live operational counts, link cards to filtered admin pages, then finish profile reads and edits and access-boundary proof.
 
 The overview must report useful operational counts and recent events, not invented gambling revenue.
@@ -187,6 +188,6 @@ Notifications, advanced filters, two-factor authentication, player limits, VIP, 
 
 ## Immediate task
 
-Phase 4 is complete: the admin Games route syncs and manages the provider catalogue with audited local curation, while authenticated players can favorite games and see prioritized Favorites and Recently played collections. The Users, Withdrawals, and Activity toolbars put search first with input-sized search icons, and the admin page headings now share the Overview typography and tighter spacing.
+Phase 5 is complete: the admin Bonuses route manages audited, future-facing bonus definitions while issued awards retain their snapshotted rules. Phase 4 remains complete: the admin Games route syncs and manages the provider catalogue with audited local curation, while authenticated players can favorite games and see prioritized Favorites and Recently played collections. The Users, Withdrawals, and Activity toolbars put search first with input-sized search icons, and the admin page headings now share the Overview typography and tighter spacing.
 
 Keep P04, P10, P22, and P24 in the verification queue. They are important release evidence, but they do not change the next implementation slice.
