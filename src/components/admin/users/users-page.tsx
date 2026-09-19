@@ -235,7 +235,7 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 						type="button"
 						onClick={() => setSelectedUser(row.original)}
 					>
-						<UserAvatar name={row.original.user.name} size={40} />
+						<UserAvatar name={row.original.user.name} size={36} />
 						<span className="min-w-0">
 							<span className="block truncate font-medium">
 								{row.original.user.name}
@@ -412,7 +412,7 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 					/>
 				) : (
 					<>
-						<div className="hidden md:block">
+						<div className="hidden overflow-hidden rounded-xl border border-border md:block">
 							<AdminDataTable
 								columns={columns}
 								data={rows}
@@ -509,7 +509,7 @@ function UserDetailSheet({
 					<div className="flex min-h-full flex-col">
 						<SheetHeader className="pr-12">
 							<div className="flex items-center gap-3">
-								<UserAvatar name={row.user.name} size={48} />
+								<UserAvatar name={row.user.name} size={44} />
 								<div className="min-w-0">
 									<SheetTitle className="truncate">{row.user.name}</SheetTitle>
 									<SheetDescription className="truncate">
@@ -810,7 +810,7 @@ function MobileUserRow({
 			onClick={onOpen}
 			type="button"
 		>
-			<UserAvatar name={row.user.name} size={40} />
+			<UserAvatar name={row.user.name} size={36} />
 			<span className="min-w-0 flex-1">
 				<span className="block truncate font-medium">{row.user.name}</span>
 				<span className="block truncate text-xs text-muted-foreground">
@@ -894,7 +894,7 @@ function UserAvatar({ name, size }: { name: string; size: number }) {
 			intensity3d="none"
 			interactive={false}
 			name={name}
-			showInitial={false}
+			showInitial
 			size={size}
 			variant="solid"
 		/>
