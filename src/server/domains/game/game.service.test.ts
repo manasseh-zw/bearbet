@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import {
 	findGame,
 	listGames,
+	searchGames,
 	syncGameCatalogue,
 } from "#/server/domains/game/game.service";
 import { db, pool } from "#/server/infra/db";
@@ -73,6 +74,7 @@ test("catalogue sync persists provider games and marks missing games unavailable
 						id: "game-1",
 						name: "Renamed game",
 						provider: "updated-studio",
+						category: "Playtech",
 						type: "roulette",
 						supportsFun: true,
 						isAvailable: true,
@@ -104,4 +106,28 @@ test("catalogue sync persists provider games and marks missing games unavailable
 	const stored = await findGame(integrationProvider, "game-1");
 	assert.equal(stored?.provider, "updated-studio");
 	assert.equal(stored?.type, "roulette");
+});
+
+test("catalogue search ranks fuzzy matches and respects promotion scope", async () => {
+	const fuzzy = await searchGames(
+		{ q: "renamd", scope: "casino", page: 1, pageSize: 20 },
+		integrationProvider,
+	);
+	assert.equal(fuzzy.games[0]?.name, "Renamed game");
+	assert.equal(fuzzy.total, 1);
+
+	const promotions = await searchGames(
+		{ q: "", scope: "promotions", page: 1, pageSize: 20 },
+		integrationProvider,
+	);
+	assert.deepEqual(
+		promotions.games.map((candidate) => candidate.name),
+		["Renamed game"],
+	);
+
+	const cached = await searchGames(
+		{ q: "renamd", scope: "casino", page: 1, pageSize: 20 },
+		integrationProvider,
+	);
+	assert.strictEqual(cached, fuzzy);
 });

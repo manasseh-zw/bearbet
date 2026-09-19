@@ -1,63 +1,297 @@
-import { SearchIcon } from "lucide-react";
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import {
+	ChevronLeftIcon,
+	ChevronRightIcon,
+	LoaderCircleIcon,
+	SearchIcon,
+	XIcon,
+} from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 
-import {
-	type FilterDefinition,
-	FilterGrid,
-} from "#/components/casino/catalogue-filter-grid";
 import { GameCard } from "#/components/casino/game-card";
-import {
-	getCatalogueCategories,
-	normalizeCatalogueCategory,
-	orderCatalogueGames,
-} from "#/components/casino/lobby/catalogue-filters";
+import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
-import type { NormalizedGame } from "#/server/infra/providers/provider.types";
+import { catalogueQueries } from "#/lib/queries/catalogue.queries";
+import type {
+	CatalogueRouteSearch,
+	CatalogueSearch,
+} from "#/lib/schemas/catalogue.schema";
+import { cn } from "#/lib/utils";
 
 type GameCatalogueProps = {
-	games: readonly NormalizedGame[];
-	isPending: boolean;
-	isError: boolean;
-	onRetry: () => void;
-	defaultCategory?: string;
-	maxItems?: number;
+	query: CatalogueRouteSearch;
+	onQueryChange: (query: CatalogueRouteSearch) => void;
+	scope: CatalogueSearch["scope"];
 	priorityCategories?: readonly string[];
-	includedCategories?: readonly string[];
 	title: string;
 	eyebrow?: string;
 	topMargin?: "mt-0" | "mt-12";
 };
 
-function useCatalogueColumns() {
-	const [columns, setColumns] = useState(2);
-
-	useEffect(() => {
-		const update = () => {
-			if (window.innerWidth >= 1536) setColumns(6);
-			else if (window.innerWidth >= 1280) setColumns(5);
-			else if (window.innerWidth >= 1024) setColumns(4);
-			else if (window.innerWidth >= 640) setColumns(3);
-			else setColumns(2);
-		};
-
-		update();
-		window.addEventListener("resize", update);
-		return () => window.removeEventListener("resize", update);
-	}, []);
-
-	return columns;
-}
-
-const catalogueSkeletonKeys = Array.from(
+const skeletonKeys = Array.from(
 	{ length: 12 },
 	(_, index) => `catalogue-skeleton-${index + 1}`,
 );
 
+export function GameCatalogue({
+	query,
+	onQueryChange,
+	scope,
+	priorityCategories = [],
+	title,
+	eyebrow = "Browse the catalogue",
+	topMargin = "mt-12",
+}: GameCatalogueProps) {
+	const searchId = useId();
+	const [draft, setDraft] = useState(query.q);
+	const catalogue = useQuery(
+		catalogueQueries.search({ ...query, scope, pageSize: 48 }),
+	);
+
+	useEffect(() => setDraft(query.q), [query.q]);
+	useEffect(() => {
+		if (draft.trim() === query.q) return;
+		const timeout = window.setTimeout(
+			() => onQueryChange({ ...query, q: draft.trim(), page: 1 }),
+			180,
+		);
+		return () => window.clearTimeout(timeout);
+	}, [draft, onQueryChange, query]);
+
+	const categories = useMemo(() => {
+		const priority = new Map(
+			priorityCategories.map((category, index) => [category, index]),
+		);
+		return [...(catalogue.data?.categories ?? [])].sort((left, right) => {
+			const leftPriority = priority.get(left.value);
+			const rightPriority = priority.get(right.value);
+			if (leftPriority !== undefined || rightPriority !== undefined) {
+				if (leftPriority === undefined) return 1;
+				if (rightPriority === undefined) return -1;
+				return leftPriority - rightPriority;
+			}
+			return right.count - left.count || left.value.localeCompare(right.value);
+		});
+	}, [catalogue.data?.categories, priorityCategories]);
+
+	function patchQuery(patch: Partial<CatalogueRouteSearch>) {
+		onQueryChange({ ...query, ...patch, page: patch.page ?? 1 });
+	}
+
+	return (
+		<section
+			className={`${topMargin} pb-12`}
+			aria-labelledby={`${searchId}-title`}
+		>
+			<div className="mb-5 flex items-end justify-between gap-4">
+				<div>
+					<p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
+						{eyebrow}
+					</p>
+					<h2
+						id={`${searchId}-title`}
+						className="mt-1 font-logo text-3xl text-foreground sm:text-4xl"
+					>
+						{title}
+					</h2>
+				</div>
+				{catalogue.data ? (
+					<p className="shrink-0 text-sm text-muted-foreground tabular-nums">
+						{catalogue.data.total.toLocaleString()}{" "}
+						{catalogue.data.total === 1 ? "game" : "games"}
+					</p>
+				) : null}
+			</div>
+
+			<div className="relative mb-4">
+				<label htmlFor={`${searchId}-input`} className="sr-only">
+					Search games
+				</label>
+				<SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
+				<Input
+					id={`${searchId}-input`}
+					type="search"
+					value={draft}
+					maxLength={80}
+					onChange={(event) => setDraft(event.target.value)}
+					placeholder="Search by game, provider, or category"
+					autoComplete="off"
+					className="h-12 rounded-xl border-white/8 bg-card pr-20 pl-11 text-base shadow-none placeholder:text-muted-foreground/65"
+				/>
+				<div className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-2">
+					{catalogue.isFetching ? (
+						<LoaderCircleIcon
+							className="size-4 animate-spin text-muted-foreground"
+							aria-label="Searching"
+						/>
+					) : null}
+					{draft ? (
+						<button
+							type="button"
+							onClick={() => {
+								setDraft("");
+								patchQuery({ q: "", page: 1 });
+							}}
+							className="grid size-7 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-white/8 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+							aria-label="Clear search"
+						>
+							<XIcon className="size-4" />
+						</button>
+					) : null}
+				</div>
+			</div>
+
+			{categories.length > 0 || query.category ? (
+				<fieldset className="scrollbar-none mb-7 flex gap-2 overflow-x-auto pb-1">
+					<legend className="sr-only">Game category</legend>
+					<CategoryButton
+						active={!query.category}
+						label="All categories"
+						onClick={() => patchQuery({ category: undefined })}
+					/>
+					{categories.map((category) => (
+						<CategoryButton
+							key={category.value}
+							active={query.category === category.value}
+							label={category.value}
+							count={category.count}
+							onClick={() => patchQuery({ category: category.value })}
+						/>
+					))}
+				</fieldset>
+			) : null}
+
+			{catalogue.isPending ? (
+				<CatalogueSkeleton />
+			) : catalogue.isError ? (
+				<div className="grid min-h-64 place-items-center rounded-xl border border-destructive/30 bg-destructive/5 px-6 text-center">
+					<div>
+						<p className="font-semibold text-foreground">
+							The catalogue could not be searched.
+						</p>
+						<Button
+							variant="link"
+							onClick={() => catalogue.refetch()}
+							className="mt-1"
+						>
+							Try again
+						</Button>
+					</div>
+				</div>
+			) : catalogue.data.games.length === 0 ? (
+				<div className="grid min-h-64 place-items-center rounded-xl border border-white/8 bg-card px-6 text-center">
+					<div>
+						<p className="font-semibold text-foreground">
+							No games match your search.
+						</p>
+						<p className="mt-1 text-sm text-muted-foreground">
+							Check the spelling or clear the category filter.
+						</p>
+						{query.q || query.category ? (
+							<Button
+								variant="outline"
+								size="sm"
+								className="mt-4"
+								onClick={() => {
+									setDraft("");
+									onQueryChange({ q: "", page: 1 });
+								}}
+							>
+								Clear filters
+							</Button>
+						) : null}
+					</div>
+				</div>
+			) : (
+				<div
+					className={cn(
+						"transition-opacity",
+						catalogue.isPlaceholderData && "opacity-55",
+					)}
+					aria-busy={catalogue.isFetching}
+				>
+					<ul className="grid grid-cols-2 gap-x-5 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+						{catalogue.data.games.map((game) => (
+							<li key={game.id} className="min-w-0">
+								<GameCard
+									playable
+									game={{ ...game, imageUrl: game.bannerUrl ?? game.coverUrl }}
+								/>
+							</li>
+						))}
+					</ul>
+					{catalogue.data.pageCount > 1 ? (
+						<nav
+							className="mt-8 flex items-center justify-center gap-3"
+							aria-label="Catalogue pages"
+						>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={query.page <= 1 || catalogue.isFetching}
+								onClick={() => patchQuery({ page: query.page - 1 })}
+							>
+								<ChevronLeftIcon data-icon="inline-start" /> Previous
+							</Button>
+							<span className="min-w-20 text-center text-sm text-muted-foreground tabular-nums">
+								{query.page} of {catalogue.data.pageCount}
+							</span>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={
+									query.page >= catalogue.data.pageCount || catalogue.isFetching
+								}
+								onClick={() => patchQuery({ page: query.page + 1 })}
+							>
+								Next <ChevronRightIcon data-icon="inline-end" />
+							</Button>
+						</nav>
+					) : null}
+				</div>
+			)}
+		</section>
+	);
+}
+
+function CategoryButton({
+	active,
+	label,
+	count,
+	onClick,
+}: {
+	active: boolean;
+	label: string;
+	count?: number;
+	onClick: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			aria-pressed={active}
+			onClick={onClick}
+			className={cn(
+				"inline-flex h-9 shrink-0 items-center gap-2 rounded-2xl border px-4 text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+				active
+					? "border-primary bg-primary text-primary-foreground"
+					: "border-white/8 bg-card text-muted-foreground hover:text-foreground",
+			)}
+		>
+			{label}
+			{count !== undefined ? (
+				<span className="text-xs tabular-nums opacity-70">{count}</span>
+			) : null}
+		</button>
+	);
+}
+
 function CatalogueSkeleton() {
 	return (
-		<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-			{catalogueSkeletonKeys.map((key) => (
+		<div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+			{skeletonKeys.map((key) => (
 				<div key={key} className="space-y-2">
 					<Skeleton className="aspect-[4/5] rounded-xl" />
 					<Skeleton className="h-4 w-3/4" />
@@ -65,142 +299,5 @@ function CatalogueSkeleton() {
 				</div>
 			))}
 		</div>
-	);
-}
-
-export function GameCatalogue({
-	games,
-	isPending,
-	isError,
-	onRetry,
-	defaultCategory,
-	maxItems,
-	priorityCategories,
-	includedCategories,
-	title,
-	eyebrow = "Browse the catalogue",
-	topMargin = "mt-12",
-}: GameCatalogueProps) {
-	const [search, setSearch] = useState("");
-	const columns = useCatalogueColumns();
-	const searchId = useId();
-	const scopedGames = useMemo(() => {
-		if (!includedCategories) return games;
-
-		const included = new Set(includedCategories);
-		return games.filter((game) =>
-			included.has(normalizeCatalogueCategory(game.category)),
-		);
-	}, [games, includedCategories]);
-	const orderedGames = useMemo(
-		() => orderCatalogueGames(scopedGames, priorityCategories),
-		[priorityCategories, scopedGames],
-	);
-	const categories = useMemo<FilterDefinition<NormalizedGame>[]>(
-		() => [
-			{
-				id: "all",
-				label: "All categories",
-				match: () => true,
-			},
-			...getCatalogueCategories(orderedGames, { priorityCategories }).map(
-				(category) => ({
-					id: category.id,
-					label: category.label,
-					match: (game: NormalizedGame) =>
-						normalizeCatalogueCategory(game.category) === category.value,
-				}),
-			),
-		],
-		[orderedGames, priorityCategories],
-	);
-	const searchedGames = useMemo(() => {
-		const query = search.trim().toLocaleLowerCase();
-		if (!query) return orderedGames;
-
-		return orderedGames.filter((game) =>
-			`${game.name} ${game.provider} ${game.category ?? ""}`
-				.toLocaleLowerCase()
-				.includes(query),
-		);
-	}, [orderedGames, search]);
-
-	return (
-		<section
-			className={`${topMargin} pb-12`}
-			aria-labelledby={`${searchId}-title`}
-		>
-			<div className="mb-5">
-				<p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
-					{eyebrow}
-				</p>
-				<h2
-					id={`${searchId}-title`}
-					className="mt-1 font-logo text-3xl text-foreground sm:text-4xl"
-				>
-					{title}
-				</h2>
-			</div>
-
-			<label htmlFor={`${searchId}-input`} className="relative mb-5 block">
-				<span className="sr-only">Search games</span>
-				<SearchIcon className="pointer-events-none absolute top-1/2 left-5 size-5 -translate-y-1/2 text-muted-foreground" />
-				<Input
-					id={`${searchId}-input`}
-					type="search"
-					value={search}
-					onChange={(event) => setSearch(event.target.value)}
-					placeholder="Search games..."
-					className="h-12 rounded-xl border-white/8 bg-card pr-4 pl-12 text-sm shadow-none placeholder:text-muted-foreground/65"
-				/>
-			</label>
-
-			{isPending ? (
-				<CatalogueSkeleton />
-			) : isError ? (
-				<div className="grid min-h-64 place-items-center rounded-xl border border-destructive/30 bg-destructive/5 px-6 text-center">
-					<div>
-						<p className="font-semibold text-foreground">
-							The catalogue could not be loaded.
-						</p>
-						<button
-							type="button"
-							onClick={onRetry}
-							className="mt-2 text-sm font-semibold text-primary hover:underline"
-						>
-							Try again
-						</button>
-					</div>
-				</div>
-			) : (
-				<FilterGrid
-					items={searchedGames}
-					filters={categories}
-					defaultValue={
-						defaultCategory === "all"
-							? "all"
-							: defaultCategory
-								? `category:${defaultCategory}`
-								: undefined
-					}
-					maxItems={maxItems}
-					label="Game category"
-					getKey={(game) => game.id}
-					columns={columns}
-					gap={columns === 2 ? 20 : 24}
-					emptyLabel={
-						search
-							? `No games found for “${search}”`
-							: "No games in this category"
-					}
-					renderItem={(game) => (
-						<GameCard
-							playable
-							game={{ ...game, imageUrl: game.bannerUrl ?? game.coverUrl }}
-						/>
-					)}
-				/>
-			)}
-		</section>
 	);
 }

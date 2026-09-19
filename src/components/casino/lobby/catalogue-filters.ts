@@ -1,3 +1,4 @@
+import { promotionCatalogueCategories } from "#/lib/schemas/catalogue.schema";
 import type { NormalizedGame } from "#/server/infra/providers/provider.types";
 
 export const uncategorizedGameLabel = "Other";
@@ -11,26 +12,8 @@ export const catalogueViewConfig = {
 	promotions: {
 		defaultCategory: "all",
 		maxItems: 100,
-		priorityCategories: [
-			"Pragmatic",
-			"Evoplay",
-			"Booming",
-			"Playtech",
-			"Hacksaw",
-			"Spinomenal",
-			"Endorphina",
-			"Amatic",
-		],
-		includedCategories: [
-			"Pragmatic",
-			"Evoplay",
-			"Booming",
-			"Playtech",
-			"Hacksaw",
-			"Spinomenal",
-			"Endorphina",
-			"Amatic",
-		],
+		priorityCategories: promotionCatalogueCategories,
+		includedCategories: promotionCatalogueCategories,
 	},
 } as const;
 

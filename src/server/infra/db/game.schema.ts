@@ -70,6 +70,18 @@ export const game = pgTable(
 		),
 		index("game_content_provider_idx").on(table.contentProvider),
 		index("game_type_idx").on(table.type),
+		index("game_name_trgm_idx").using(
+			"gin",
+			sql`lower(${table.name}) gin_trgm_ops`,
+		),
+		index("game_content_provider_trgm_idx").using(
+			"gin",
+			sql`lower(${table.contentProvider}) gin_trgm_ops`,
+		),
+		index("game_category_trgm_idx").using(
+			"gin",
+			sql`lower(coalesce(${table.category}, '')) gin_trgm_ops`,
+		),
 		check(
 			"game_rtp_non_negative",
 			sql`${table.rtp} IS NULL OR ${table.rtp} >= 0`,

@@ -63,7 +63,7 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 
 ### 3. Catalogue at product scale
 
-- [~] **P11. Move catalogue filtering to PostgreSQL.** The current lobby searches and filters a complete client-side result. Add indexed, paginated reads for name, content provider, category, availability, and local curation so roughly 15,000 games remain usable.
+- [x] **P11. Move catalogue filtering to PostgreSQL.** The casino and promotions views use validated, indexed, paginated PostgreSQL reads for name, content provider, category, availability, and local curation. Trigram matching handles partial names and common typing errors without sending the full catalogue to the browser.
 - [~] **P12. Finish lobby collections and URL state.** The lobby has top picks, search, categories, result loading, errors, and empty states. Add persisted featured, popular, and new collections, provider filtering, result counts, clear-all, and useful URL-backed state.
 - [ ] **P13. Handle catalogue edge cases.** Verify broken artwork, unavailable games, empty sync results, slow reads, keyboard use, and mobile layouts.
 

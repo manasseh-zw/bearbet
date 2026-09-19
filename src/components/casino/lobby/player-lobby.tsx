@@ -3,13 +3,11 @@ import { FlameIcon } from "lucide-react";
 import { useMemo } from "react";
 
 import { GameCard } from "#/components/casino/game-card";
-import {
-	catalogueViewConfig,
-	normalizeCatalogueCategory,
-} from "#/components/casino/lobby/catalogue-filters";
+import { catalogueViewConfig } from "#/components/casino/lobby/catalogue-filters";
 import { GameCatalogue } from "#/components/casino/lobby/game-catalogue";
 import { Skeleton } from "#/components/ui/skeleton";
 import { catalogueQueries } from "#/lib/queries/catalogue.queries";
+import type { CatalogueRouteSearch } from "#/lib/schemas/catalogue.schema";
 
 const catalogueSkeletonKeys = Array.from(
 	{ length: 12 },
@@ -30,21 +28,31 @@ function CatalogueSkeleton() {
 	);
 }
 
-export function PlayerLobby() {
-	const catalogue = useQuery(catalogueQueries.games());
-	const games = useMemo(
-		() => catalogue.data?.filter((game) => game.isAvailable) ?? [],
-		[catalogue.data],
-	);
-	const topPicks = useMemo(() => {
-		const featured = games.filter(
-			(game) =>
-				normalizeCatalogueCategory(game.category) ===
-				catalogueViewConfig.casino.featuredCategory,
-		);
+type PlayerLobbyProps = {
+	query: CatalogueRouteSearch;
+	onQueryChange: (query: CatalogueRouteSearch) => void;
+};
 
-		return (featured.length > 0 ? featured : games).slice(0, 6);
-	}, [games]);
+export function PlayerLobby({ query, onQueryChange }: PlayerLobbyProps) {
+	const fallbackCatalogue = useQuery(
+		catalogueQueries.search({ q: "", scope: "casino", page: 1, pageSize: 6 }),
+	);
+	const featuredCatalogue = useQuery(
+		catalogueQueries.search({
+			q: "",
+			category: catalogueViewConfig.casino.featuredCategory,
+			scope: "casino",
+			page: 1,
+			pageSize: 6,
+		}),
+	);
+	const topPicks = useMemo(
+		() =>
+			featuredCatalogue.data?.games.length
+				? featuredCatalogue.data.games
+				: (fallbackCatalogue.data?.games ?? []),
+		[featuredCatalogue.data, fallbackCatalogue.data],
+	);
 
 	return (
 		<main className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">
@@ -66,7 +74,7 @@ export function PlayerLobby() {
 					</div>
 				</div>
 
-				{catalogue.isPending ? (
+				{featuredCatalogue.isPending || fallbackCatalogue.isPending ? (
 					<CatalogueSkeleton />
 				) : (
 					<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -83,11 +91,9 @@ export function PlayerLobby() {
 			</section>
 
 			<GameCatalogue
-				games={games}
-				isPending={catalogue.isPending}
-				isError={catalogue.isError}
-				onRetry={() => catalogue.refetch()}
-				defaultCategory={catalogueViewConfig.casino.defaultCategory}
+				query={query}
+				onQueryChange={onQueryChange}
+				scope="casino"
 				priorityCategories={catalogueViewConfig.casino.priorityCategories}
 				eyebrow="Find your game"
 				title="Casino catalogue"
