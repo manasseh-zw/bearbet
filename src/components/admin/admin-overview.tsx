@@ -102,7 +102,7 @@ const activity = [
 export function AdminOverview() {
 	return (
 		<main className="mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
-			<div className="flex flex-col gap-2 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+			<div className="flex flex-col gap-2 border-b border-border pb-2 sm:flex-row sm:items-end sm:justify-between">
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
 						Good evening, operator

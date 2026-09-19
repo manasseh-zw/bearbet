@@ -1,6 +1,6 @@
 import "@tanstack/react-start/server-only";
 
-import { and, asc, desc, eq, ilike, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 
 import type { AdminGameQuery } from "#/lib/schemas/admin-game.schema";
 import { adminGameQuerySchema } from "#/lib/schemas/admin-game.schema";
@@ -24,7 +24,6 @@ export async function listAdminGames(input: AdminGameQuery) {
 		);
 	}
 	if (query.provider) conditions.push(eq(game.contentProvider, query.provider));
-	if (query.category) conditions.push(eq(game.category, query.category));
 	if (query.availability === "available")
 		conditions.push(eq(game.isAvailable, true));
 	if (query.availability === "unavailable")

@@ -35,9 +35,9 @@ import { Switch } from "#/components/ui/switch";
 import { Textarea } from "#/components/ui/textarea";
 import { adminGameQueries } from "#/lib/queries/admin-game.queries";
 import type {
+	AdminGameAvailability,
 	AdminGameCuration,
 	AdminGameQuery,
-	AdminGameAvailability,
 	AdminGameSortFields,
 	AdminGameStatuses,
 	UpdateAdminGameInput,
@@ -152,7 +152,6 @@ export function GamesPage({
 	const hasFilters = Boolean(
 		query.search ||
 			query.provider ||
-			query.category ||
 			query.availability !== "all" ||
 			query.status !== "all" ||
 			query.curation !== "all",
@@ -174,7 +173,6 @@ export function GamesPage({
 			...query,
 			search: "",
 			provider: "",
-			category: "",
 			availability: "all",
 			status: "all",
 			curation: "all",
@@ -189,9 +187,9 @@ export function GamesPage({
 
 	return (
 		<main className="mx-auto w-full max-w-[1600px] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
-			<header className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
+			<header className="flex flex-col gap-4 pb-6 lg:flex-row lg:items-end lg:justify-between">
 				<div>
-					<h1 className="font-logo text-3xl leading-none tracking-tight sm:text-4xl">
+					<h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
 						Games
 					</h1>
 					<p className="mt-2 max-w-2xl text-sm text-muted-foreground">
@@ -267,15 +265,6 @@ export function GamesPage({
 					names={{ __all: "All providers" }}
 					onChange={(value) =>
 						patchQuery({ provider: value === "__all" ? "" : value })
-					}
-				/>
-				<FilterSelect
-					label="Category"
-					value={query.category || "__all"}
-					options={["__all", ...(filters?.categories ?? [])]}
-					names={{ __all: "All categories" }}
-					onChange={(value) =>
-						patchQuery({ category: value === "__all" ? "" : value })
 					}
 				/>
 				<FilterSelect

@@ -19,11 +19,11 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
 	AdminDataTable,
+	type AdminTableColumn,
 	AdminTableEmpty,
 	AdminTableError,
 	AdminTableLoading,
 	AdminTableMobileList,
-	type AdminTableColumn,
 	AdminTablePagination,
 	AdminTableToolbar,
 } from "#/components/admin/data-table";
@@ -297,9 +297,9 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 
 	return (
 		<main className="mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
-			<header className="flex flex-col gap-2 pb-6 sm:flex-row sm:items-end sm:justify-between">
+			<header className="flex flex-col gap-2 pb-2 sm:flex-row sm:items-end sm:justify-between">
 				<div>
-					<h1 className="font-logo text-3xl leading-none tracking-tight sm:text-4xl">
+					<h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
 						Users
 					</h1>
 					<p className="mt-2 max-w-2xl text-sm text-muted-foreground">
