@@ -47,12 +47,12 @@ export function VipPage() {
 
 	return (
 		<main className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-			<section className="grid overflow-hidden rounded-2xl border border-white/8 bg-card lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.72fr)]">
-				<div className="relative min-h-72 overflow-hidden bg-[#1b130b] sm:min-h-96 lg:min-h-[31rem]">
+			<section className="grid overflow-hidden rounded-2xl border border-white/8 bg-card lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+				<div className="relative overflow-hidden bg-[#1b130b]">
 					<img
 						src="/images/vip_banner.png"
 						alt="BearBet's VIP Club banner with a suited bear at a casino table"
-						className="absolute inset-0 size-full object-cover object-center"
+						className="block h-auto w-full"
 					/>
 					<div className="pointer-events-none absolute inset-0 bg-linear-to-r from-black/5 via-transparent to-black/35" />
 					<div className="absolute bottom-4 left-4 rounded-full border border-white/15 bg-black/45 px-3 py-1.5 text-xs font-medium text-white/85 backdrop-blur-sm sm:bottom-5 sm:left-5">
@@ -60,7 +60,7 @@ export function VipPage() {
 					</div>
 				</div>
 
-				<div className="flex flex-col justify-between border-t border-white/8 px-6 py-8 sm:px-8 sm:py-10 lg:border-t-0 lg:border-l lg:px-10">
+				<div className="flex flex-col justify-between border-t border-white/8 px-6 py-7 sm:px-8 sm:py-8 lg:border-t-0 lg:border-l lg:px-8 lg:py-7">
 					<div>
 						<div className="flex items-center gap-2 text-primary">
 							<CrownIcon className="size-5" aria-hidden="true" />
@@ -68,17 +68,16 @@ export function VipPage() {
 								VIP club
 							</span>
 						</div>
-						<h1 className="mt-4 max-w-sm font-logo text-4xl leading-[0.98] text-foreground sm:text-5xl">
-							A little more BearBet is coming.
+						<h1 className="mt-3 max-w-sm font-logo text-4xl leading-[0.98] text-foreground sm:text-[2.75rem]">
+							The VIP club is coming.
 						</h1>
-						<p className="mt-5 max-w-md text-sm leading-6 text-muted-foreground">
-							We are shaping a VIP club for players who want more from their
-							time at BearBet. The club is not live yet, but this is where the
-							good stuff will land first.
+						<p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">
+							A future BearBet club for more rewards, special events, and
+							personal service. Details are coming soon.
 						</p>
 					</div>
 
-					<div className="mt-10 border-t border-border pt-6">
+					<div className="mt-8 border-t border-border pt-5">
 						<div className="flex items-center gap-2 text-sm font-semibold text-primary">
 							<span
 								className="size-2 rounded-full bg-primary"
@@ -86,21 +85,21 @@ export function VipPage() {
 							/>
 							Coming soon
 						</div>
-						<p className="mt-2 text-sm leading-6 text-muted-foreground">
+						<p className="mt-1.5 text-sm leading-5 text-muted-foreground">
 							We will share more when the first VIP invitations are ready.
 						</p>
 						<Link
 							to={isSignedIn ? "/" : "/register"}
 							className={buttonVariants({
 								size: "lg",
-								className: "mt-6 h-12 w-full text-base font-bold",
+								className: "mt-4 h-11 w-full text-base font-bold",
 							})}
 						>
 							{isSignedIn ? "Explore the casino" : "Create an account"}
 							<ArrowRightIcon data-icon="inline-end" />
 						</Link>
 						{!isSignedIn ? (
-							<p className="mt-4 text-center text-xs text-muted-foreground">
+							<p className="mt-3 text-center text-xs text-muted-foreground">
 								Already playing?{" "}
 								<Link
 									to="/login"
