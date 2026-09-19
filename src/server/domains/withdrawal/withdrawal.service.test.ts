@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test, { after, before } from "node:test";
 
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { MoneyRuleError } from "#/server/domains/wallet/wallet.policy";
 import { db, pool } from "#/server/infra/db";
 import {
@@ -176,11 +176,17 @@ test("only an active admin can approve and approval cannot be reversed", async (
 			),
 		);
 	assert.equal(auditEntry?.action, "withdrawal_approved");
+	assert.equal(auditEntry?.reason, "Demo request checked");
 	assert.equal(
 		(auditEntry?.metadata as { walletOperationId?: string })
 			.walletOperationId !== undefined,
 		true,
 	);
+	const [auditCount] = await db
+		.select({ value: count() })
+		.from(adminAuditEntry)
+		.where(eq(adminAuditEntry.targetId, pending.withdrawal.id));
+	assert.equal(auditCount?.value, 1);
 	await assert.rejects(
 		reviewWithdrawal({
 			withdrawalId: pending.withdrawal.id,
@@ -192,6 +198,107 @@ test("only an active admin can approve and approval cannot be reversed", async (
 			error instanceof WithdrawalServiceError &&
 			error.code === "ALREADY_REVIEWED",
 	);
+});
+
+test("a banned admin cannot review and leaves withdrawal state unchanged", async () => {
+	const pending = await requestWithdrawal({
+		playerId,
+		amountMinor: 2_000,
+		idempotencyKey: `${playerId}:withdrawal-banned-admin`,
+	});
+	const [reservedWallet] = await db
+		.select()
+		.from(wallet)
+		.where(eq(wallet.playerId, playerId));
+
+	await db.update(user).set({ banned: true }).where(eq(user.id, adminId));
+	try {
+		await assert.rejects(
+			reviewWithdrawal({
+				withdrawalId: pending.withdrawal.id,
+				reviewerUserId: adminId,
+				decision: "approve",
+				reason: "This must not be accepted",
+			}),
+			(error) =>
+				error instanceof WithdrawalServiceError &&
+				error.code === "ADMIN_REQUIRED",
+		);
+	} finally {
+		await db.update(user).set({ banned: false }).where(eq(user.id, adminId));
+	}
+
+	const [unchangedWithdrawal] = await db
+		.select()
+		.from(withdrawal)
+		.where(eq(withdrawal.id, pending.withdrawal.id));
+	const [unchangedWallet] = await db
+		.select()
+		.from(wallet)
+		.where(eq(wallet.playerId, playerId));
+	const [auditCount] = await db
+		.select({ value: count() })
+		.from(adminAuditEntry)
+		.where(eq(adminAuditEntry.targetId, pending.withdrawal.id));
+
+	assert.equal(unchangedWithdrawal?.status, "pending");
+	assert.equal(unchangedWithdrawal?.reviewerUserId, null);
+	assert.equal(
+		unchangedWallet?.cashBalanceMinor,
+		reservedWallet?.cashBalanceMinor,
+	);
+	assert.equal(
+		unchangedWallet?.reservedCashMinor,
+		reservedWallet?.reservedCashMinor,
+	);
+	assert.equal(auditCount?.value, 0);
+
+	await reviewWithdrawal({
+		withdrawalId: pending.withdrawal.id,
+		reviewerUserId: adminId,
+		decision: "reject",
+		reason: "Test cleanup",
+	});
+});
+
+test("concurrent identical reviews move money and write audit evidence once", async () => {
+	const pending = await requestWithdrawal({
+		playerId,
+		amountMinor: 3_000,
+		idempotencyKey: `${playerId}:withdrawal-concurrent-review`,
+	});
+	const reviews = await Promise.all([
+		reviewWithdrawal({
+			withdrawalId: pending.withdrawal.id,
+			reviewerUserId: adminId,
+			decision: "reject",
+			reason: "Concurrent review",
+		}),
+		reviewWithdrawal({
+			withdrawalId: pending.withdrawal.id,
+			reviewerUserId: adminId,
+			decision: "reject",
+			reason: "Concurrent retry",
+		}),
+	]);
+
+	assert.equal(reviews.filter((review) => review.isDuplicate).length, 1);
+	const [auditCount] = await db
+		.select({ value: count() })
+		.from(adminAuditEntry)
+		.where(eq(adminAuditEntry.targetId, pending.withdrawal.id));
+	const [operationCount] = await db
+		.select({ value: count() })
+		.from(walletOperation)
+		.where(
+			and(
+				eq(walletOperation.sourceId, pending.withdrawal.id),
+				eq(walletOperation.type, "withdrawal_release"),
+			),
+		);
+
+	assert.equal(auditCount?.value, 1);
+	assert.equal(operationCount?.value, 1);
 });
 
 test("rejection returns reserved cash and over-withdrawal rolls back", async () => {
