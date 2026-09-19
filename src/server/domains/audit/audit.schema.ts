@@ -23,6 +23,7 @@ const auditActions = [
 	"bonus_deactivated",
 	"withdrawal_approved",
 	"withdrawal_rejected",
+	"games_synced",
 ] as const;
 
 export const auditTargetTypeSchema = z.enum(auditTargetTypes);

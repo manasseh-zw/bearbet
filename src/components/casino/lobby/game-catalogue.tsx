@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 
-import { GameCard } from "#/components/casino/game-card";
+import { GameCard, type GameCardGame } from "#/components/casino/game-card";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
@@ -29,6 +29,17 @@ type GameCatalogueProps = {
 	title: string;
 	eyebrow?: string;
 	topMargin?: "mt-0" | "mt-12";
+	specialCollections?: Array<{
+		value: "favorites" | "recent";
+		label: string;
+		count: number;
+	}>;
+	collectionGames?: GameCardGame[];
+	collectionPending?: boolean;
+	collectionError?: boolean;
+	favoriteGameIds?: ReadonlySet<string>;
+	onToggleFavorite?: (gameId: string, isFavorite: boolean) => void;
+	favoritePending?: boolean;
 };
 
 const skeletonKeys = Array.from(
@@ -44,18 +55,38 @@ export function GameCatalogue({
 	title,
 	eyebrow = "Browse the catalogue",
 	topMargin = "mt-12",
+	specialCollections = [],
+	collectionGames = [],
+	collectionPending = false,
+	collectionError = false,
+	favoriteGameIds,
+	onToggleFavorite,
+	favoritePending = false,
 }: GameCatalogueProps) {
 	const searchId = useId();
 	const [draft, setDraft] = useState(query.q);
+	const collection = query.collection;
 	const catalogue = useQuery(
-		catalogueQueries.search({ ...query, scope, pageSize: 48 }),
+		catalogueQueries.search({
+			q: query.q,
+			category: query.category,
+			scope,
+			page: query.page,
+			pageSize: 48,
+		}),
 	);
 
 	useEffect(() => setDraft(query.q), [query.q]);
 	useEffect(() => {
 		if (draft.trim() === query.q) return;
 		const timeout = window.setTimeout(
-			() => onQueryChange({ ...query, q: draft.trim(), page: 1 }),
+			() =>
+				onQueryChange({
+					...query,
+					q: draft.trim(),
+					collection: undefined,
+					page: 1,
+				}),
 			180,
 		);
 		return () => window.clearTimeout(timeout);
@@ -81,6 +112,26 @@ export function GameCatalogue({
 		onQueryChange({ ...query, ...patch, page: patch.page ?? 1 });
 	}
 
+	const isCollection = Boolean(collection);
+	const collectionTitle =
+		collection === "favorites"
+			? "Your favorites"
+			: collection === "recent"
+				? "Recently played"
+				: title;
+	const collectionResult = isCollection ? collectionGames : null;
+	const total = collectionResult
+		? collectionResult.length
+		: (catalogue.data?.total ?? 0);
+	const games: GameCardGame[] = collectionResult
+		? collectionResult
+		: (catalogue.data?.games ?? []).map((game) => ({
+				...game,
+				imageUrl: game.bannerUrl ?? game.coverUrl,
+			}));
+	const isPending = collectionResult ? collectionPending : catalogue.isPending;
+	const isError = collectionResult ? collectionError : catalogue.isError;
+
 	return (
 		<section
 			className={`${topMargin} pb-12`}
@@ -95,13 +146,12 @@ export function GameCatalogue({
 						id={`${searchId}-title`}
 						className="mt-1 font-logo text-3xl text-foreground sm:text-4xl"
 					>
-						{title}
+						{collectionTitle}
 					</h2>
 				</div>
-				{catalogue.data ? (
+				{isCollection || catalogue.data ? (
 					<p className="shrink-0 text-sm text-muted-foreground tabular-nums">
-						{catalogue.data.total.toLocaleString()}{" "}
-						{catalogue.data.total === 1 ? "game" : "games"}
+						{total.toLocaleString()} {total === 1 ? "game" : "games"}
 					</p>
 				) : null}
 			</div>
@@ -122,7 +172,7 @@ export function GameCatalogue({
 					className="h-12 rounded-xl border-white/8 bg-card pr-20 pl-11 text-base shadow-none placeholder:text-muted-foreground/65"
 				/>
 				<div className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-2">
-					{catalogue.isFetching ? (
+					{catalogue.isFetching && !isCollection ? (
 						<LoaderCircleIcon
 							className="size-4 animate-spin text-muted-foreground"
 							aria-label="Searching"
@@ -133,7 +183,7 @@ export function GameCatalogue({
 							type="button"
 							onClick={() => {
 								setDraft("");
-								patchQuery({ q: "", page: 1 });
+								patchQuery({ q: "", collection: undefined, page: 1 });
 							}}
 							className="grid size-7 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-white/8 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
 							aria-label="Clear search"
@@ -144,13 +194,33 @@ export function GameCatalogue({
 				</div>
 			</div>
 
-			{categories.length > 0 || query.category ? (
+			{categories.length > 0 ||
+			query.category ||
+			specialCollections.length > 0 ? (
 				<fieldset className="scrollbar-none mb-7 flex gap-2 overflow-x-auto pb-1">
 					<legend className="sr-only">Game category</legend>
+					{specialCollections.map((item) => (
+						<CategoryButton
+							key={item.value}
+							active={collection === item.value}
+							label={item.label}
+							count={item.count}
+							onClick={() =>
+								patchQuery({
+									collection: item.value,
+									category: undefined,
+									q: "",
+									page: 1,
+								})
+							}
+						/>
+					))}
 					<CategoryButton
-						active={!query.category}
+						active={!query.category && !collection}
 						label="All categories"
-						onClick={() => patchQuery({ category: undefined })}
+						onClick={() =>
+							patchQuery({ category: undefined, collection: undefined })
+						}
 					/>
 					{categories.map((category) => (
 						<CategoryButton
@@ -158,39 +228,47 @@ export function GameCatalogue({
 							active={query.category === category.value}
 							label={category.value}
 							count={category.count}
-							onClick={() => patchQuery({ category: category.value })}
+							onClick={() =>
+								patchQuery({ category: category.value, collection: undefined })
+							}
 						/>
 					))}
 				</fieldset>
 			) : null}
 
-			{catalogue.isPending ? (
+			{isPending ? (
 				<CatalogueSkeleton />
-			) : catalogue.isError ? (
+			) : isError ? (
 				<div className="grid min-h-64 place-items-center rounded-xl border border-destructive/30 bg-destructive/5 px-6 text-center">
 					<div>
 						<p className="font-semibold text-foreground">
-							The catalogue could not be searched.
+							The catalogue could not be loaded.
 						</p>
 						<Button
 							variant="link"
-							onClick={() => catalogue.refetch()}
+							onClick={() => void catalogue.refetch()}
 							className="mt-1"
 						>
 							Try again
 						</Button>
 					</div>
 				</div>
-			) : catalogue.data.games.length === 0 ? (
+			) : games.length === 0 ? (
 				<div className="grid min-h-64 place-items-center rounded-xl border border-white/8 bg-card px-6 text-center">
 					<div>
 						<p className="font-semibold text-foreground">
-							No games match your search.
+							{collection === "favorites"
+								? "No favorites yet."
+								: collection === "recent"
+									? "No recently played games yet."
+									: "No games match your search."}
 						</p>
 						<p className="mt-1 text-sm text-muted-foreground">
-							Check the spelling or clear the category filter.
+							{collection
+								? "Use the catalogue to build this collection as you play."
+								: "Check the spelling or clear the category filter."}
 						</p>
-						{query.q || query.category ? (
+						{query.q || query.category || query.collection ? (
 							<Button
 								variant="outline"
 								size="sm"
@@ -209,21 +287,34 @@ export function GameCatalogue({
 				<div
 					className={cn(
 						"transition-opacity",
-						catalogue.isPlaceholderData && "opacity-55",
+						catalogue.isPlaceholderData && !isCollection && "opacity-55",
 					)}
-					aria-busy={catalogue.isFetching}
+					aria-busy={isCollection ? collectionPending : catalogue.isFetching}
 				>
 					<ul className="grid grid-cols-2 gap-x-5 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-						{catalogue.data.games.map((game) => (
+						{games.map((game) => (
 							<li key={game.id} className="min-w-0">
 								<GameCard
 									playable
-									game={{ ...game, imageUrl: game.bannerUrl ?? game.coverUrl }}
+									game={{
+										...game,
+										isFavorite: favoriteGameIds?.has(game.id),
+									}}
+									onToggleFavorite={
+										onToggleFavorite
+											? () =>
+													onToggleFavorite(
+														game.id,
+														!favoriteGameIds?.has(game.id),
+													)
+											: undefined
+									}
+									favoritePending={favoritePending}
 								/>
 							</li>
 						))}
 					</ul>
-					{catalogue.data.pageCount > 1 ? (
+					{!isCollection && catalogue.data && catalogue.data.pageCount > 1 ? (
 						<nav
 							className="mt-8 flex items-center justify-center gap-3"
 							aria-label="Catalogue pages"

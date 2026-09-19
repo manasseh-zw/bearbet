@@ -2,7 +2,12 @@ import "@tanstack/react-start/server-only";
 
 import { and, desc, eq, sql } from "drizzle-orm";
 
-import { findGame } from "#/server/domains/game/game.service";
+import {
+	findGame,
+	findStoredGame,
+	toNormalizedGame,
+} from "#/server/domains/game/game.service";
+import { recordPlayerGameLaunchInTransaction } from "#/server/domains/game-engagement/game-engagement.service";
 import {
 	recordBet,
 	recordWin,
@@ -36,11 +41,13 @@ export async function startDemoGame(input: {
 	gameId: string;
 	launchKey: string;
 }) {
-	const [game, wallet] = await Promise.all([
-		findGame(env.CASINO_PROVIDER, input.gameId),
+	const [storedGame, wallet] = await Promise.all([
+		findStoredGame(env.CASINO_PROVIDER, input.gameId),
 		getPlayableBalance(input.playerId),
 	]);
-	if (!game?.isAvailable) throw new DemoGameError("This game is unavailable");
+	if (!storedGame) throw new DemoGameError("This game is unavailable");
+	const game = toNormalizedGame(storedGame);
+	if (!game.isAvailable) throw new DemoGameError("This game is unavailable");
 
 	const session = await db.transaction(async (transaction) => {
 		await transaction.execute(
@@ -60,7 +67,13 @@ export async function startDemoGame(input: {
 			)
 			.orderBy(desc(gameSession.createdAt))
 			.limit(1);
-		if (activeSession) return activeSession;
+		if (activeSession) {
+			await recordPlayerGameLaunchInTransaction(transaction, {
+				playerId: input.playerId,
+				gameId: storedGame.id,
+			});
+			return activeSession;
+		}
 
 		if (wallet.balanceMinor <= 0)
 			throw new DemoGameError("Add funds to your wallet before playing");
@@ -78,7 +91,13 @@ export async function startDemoGame(input: {
 			})
 			.onConflictDoNothing()
 			.returning();
-		if (createdSession) return createdSession;
+		if (createdSession) {
+			await recordPlayerGameLaunchInTransaction(transaction, {
+				playerId: input.playerId,
+				gameId: storedGame.id,
+			});
+			return createdSession;
+		}
 
 		const [existingSession] = await transaction
 			.select()
@@ -90,6 +109,12 @@ export async function startDemoGame(input: {
 					eq(gameSession.externalSessionId, externalSessionId),
 				),
 			);
+		if (existingSession) {
+			await recordPlayerGameLaunchInTransaction(transaction, {
+				playerId: input.playerId,
+				gameId: storedGame.id,
+			});
+		}
 		return existingSession;
 	});
 	if (!session)
@@ -117,11 +142,13 @@ export async function startCurrentPlayerGame(
 		);
 	}
 
-	const [game, wallet] = await Promise.all([
-		findGame(env.CASINO_PROVIDER, input.gameId),
+	const [storedGame, wallet] = await Promise.all([
+		findStoredGame(env.CASINO_PROVIDER, input.gameId),
 		getPlayableBalance(input.playerId),
 	]);
-	if (!game?.isAvailable) throw new DemoGameError("This game is unavailable");
+	if (!storedGame) throw new DemoGameError("This game is unavailable");
+	const game = toNormalizedGame(storedGame);
+	if (!game.isAvailable) throw new DemoGameError("This game is unavailable");
 	if (wallet.balanceMinor <= 0)
 		throw new DemoGameError("Add funds to your wallet before playing");
 
@@ -150,6 +177,10 @@ export async function startCurrentPlayerGame(
 			if (!activeSession.launchUrl || !activeSession.providerPlayerId) {
 				throw new DemoGameError("The active BigBang session is unavailable");
 			}
+			await recordPlayerGameLaunchInTransaction(transaction, {
+				playerId: input.playerId,
+				gameId: storedGame.id,
+			});
 			return activeSession;
 		}
 
@@ -204,7 +235,13 @@ export async function startCurrentPlayerGame(
 			})
 			.onConflictDoNothing()
 			.returning();
-		if (createdSession) return createdSession;
+		if (createdSession) {
+			await recordPlayerGameLaunchInTransaction(transaction, {
+				playerId: input.playerId,
+				gameId: storedGame.id,
+			});
+			return createdSession;
+		}
 
 		const [existingSession] = await transaction
 			.select()
@@ -219,6 +256,12 @@ export async function startCurrentPlayerGame(
 					),
 				),
 			);
+		if (existingSession) {
+			await recordPlayerGameLaunchInTransaction(transaction, {
+				playerId: input.playerId,
+				gameId: storedGame.id,
+			});
+		}
 		return existingSession;
 	});
 

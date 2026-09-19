@@ -30,6 +30,7 @@ import {
 	emitBonusCompletion,
 } from "#/lib/bonus-events";
 import { bonusQueries } from "#/lib/queries/bonus.queries";
+import { gameEngagementQueries } from "#/lib/queries/game-engagement.queries";
 import { historyQueries } from "#/lib/queries/history.queries";
 import { walletQueries } from "#/lib/queries/wallet.queries";
 import { cn } from "#/lib/utils";
@@ -57,6 +58,11 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 			startCurrentPlayerGame({
 				data: { gameId, launchKey: launchKey.current },
 			}),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: gameEngagementQueries.all,
+			});
+		},
 	});
 	const play = useMutation({
 		mutationFn: (input: {

@@ -64,7 +64,7 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 ### 3. Catalogue at product scale
 
 - [x] **P11. Move catalogue filtering to PostgreSQL.** The casino and promotions views use validated, indexed, paginated PostgreSQL reads for name, content provider, category, availability, and local curation. Trigram matching handles partial names and common typing errors without sending the full catalogue to the browser.
-- [~] **P12. Finish lobby collections and URL state.** The schema now has local featured, popular, and new curation flags plus indexed player favorite/recent-game projections. The lobby still needs the authenticated reads/writes, provider filtering, result counts, clear-all, and useful URL-backed state.
+- [~] **P12. Finish lobby collections and URL state.** Authenticated favorite reads/writes, launch-time recent projections, favorite card controls, collection counts, clear-all, and URL-backed Favorites/Recently played filters are complete. Explicit provider filtering and broader collection verification remain.
 - [ ] **P13. Handle catalogue edge cases.** Verify broken artwork, unavailable games, empty sync results, slow reads, keyboard use, and mobile layouts.
 
 ### 4. Playable simulator journey
@@ -92,7 +92,7 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 - [~] **A01. Add an administrator route group and overview.** The protected `/admin` route group now has a separate operations shell, admin navigation, placeholder operational counts, a Recharts activity view, attention links, and recent virtual-money activity. Replace the illustrative values with authenticated admin queries as the remaining management functions land.
 - [x] **A02. Build user management.** Search users, inspect profile and wallet state, suspend or activate accounts, and assign a bonus. The admin users page uses URL-backed filters, a responsive table/card view, a detail sheet, and transaction-scoped mutation functions.
 - [x] **A03. Add audited balance adjustments.** Require actor, target, amount, and reason. Record before and after balances through the existing wallet operation and ledger model, with idempotent retries and focused service tests.
-- [ ] **A04. Build game management.** Sync the catalogue, inspect games, enable or disable them, set categories, and manage featured, popular, and new curation without losing local edits during sync.
+- [x] **A04. Build game management.** The admin Games route syncs and paginates the provider catalogue, filters by search/provider/category/availability/status/curation, edits enabled state, category, featured, popular, and new flags through reason-confirmed audited mutations, preserves local edits during sync, and exposes unavailable/artwork-fallback states.
 - [ ] **A05. Build bonus management.** Create, edit, activate, and deactivate definitions with clear rules for existing awards.
 - [x] **A06. Build operations management.** Inspect wallet and gameplay operations and approve or reject simulated withdrawals. The responsive withdrawal queue and read-only activity view selector use explicit projections, URL-backed single- and multi-select filters, offset queue pagination, and cursor activity pagination on top of the audited review mutation. Admin Users, Withdrawals, and Activity toolbars put search first and use input-sized search icons for a consistent filter layout.
 - [~] **A07. Persist and verify the admin audit trail.** The audit schema and transaction-scoped writer now cover withdrawal decisions, with fresh-session and in-transaction admin authorization. Remaining admin mutation writers and broader verification coverage remain.
@@ -126,7 +126,7 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 
 ## Deferred until after the MVP
 
-- [ ] Favourites and recently played games.
+- [x] Favourites and recently played games.
 - [ ] Notifications and advanced catalogue filters.
 - [ ] Two-factor authentication and player limits.
 - [ ] VIP, cashback, referral, and loyalty systems.

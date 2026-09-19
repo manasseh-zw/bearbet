@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowRightIcon, HeartIcon, LoaderCircleIcon } from "lucide-react";
 
 export type GameCardGame = {
 	id: string;
@@ -8,18 +8,23 @@ export type GameCardGame = {
 	category?: string;
 	type?: string;
 	imageUrl?: string;
+	isFavorite?: boolean;
 };
 
 type GameCardProps = {
 	game: GameCardGame;
 	compact?: boolean;
 	playable?: boolean;
+	onToggleFavorite?: () => void;
+	favoritePending?: boolean;
 };
 
 export function GameCard({
 	game,
 	compact = false,
 	playable = false,
+	onToggleFavorite,
+	favoritePending = false,
 }: GameCardProps) {
 	const content = (
 		<>
@@ -58,7 +63,32 @@ export function GameCard({
 	);
 
 	return (
-		<article className="group min-w-0">
+		<article className="group relative min-w-0">
+			{playable && onToggleFavorite ? (
+				<button
+					type="button"
+					aria-label={
+						game.isFavorite
+							? `Remove ${game.name} from favorites`
+							: `Add ${game.name} to favorites`
+					}
+					aria-pressed={game.isFavorite}
+					disabled={favoritePending}
+					onClick={onToggleFavorite}
+					className="absolute top-2 right-2 z-10 grid size-9 place-items-center rounded-full bg-black/55 text-white/80 shadow-lg backdrop-blur-sm transition hover:bg-black/75 hover:text-white focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60"
+					title={game.isFavorite ? "Remove favorite" : "Add favorite"}
+				>
+					{favoritePending ? (
+						<LoaderCircleIcon className="size-4 animate-spin" />
+					) : (
+						<HeartIcon
+							className={
+								game.isFavorite ? "size-4 fill-primary text-primary" : "size-4"
+							}
+						/>
+					)}
+				</button>
+			) : null}
 			{playable ? (
 				<Link
 					to="/games/$gameId"

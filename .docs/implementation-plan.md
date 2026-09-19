@@ -11,12 +11,12 @@ This is the current administration and release sequence. Update this section whe
 - **Phase 1, shared admin foundations, complete.** TanStack admin table primitives, responsive states, URL query contracts, cursor conventions, password recovery, password reset, password change, and the local reset-email preview are in place.
 - **Phase 2, users, complete.** Admin user queries, URL-backed filters and sorting, responsive users UI, detail actions, wallet adjustments, bonus assignment, fresh-session authorization, session revocation, and transaction-scoped audits are implemented and tested.
 - **Phase 3, withdrawals and operations, complete.** Admin withdrawal projections, offset-paginated review queue, cursor-paginated wallet/gameplay/withdrawal/audit activity, responsive review controls, and URL-backed operational filters are implemented and tested on top of the audited review mutation. The UI closeout puts search first in the Users, Withdrawals, and Activity toolbars and uses input-sized search icons throughout.
-- **Phase 4, games, current.** Add audited game curation mutations, provider/category/status filters, sync feedback, and safe curation actions.
-- **Phase 5, bonuses, follows games.** Add bonus-definition management and the definition table without changing already-issued awards.
-- **Phase 6, live overview and player gaps, follows administration.** Replace illustrative overview data with live operational counts, then finish favorites, recently played, profile reads and edits, and lifecycle/access-boundary proof.
+- **Phase 4, games, complete.** The admin Games route now syncs the provider catalogue, filters and paginates the local catalogue, and applies reason-confirmed audited enable/disable, category, featured, popular, and new curation changes while preserving local fields during sync.
+- **Phase 5, bonuses, current.** Add bonus-definition management and the definition table without changing already-issued awards.
+- **Phase 6, live overview and player gaps, follows administration.** Replace illustrative overview data with live operational counts, then finish profile reads and edits and lifecycle/access-boundary proof.
 - **Phase 7, release gate, final.** Complete rate limits, redacted logs, secure headers, health checks, clean-install verification, accessibility checks, and reviewer evidence.
 
-The Phase 3 foundation and UI closeout are complete and verified. The next slice begins game management; bonus-definition work remains separate.
+The Phase 3 foundation and UI closeout, plus the Phase 4 game-management slice, are complete and verified. The next slice is bonus-definition management; remaining player profile and access-boundary proof stays in the verification queue.
 
 ## Where the project stands
 
@@ -126,13 +126,12 @@ This stage delivers tasks P19 through P21. It depends on wallet and gameplay. Ad
 
 ## Stage 4: account, catalogue completion, and administration
 
-The player account work is split. Password recovery and password change are complete through Better Auth, while profile reads and safe edits and browser lifecycle proof remain in the task list. Favorites and recently played projections exist but still need their player-facing reads, writes, lobby sections, and empty states.
+The player account work is split. Password recovery and password change are complete through Better Auth, while profile reads and safe edits and browser lifecycle proof remain in the task list. Favorites and recently played now have authenticated reads/writes, launch-time recent projections, lobby collections, URL-backed priority filters, empty states, and card-level favorite controls.
 
 The admin route group, fresh-session checks, transaction-scoped authorization, audit writer, shared table primitives, users slice, and operations slice are complete. Continue administration in this order:
 
-1. **Phase 4, games.** Add audited enable/disable, category, featured, popular, and new curation mutations. Preserve local fields during provider sync and show sync progress, errors, unavailable games, and artwork fallbacks.
-2. **Phase 5, bonuses.** Add audited definition list, create, edit, activate, and deactivate operations. Existing player awards keep their snapshotted rules.
-3. **Phase 6, live overview and player gaps.** Replace illustrative overview values with live operational counts, link cards to filtered admin pages, then finish favorites, recently played, profile reads and edits, and access-boundary proof.
+1. **Phase 5, bonuses.** Add audited definition list, create, edit, activate, and deactivate operations. Existing player awards keep their snapshotted rules.
+2. **Phase 6, live overview and player gaps.** Replace illustrative overview values with live operational counts, link cards to filtered admin pages, then finish profile reads and edits and access-boundary proof.
 
 The overview must report useful operational counts and recent events, not invented gambling revenue.
 
@@ -182,7 +181,7 @@ This stage delivers R01 through R10.
 
 ## Scope kept out of the MVP
 
-Favourites, recently played games, notifications, advanced filters, two-factor authentication, player limits, VIP, cashback, referrals, loyalty, multi-currency conversion, and broad analytics remain deferred. Promotions and VIP may keep honest unavailable states until a later scope explicitly brings them in.
+Notifications, advanced filters, two-factor authentication, player limits, VIP, cashback, referrals, loyalty, multi-currency conversion, and broad analytics remain deferred. Promotions and VIP may keep honest unavailable states until a later scope explicitly brings them in.
 
 ## Immediate task
 

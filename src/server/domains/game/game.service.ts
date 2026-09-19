@@ -7,6 +7,7 @@ import {
 	promotionCatalogueCategories,
 } from "#/lib/schemas/catalogue.schema";
 import { env } from "#/server/env";
+import { recordAuditEntryInTransaction } from "#/server/domains/audit/audit.service";
 import { db } from "#/server/infra/db";
 import { game, gameProvider } from "#/server/infra/db/schema";
 import { createCasinoProvider } from "#/server/infra/providers";
@@ -35,6 +36,7 @@ export async function syncGameCatalogue(input: {
 	integrationProvider: string;
 	provider?: CasinoProvider;
 	now?: Date;
+	audit?: { actorUserId: string; reason: string };
 }) {
 	const provider = input.provider ?? createCasinoProvider();
 	const catalogue = await provider.syncCatalogue();
@@ -87,6 +89,16 @@ export async function syncGameCatalogue(input: {
 					target: [game.providerId, game.externalId],
 					set: { ...values, updatedAt: now },
 				});
+		}
+
+		if (input.audit) {
+			await recordAuditEntryInTransaction(transaction, {
+				actorUserId: input.audit.actorUserId,
+				target: { type: "game", id: integrationProvider },
+				action: "games_synced",
+				reason: input.audit.reason,
+				metadata: { integrationProvider, gameCount: games.length },
+			});
 		}
 	});
 	searchCache.clear();
@@ -251,6 +263,22 @@ export async function findGame(
 	return stored ? toNormalizedGame(stored) : undefined;
 }
 
+export async function findStoredGame(
+	integrationProvider: string,
+	externalId: string,
+) {
+	const [stored] = await db
+		.select()
+		.from(game)
+		.where(
+			and(
+				eq(game.providerId, normalizeProviderId(integrationProvider)),
+				eq(game.externalId, externalId),
+			),
+		);
+	return stored;
+}
+
 function normalizeProviderId(value: string) {
 	const providerId = value.trim().toLowerCase();
 	if (!/^[a-z0-9_-]{1,40}$/.test(providerId)) {
@@ -311,7 +339,9 @@ function toGameRecord(
 	};
 }
 
-function toNormalizedGame(stored: typeof game.$inferSelect): NormalizedGame {
+export function toNormalizedGame(
+	stored: typeof game.$inferSelect,
+): NormalizedGame {
 	return {
 		id: stored.externalId,
 		...(stored.code ? { code: stored.code } : {}),
