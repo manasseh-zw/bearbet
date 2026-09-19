@@ -11,6 +11,7 @@ import {
 	assertActiveAdminInTransaction,
 } from "#/server/domains/admin/admin-auth.service";
 import { recordAuditEntryInTransaction } from "#/server/domains/audit/audit.service";
+import { clearCatalogueSearchCache } from "#/server/domains/game/game.service";
 import { db } from "#/server/infra/db";
 import type { DatabaseTransaction } from "#/server/infra/db/database.types";
 import { game } from "#/server/infra/db/schema";
@@ -40,7 +41,7 @@ export async function updateAdminGame(
 		}),
 	);
 
-	return db.transaction(async (transaction) => {
+	const result = await db.transaction(async (transaction) => {
 		await assertAdmin(transaction, input.actorUserId);
 		const [current] = await transaction
 			.select()
@@ -95,6 +96,8 @@ export async function updateAdminGame(
 
 		return { isDuplicate: false, game: updated };
 	});
+	if (!result.isDuplicate) clearCatalogueSearchCache();
+	return result;
 }
 
 function parseInput<T>(parse: () => T) {

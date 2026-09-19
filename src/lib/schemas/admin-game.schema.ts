@@ -18,6 +18,7 @@ export const adminGameQuerySchema = z
 		pageSize: adminPageSizeSchema.default(24),
 		search: z.string().trim().max(100).default(""),
 		provider: z.string().trim().max(120).default(""),
+		category: z.string().trim().max(120).default(""),
 		availability: z.enum(adminGameAvailability).default("all"),
 		status: z.enum(adminGameStatuses).default("all"),
 		curation: z.enum(adminGameCuration).default("all"),

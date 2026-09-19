@@ -12,10 +12,12 @@ import {
 	user,
 } from "#/server/infra/db/schema";
 
+import { listAdminGames } from "./games.query";
 import { AdminGameServiceError, updateAdminGame } from "./games.service";
 
 const adminId = `game-admin-${crypto.randomUUID()}`;
 const playerId = `game-player-${crypto.randomUUID()}`;
+const curatedCategory = `Admin-${crypto.randomUUID()}`;
 let gameId: string;
 
 before(async () => {
@@ -77,13 +79,13 @@ test("game curation changes are audited and non-admins are rejected", async () =
 		actorUserId: adminId,
 		gameId,
 		reason: "Promote the launch-week catalogue",
-		category: "Playtech",
+		category: curatedCategory,
 		isFeatured: true,
 		isPopular: true,
 	});
 
 	assert.equal(updated.isDuplicate, false);
-	assert.equal(updated.game.category, "Playtech");
+	assert.equal(updated.game.category, curatedCategory);
 	assert.equal(updated.game.isFeatured, true);
 	assert.equal(updated.game.isPopular, true);
 
@@ -103,4 +105,20 @@ test("game curation changes are audited and non-admins are rejected", async () =
 		(error: unknown) =>
 			error instanceof AdminGameServiceError && error.code === "ADMIN_REQUIRED",
 	);
+
+	const query = {
+		page: 999,
+		pageSize: 24,
+		search: "",
+		provider: "",
+		category: curatedCategory,
+		availability: "all" as const,
+		status: "all" as const,
+		curation: "all" as const,
+		sort: "name" as const,
+		direction: "asc" as const,
+	};
+	const result = await listAdminGames(query);
+	assert.equal(result.pagination.page, 1);
+	assert.equal(result.items.some((item) => item.id === gameId), true);
 });

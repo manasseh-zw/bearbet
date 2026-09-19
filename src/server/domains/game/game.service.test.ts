@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
 	findGame,
 	listGames,
@@ -118,6 +118,20 @@ test("catalogue sync persists provider games and marks missing games unavailable
 		provider: updatedProvider,
 		now: new Date("2030-01-02T00:00:00Z"),
 	});
+	await db
+		.update(game)
+		.set({ category: "Admin curated" })
+		.where(
+			and(
+				eq(game.providerId, integrationProvider),
+				eq(game.externalId, "game-1"),
+			),
+		);
+	await syncGameCatalogue({
+		integrationProvider,
+		provider: updatedProvider,
+		now: new Date("2030-01-03T00:00:00Z"),
+	});
 
 	const games = await listGames(integrationProvider);
 	assert.equal(games.length, 4);
@@ -132,6 +146,7 @@ test("catalogue sync persists provider games and marks missing games unavailable
 	const stored = await findGame(integrationProvider, "game-1");
 	assert.equal(stored?.provider, "updated-studio");
 	assert.equal(stored?.type, "roulette");
+	assert.equal(stored?.category, "Admin curated");
 });
 
 test("catalogue search ranks fuzzy matches and configured scope priorities", async () => {
@@ -153,7 +168,7 @@ test("catalogue search ranks fuzzy matches and configured scope priorities", asy
 	);
 	assert.deepEqual(
 		promotions.games.map((candidate) => candidate.name),
-		["Alpha Pragmatic game", "Zulu Booming game", "Renamed game"],
+		["Alpha Pragmatic game", "Zulu Booming game"],
 	);
 
 	const cached = await searchGames(

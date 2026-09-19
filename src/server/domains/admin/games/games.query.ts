@@ -24,6 +24,7 @@ export async function listAdminGames(input: AdminGameQuery) {
 		);
 	}
 	if (query.provider) conditions.push(eq(game.contentProvider, query.provider));
+	if (query.category) conditions.push(eq(game.category, query.category));
 	if (query.availability === "available")
 		conditions.push(eq(game.isAvailable, true));
 	if (query.availability === "unavailable")
@@ -42,14 +43,7 @@ export async function listAdminGames(input: AdminGameQuery) {
 	}[query.sort];
 	const orderDirection = query.direction === "asc" ? asc : desc;
 
-	const [rows, totalRows, providers, categories] = await Promise.all([
-		db
-			.select()
-			.from(game)
-			.where(where)
-			.orderBy(orderDirection(orderColumn), asc(game.externalId))
-			.limit(query.pageSize)
-			.offset((query.page - 1) * query.pageSize),
+	const [totalRows, providers, categories] = await Promise.all([
 		db.select({ value: sql<number>`count(*)::int` }).from(game).where(where),
 		db
 			.selectDistinct({ value: game.contentProvider })
@@ -65,6 +59,14 @@ export async function listAdminGames(input: AdminGameQuery) {
 
 	const total = totalRows[0]?.value ?? 0;
 	const pageCount = Math.max(1, Math.ceil(total / query.pageSize));
+	const page = Math.min(query.page, pageCount);
+	const rows = await db
+		.select()
+		.from(game)
+		.where(where)
+		.orderBy(orderDirection(orderColumn), asc(game.externalId))
+		.limit(query.pageSize)
+		.offset((page - 1) * query.pageSize);
 
 	return {
 		items: rows,
@@ -73,7 +75,7 @@ export async function listAdminGames(input: AdminGameQuery) {
 			categories: categories.flatMap((row) => (row.value ? [row.value] : [])),
 		},
 		pagination: {
-			page: Math.min(query.page, pageCount),
+			page,
 			pageSize: query.pageSize,
 			total,
 			totalPages: pageCount,

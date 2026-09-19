@@ -135,3 +135,33 @@ test("favorites are retry-safe and launches build a recent projection", async ()
 		);
 	assert.equal(recent?.playCount, 2);
 });
+
+test("stale favorites can be removed after a game becomes unavailable", async () => {
+	const storedGame = await db
+		.select({ externalId: game.externalId })
+		.from(game)
+		.where(eq(game.id, gameId));
+	const externalId = storedGame[0]?.externalId;
+	assert.ok(externalId);
+
+	await setPlayerGameFavorite({
+		playerId,
+		gameId: externalId,
+		isFavorite: true,
+	});
+	await db
+		.update(game)
+		.set({ isAvailable: false })
+		.where(eq(game.id, gameId));
+
+	assert.deepEqual(
+		await setPlayerGameFavorite({
+			playerId,
+			gameId: externalId,
+			isFavorite: false,
+		}),
+		{ isFavorite: false, gameId: externalId },
+	);
+
+	await db.update(game).set({ isAvailable: true }).where(eq(game.id, gameId));
+});

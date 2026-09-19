@@ -88,7 +88,13 @@ export async function setPlayerGameFavorite(
 				eq(game.externalId, input.gameId.trim()),
 			),
 		);
-	if (!storedGame || !storedGame.isAvailable || !storedGame.isEnabled) {
+	if (!storedGame && input.isFavorite) {
+		throw new GameEngagementServiceError("This game is unavailable");
+	}
+	if (!storedGame) {
+		return { isFavorite: false, gameId: input.gameId.trim() };
+	}
+	if (input.isFavorite && (!storedGame.isAvailable || !storedGame.isEnabled)) {
 		throw new GameEngagementServiceError("This game is unavailable");
 	}
 

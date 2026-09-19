@@ -23,6 +23,10 @@ const searchCache = new Map<
 const searchCacheTtlMs = 30_000;
 const searchCacheMaxEntries = 250;
 
+export function clearCatalogueSearchCache() {
+	searchCache.clear();
+}
+
 export type CatalogueSearchResult = {
 	games: NormalizedGame[];
 	total: number;
@@ -87,7 +91,26 @@ export async function syncGameCatalogue(input: {
 				.values(values)
 				.onConflictDoUpdate({
 					target: [game.providerId, game.externalId],
-					set: { ...values, updatedAt: now },
+					// Category is also an admin-owned curation field. Keep the
+					// existing value when a provider game is seen again.
+					set: {
+						code: values.code,
+						name: values.name,
+						contentProvider: values.contentProvider,
+						type: values.type,
+						description: values.description,
+						rtp: values.rtp,
+						bannerUrl: values.bannerUrl,
+						coverUrl: values.coverUrl,
+						supportsFun: values.supportsFun,
+						isAvailable: values.isAvailable,
+						isMobile: values.isMobile,
+						hasFreeSpins: values.hasFreeSpins,
+						hasLobby: values.hasLobby,
+						hasTables: values.hasTables,
+						lastSeenAt: values.lastSeenAt,
+						updatedAt: now,
+					},
 				});
 		}
 
@@ -101,7 +124,7 @@ export async function syncGameCatalogue(input: {
 			});
 		}
 	});
-	searchCache.clear();
+	clearCatalogueSearchCache();
 
 	return { gameCount: games.length, syncedAt: now };
 }

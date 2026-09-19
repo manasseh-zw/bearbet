@@ -152,6 +152,7 @@ export function GamesPage({
 	const hasFilters = Boolean(
 		query.search ||
 			query.provider ||
+			query.category ||
 			query.availability !== "all" ||
 			query.status !== "all" ||
 			query.curation !== "all",
@@ -173,6 +174,7 @@ export function GamesPage({
 			...query,
 			search: "",
 			provider: "",
+			category: "",
 			availability: "all",
 			status: "all",
 			curation: "all",
@@ -265,6 +267,15 @@ export function GamesPage({
 					names={{ __all: "All providers" }}
 					onChange={(value) =>
 						patchQuery({ provider: value === "__all" ? "" : value })
+					}
+				/>
+				<FilterSelect
+					label="Category"
+					value={query.category || "__all"}
+					options={["__all", ...(filters?.categories ?? [])]}
+					names={{ __all: "All categories" }}
+					onChange={(value) =>
+						patchQuery({ category: value === "__all" ? "" : value })
 					}
 				/>
 				<FilterSelect
