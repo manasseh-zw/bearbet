@@ -15,6 +15,9 @@ import * as schema from "#/server/infra/db/schema";
 import { sendPasswordResetEmail } from "../email/email.service";
 import { provisionNewPlayer } from "./player-provisioning";
 
+const vercelPreviewOrigin =
+	"https://bearbet-*-manassehs-projects-34d48d2a.vercel.app";
+
 export const auth = betterAuth({
 	appName: "Bearbet",
 	database: drizzleAdapter(db, {
@@ -22,7 +25,7 @@ export const auth = betterAuth({
 		schema,
 		transaction: true,
 	}),
-	trustedOrigins: [env.BETTER_AUTH_URL],
+	trustedOrigins: [env.BETTER_AUTH_URL, vercelPreviewOrigin],
 	emailAndPassword: {
 		enabled: true,
 		resetPasswordTokenExpiresIn: 30 * 60,
