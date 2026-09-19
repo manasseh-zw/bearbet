@@ -22,6 +22,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "#/components/ui/table";
+import { cn } from "#/lib/utils";
 
 export const adminTableFeatures = tableFeatures({
 	columnFilteringFeature,
@@ -49,9 +50,12 @@ export type AdminDataTableProps<TData extends RowData> = {
 		index: number,
 		parent?: Row<typeof adminTableFeatures, TData>,
 	) => string;
+	headerRowClassName?: string;
 	manualPagination?: boolean;
+	onRowClick?: (row: TData) => void;
 	pageCount?: number;
 	rowCount?: number;
+	rowClassName?: string;
 	tableClassName?: string;
 };
 
@@ -62,9 +66,12 @@ export function AdminDataTable<TData extends RowData>({
 	enableRowSelection = false,
 	footer,
 	getRowId,
+	headerRowClassName,
 	manualPagination = false,
+	onRowClick,
 	pageCount,
 	rowCount,
+	rowClassName,
 	tableClassName,
 }: AdminDataTableProps<TData>) {
 	const table = useTable({
@@ -83,7 +90,7 @@ export function AdminDataTable<TData extends RowData>({
 			<Table className={tableClassName}>
 				<TableHeader>
 					{table.getHeaderGroups().map((headerGroup) => (
-						<TableRow key={headerGroup.id}>
+						<TableRow className={headerRowClassName} key={headerGroup.id}>
 							{headerGroup.headers.map((header) => (
 								<TableHead key={header.id}>
 									{header.isPlaceholder
@@ -101,8 +108,26 @@ export function AdminDataTable<TData extends RowData>({
 					{table.getRowModel().rows.length > 0 ? (
 						table.getRowModel().rows.map((row) => (
 							<TableRow
+								className={cn(
+									rowClassName,
+									onRowClick && "cursor-pointer focus-visible:bg-muted/50",
+								)}
 								data-state={row.getIsSelected() ? "selected" : undefined}
 								key={row.id}
+								onClick={
+									onRowClick ? () => onRowClick(row.original) : undefined
+								}
+								onKeyDown={
+									onRowClick
+										? (event) => {
+												if (event.key === "Enter" || event.key === " ") {
+													event.preventDefault();
+													onRowClick(row.original);
+												}
+											}
+										: undefined
+								}
+								tabIndex={onRowClick ? 0 : undefined}
 							>
 								{row.getVisibleCells().map((cell) => (
 									<TableCell key={cell.id}>
@@ -112,7 +137,7 @@ export function AdminDataTable<TData extends RowData>({
 							</TableRow>
 						))
 					) : (
-						<TableRow>
+						<TableRow className={rowClassName}>
 							<TableCell className="h-24 text-center" colSpan={columns.length}>
 								{emptyMessage}
 							</TableCell>

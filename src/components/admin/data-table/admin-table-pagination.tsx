@@ -1,6 +1,12 @@
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-
-import { Button } from "#/components/ui/button";
+import {
+	Pagination,
+	PaginationContent,
+	PaginationEllipsis,
+	PaginationItem,
+	PaginationLink,
+	PaginationNext,
+	PaginationPrevious,
+} from "#/components/ui/pagination";
 
 type AdminTablePaginationProps = {
 	pageCount: number;
@@ -15,32 +21,66 @@ export function AdminTablePagination({
 }: AdminTablePaginationProps) {
 	const hasPreviousPage = pageIndex > 0;
 	const hasNextPage = pageIndex < pageCount - 1;
+	const pages = getPaginationPages(pageCount, pageIndex);
 
 	return (
-		<div className="flex items-center justify-between gap-3 border-t px-4 py-3 text-sm text-muted-foreground">
-			<span>
+		<footer className="flex flex-col gap-3 px-1 pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+			<p>
 				Page {pageCount === 0 ? 0 : pageIndex + 1} of {pageCount}
-			</span>
-			<div className="flex items-center gap-1">
-				<Button
-					aria-label="Previous page"
-					disabled={!hasPreviousPage}
-					onClick={() => onPageChange(pageIndex - 1)}
-					size="icon-sm"
-					variant="ghost"
-				>
-					<ChevronLeftIcon data-icon="inline-start" />
-				</Button>
-				<Button
-					aria-label="Next page"
-					disabled={!hasNextPage}
-					onClick={() => onPageChange(pageIndex + 1)}
-					size="icon-sm"
-					variant="ghost"
-				>
-					<ChevronRightIcon data-icon="inline-end" />
-				</Button>
-			</div>
-		</div>
+			</p>
+			<Pagination className="mx-0 w-auto sm:justify-end">
+				<PaginationContent>
+					<PaginationItem>
+						<PaginationPrevious
+							disabled={!hasPreviousPage}
+							onClick={() => onPageChange(pageIndex - 1)}
+						/>
+					</PaginationItem>
+					{pages.map((page) =>
+						page === "ellipsis-start" || page === "ellipsis-end" ? (
+							<PaginationItem key={page}>
+								<PaginationEllipsis />
+							</PaginationItem>
+						) : (
+							<PaginationItem key={page}>
+								<PaginationLink
+									aria-label={`Go to page ${page + 1}`}
+									isActive={page === pageIndex}
+									onClick={() => onPageChange(page)}
+								>
+									{page + 1}
+								</PaginationLink>
+							</PaginationItem>
+						),
+					)}
+					<PaginationItem>
+						<PaginationNext
+							disabled={!hasNextPage}
+							onClick={() => onPageChange(pageIndex + 1)}
+						/>
+					</PaginationItem>
+				</PaginationContent>
+			</Pagination>
+		</footer>
 	);
+}
+
+function getPaginationPages(
+	pageCount: number,
+	pageIndex: number,
+): Array<number | "ellipsis-start" | "ellipsis-end"> {
+	if (pageCount <= 7) {
+		return Array.from({ length: pageCount }, (_, page) => page);
+	}
+
+	const pages: Array<number | "ellipsis-start" | "ellipsis-end"> = [0];
+	const start = Math.max(1, pageIndex - 1);
+	const end = Math.min(pageCount - 2, pageIndex + 1);
+
+	if (start > 1) pages.push("ellipsis-start");
+	for (let page = start; page <= end; page += 1) pages.push(page);
+	if (end < pageCount - 2) pages.push("ellipsis-end");
+	pages.push(pageCount - 1);
+
+	return pages;
 }

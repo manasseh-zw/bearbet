@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Facehash } from "facehash";
 import {
 	ArrowDownIcon,
 	ArrowUpIcon,
@@ -23,7 +24,6 @@ import {
 	type AdminTableColumn,
 	AdminTablePagination,
 } from "#/components/admin/data-table";
-import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
@@ -231,15 +231,11 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 				header: "User",
 				cell: ({ row }) => (
 					<button
-						className="flex min-w-44 items-center gap-3 text-left"
+						className="flex min-w-56 items-center gap-3 text-left"
 						type="button"
 						onClick={() => setSelectedUser(row.original)}
 					>
-						<Avatar size="sm">
-							<AvatarFallback>
-								{initials(row.original.user.name)}
-							</AvatarFallback>
-						</Avatar>
+						<UserAvatar name={row.original.user.name} size={40} />
 						<span className="min-w-0">
 							<span className="block truncate font-medium">
 								{row.original.user.name}
@@ -299,9 +295,9 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 
 	return (
 		<main className="mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
-			<header className="flex flex-col gap-2 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+			<header className="flex flex-col gap-2 pb-6 sm:flex-row sm:items-end sm:justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+					<h1 className="font-logo text-3xl leading-none tracking-tight sm:text-4xl">
 						Users
 					</h1>
 					<p className="mt-2 max-w-2xl text-sm text-muted-foreground">
@@ -316,7 +312,7 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 
 			<section
 				aria-label="User filters"
-				className="flex flex-col gap-3 border-b border-border py-5 lg:flex-row lg:items-center"
+				className="flex flex-col gap-3 py-5 lg:flex-row lg:items-center"
 			>
 				<div className="relative min-w-0 flex-1 lg:max-w-md">
 					<SearchIcon className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground" />
@@ -416,12 +412,15 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 					/>
 				) : (
 					<>
-						<div className="hidden overflow-hidden rounded-xl border border-border md:block">
+						<div className="hidden md:block">
 							<AdminDataTable
 								columns={columns}
 								data={rows}
 								emptyMessage="No users found."
 								getRowId={(row) => row.user.id}
+								headerRowClassName="!border-0"
+								onRowClick={(row) => setSelectedUser(row)}
+								rowClassName="!border-0 [&>td]:py-4"
 							/>
 						</div>
 						<div className="grid gap-2 md:hidden">
@@ -508,11 +507,9 @@ function UserDetailSheet({
 			<SheetContent className="w-full sm:max-w-lg" side="right">
 				{row ? (
 					<div className="flex min-h-full flex-col">
-						<SheetHeader className="border-b border-border pr-12">
+						<SheetHeader className="pr-12">
 							<div className="flex items-center gap-3">
-								<Avatar size="lg">
-									<AvatarFallback>{initials(row.user.name)}</AvatarFallback>
-								</Avatar>
+								<UserAvatar name={row.user.name} size={48} />
 								<div className="min-w-0">
 									<SheetTitle className="truncate">{row.user.name}</SheetTitle>
 									<SheetDescription className="truncate">
@@ -602,7 +599,7 @@ function UserDetailSheet({
 								)}
 							</DetailSection>
 						</div>
-						<div className="grid gap-2 border-t border-border p-6 sm:grid-cols-2">
+						<div className="grid gap-2 p-6 sm:grid-cols-2">
 							{row.user.status === "suspended" ? (
 								<Button
 									onClick={() => onAction(row, "activate")}
@@ -809,13 +806,11 @@ function MobileUserRow({
 }) {
 	return (
 		<button
-			className="flex w-full items-center gap-3 rounded-xl border border-border px-4 py-3 text-left hover:bg-muted/40"
+			className="flex w-full items-center gap-3 rounded-xl px-4 py-4 text-left hover:bg-muted/40"
 			onClick={onOpen}
 			type="button"
 		>
-			<Avatar size="sm">
-				<AvatarFallback>{initials(row.user.name)}</AvatarFallback>
-			</Avatar>
+			<UserAvatar name={row.user.name} size={40} />
 			<span className="min-w-0 flex-1">
 				<span className="block truncate font-medium">{row.user.name}</span>
 				<span className="block truncate text-xs text-muted-foreground">
@@ -891,13 +886,19 @@ function StatusBadge({ status }: { status: "active" | "suspended" }) {
 		</Badge>
 	);
 }
-function initials(name: string) {
-	return name
-		.split(/\s+/)
-		.map((part) => part[0])
-		.join("")
-		.slice(0, 2)
-		.toUpperCase();
+function UserAvatar({ name, size }: { name: string; size: number }) {
+	return (
+		<Facehash
+			className="shrink-0 rounded-full text-[#211805]"
+			colors={["#fee402", "#e9a923", "#ffd978"]}
+			intensity3d="none"
+			interactive={false}
+			name={name}
+			showInitial={false}
+			size={size}
+			variant="solid"
+		/>
+	);
 }
 function formatDate(value: Date | string) {
 	return new Intl.DateTimeFormat("en-US", {
