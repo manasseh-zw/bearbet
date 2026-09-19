@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Facehash } from "facehash";
 import {
 	ArrowDownIcon,
 	ArrowUpIcon,
@@ -24,6 +23,7 @@ import {
 	type AdminTableColumn,
 	AdminTablePagination,
 } from "#/components/admin/data-table";
+import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
@@ -59,6 +59,7 @@ import type {
 	AdminUserRole,
 	AdminUserStatus,
 } from "#/lib/schemas/admin-query.schema";
+import { cn } from "#/lib/utils";
 import {
 	activateAdminUserFn,
 	adjustAdminUserBalanceFn,
@@ -235,7 +236,7 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 						type="button"
 						onClick={() => setSelectedUser(row.original)}
 					>
-						<UserAvatar name={row.original.user.name} size={36} />
+						<UserAvatar name={row.original.user.name} size="row" />
 						<span className="min-w-0">
 							<span className="block truncate font-medium">
 								{row.original.user.name}
@@ -418,9 +419,9 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 								data={rows}
 								emptyMessage="No users found."
 								getRowId={(row) => row.user.id}
-								headerRowClassName="!border-0"
 								onRowClick={(row) => setSelectedUser(row)}
-								rowClassName="!border-0 [&>td]:py-4"
+								rowClassName="[&>td]:px-4 [&>td]:py-3"
+								tableClassName="[&_th]:px-4"
 							/>
 						</div>
 						<div className="grid gap-2 md:hidden">
@@ -509,7 +510,7 @@ function UserDetailSheet({
 					<div className="flex min-h-full flex-col">
 						<SheetHeader className="pr-12">
 							<div className="flex items-center gap-3">
-								<UserAvatar name={row.user.name} size={44} />
+								<UserAvatar name={row.user.name} size="detail" />
 								<div className="min-w-0">
 									<SheetTitle className="truncate">{row.user.name}</SheetTitle>
 									<SheetDescription className="truncate">
@@ -810,7 +811,7 @@ function MobileUserRow({
 			onClick={onOpen}
 			type="button"
 		>
-			<UserAvatar name={row.user.name} size={36} />
+			<UserAvatar name={row.user.name} size="row" />
 			<span className="min-w-0 flex-1">
 				<span className="block truncate font-medium">{row.user.name}</span>
 				<span className="block truncate text-xs text-muted-foreground">
@@ -886,19 +887,45 @@ function StatusBadge({ status }: { status: "active" | "suspended" }) {
 		</Badge>
 	);
 }
-function UserAvatar({ name, size }: { name: string; size: number }) {
+function UserAvatar({ name, size }: { name: string; size: "detail" | "row" }) {
 	return (
-		<Facehash
-			className="shrink-0 rounded-full text-[#211805]"
-			colors={["#fee402", "#e9a923", "#ffd978"]}
-			intensity3d="none"
-			interactive={false}
-			name={name}
-			showInitial
-			size={size}
-			variant="solid"
-		/>
+		<Avatar
+			className={cn("shrink-0", size === "detail" ? "size-10" : "size-8")}
+		>
+			<AvatarFallback
+				className={cn(
+					"font-semibold text-primary-foreground",
+					avatarColor(name),
+				)}
+			>
+				{initials(name)}
+			</AvatarFallback>
+		</Avatar>
 	);
+}
+
+const avatarColors = [
+	"bg-primary",
+	"bg-amber-300",
+	"bg-amber-400",
+	"bg-yellow-500",
+] as const;
+
+function avatarColor(name: string) {
+	let hash = 0;
+	for (const character of name) {
+		hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+	}
+	return avatarColors[hash % avatarColors.length];
+}
+
+function initials(name: string) {
+	return name
+		.split(/\s+/)
+		.map((part) => part[0])
+		.join("")
+		.slice(0, 2)
+		.toUpperCase();
 }
 function formatDate(value: Date | string) {
 	return new Intl.DateTimeFormat("en-US", {
