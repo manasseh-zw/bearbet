@@ -16,7 +16,10 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-
+import {
+	AdminDataTable,
+	type AdminTableColumn,
+} from "#/components/admin/data-table";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
@@ -322,20 +325,17 @@ export function BonusDefinitionsPage({
 					</div>
 				) : (
 					<div className="space-y-3">
-						{rows.map((row) => (
-							<DefinitionRowView
-								key={row.id}
-								row={row}
-								onEdit={() => {
-									setActionError(null);
-									setEditor({ mode: "edit", row });
-								}}
-								onStatus={() => {
-									setActionError(null);
-									setStatusChange(row);
-								}}
-							/>
-						))}
+						<BonusDefinitionTable
+							rows={rows}
+							onEdit={(row) => {
+								setActionError(null);
+								setEditor({ mode: "edit", row });
+							}}
+							onStatus={(row) => {
+								setActionError(null);
+								setStatusChange(row);
+							}}
+						/>
 						<footer className="flex flex-col gap-3 pt-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
 							<span>
 								Page {query.page} of {pageCount} ·{" "}
@@ -396,56 +396,123 @@ export function BonusDefinitionsPage({
 	);
 }
 
-function DefinitionRowView({
-	row,
+function BonusDefinitionTable({
+	rows,
 	onEdit,
 	onStatus,
 }: {
-	row: DefinitionRow;
-	onEdit: () => void;
-	onStatus: () => void;
+	rows: DefinitionRow[];
+	onEdit: (row: DefinitionRow) => void;
+	onStatus: (row: StatusChange) => void;
 }) {
-	return (
-		<article className="group rounded-2xl border border-border bg-card/40 p-4 transition-colors hover:border-foreground/20 sm:p-5">
-			<div className="grid gap-5 lg:grid-cols-[9.5rem_minmax(0,1fr)_auto] lg:items-start">
-				<div className="aspect-[4/3] w-full overflow-hidden rounded-xl border border-border bg-muted sm:max-w-40 lg:aspect-[4/3]">
-					{row.thumbnailUrl ? (
-						<img
-							alt=""
-							className="size-full object-cover"
-							src={row.thumbnailUrl}
-						/>
-					) : (
-						<div className="grid size-full place-items-center px-2 text-center text-[11px] text-muted-foreground">
-							No image
-						</div>
-					)}
-				</div>
-				<div className="min-w-0">
-					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant={row.isActive ? "default" : "secondary"}>
-							{row.isActive ? "Active" : "Inactive"}
-						</Badge>
+	const columns: AdminTableColumn<DefinitionRow>[] = [
+		{
+			id: "bonus",
+			header: "Bonus",
+			cell: ({ row }) => (
+				<div className="flex min-w-64 items-center gap-3">
+					<div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-muted text-center text-[10px] text-muted-foreground">
+						{row.original.thumbnailUrl ? (
+							<img
+								alt=""
+								className="size-full object-cover"
+								loading="lazy"
+								src={row.original.thumbnailUrl}
+							/>
+						) : (
+							<span>No image</span>
+						)}
 					</div>
-					<h2 className="mt-3 text-xl font-semibold tracking-tight">
-						{row.name}
-					</h2>
-					{row.description ? (
-						<p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
-							{row.description}
+					<div className="min-w-0">
+						<p className="truncate font-medium">{row.original.name}</p>
+						{row.original.description ? (
+							<p className="mt-1 max-w-96 truncate text-xs text-muted-foreground">
+								{row.original.description}
+							</p>
+						) : null}
+					</div>
+				</div>
+			),
+		},
+		{
+			accessorKey: "isActive",
+			header: "Status",
+			cell: ({ row }) => (
+				<Badge variant={row.original.isActive ? "default" : "secondary"}>
+					{row.original.isActive ? "Active" : "Inactive"}
+				</Badge>
+			),
+		},
+		{
+			id: "award",
+			header: "Award",
+			cell: ({ row }) => (
+				<div className="tabular-nums">
+					<p className="font-medium">{formatMinor(row.original.amountMinor)}</p>
+					{row.original.matchPercentageBps ? (
+						<p className="text-xs text-muted-foreground">
+							{row.original.matchPercentageBps / 100}% match
 						</p>
 					) : null}
 				</div>
-				<div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
-					<Button onClick={onEdit} size="sm" variant="outline">
+			),
+		},
+		{
+			accessorKey: "wageringMultiplier",
+			header: "Wagering",
+			cell: ({ row }) => (
+				<span className="tabular-nums">{row.original.wageringMultiplier}x</span>
+			),
+		},
+		{
+			accessorKey: "expiresAfterDays",
+			header: "Expires",
+			cell: ({ row }) => (
+				<span className="tabular-nums">
+					{row.original.expiresAfterDays} days
+				</span>
+			),
+		},
+		{
+			id: "actions",
+			header: "Actions",
+			meta: {
+				headerClassName: "w-0 text-right",
+				cellClassName: "text-right",
+			},
+			cell: ({ row }) => (
+				<div className="flex justify-end gap-1.5">
+					<Button
+						aria-label={`Edit ${row.original.name}`}
+						onClick={() => onEdit(row.original)}
+						size="sm"
+						variant="outline"
+					>
 						<Edit3Icon data-icon="inline-start" /> Edit
 					</Button>
-					<Button onClick={onStatus} size="sm" variant="outline">
-						{row.isActive ? "Deactivate" : "Activate"}
+					<Button
+						aria-label={`${row.original.isActive ? "Deactivate" : "Activate"} ${row.original.name}`}
+						onClick={() => onStatus(row.original)}
+						size="sm"
+						variant="outline"
+					>
+						{row.original.isActive ? "Deactivate" : "Activate"}
 					</Button>
 				</div>
-			</div>
-		</article>
+			),
+		},
+	];
+
+	return (
+		<div className="overflow-hidden rounded-xl border border-border">
+			<AdminDataTable
+				columns={columns}
+				data={rows}
+				getRowId={(row) => row.id}
+				rowClassName="[&>td]:px-4 [&>td]:py-4"
+				tableClassName="min-w-[58rem] [&_th]:px-4"
+			/>
+		</div>
 	);
 }
 
@@ -1039,14 +1106,21 @@ function DefinitionListSkeleton() {
 		<output
 			aria-busy="true"
 			aria-label="Loading bonus definitions"
-			className="block space-y-3"
+			className="block overflow-hidden rounded-xl border border-border"
 		>
-			{["one", "two", "three", "four", "five"].map((key) => (
-				<div
-					className="h-44 animate-pulse rounded-xl bg-muted/50"
-					key={`bonus-definition-loading-${key}`}
-				/>
-			))}
+			<div className="h-10 animate-pulse border-b border-border bg-muted/30" />
+			<div className="divide-y divide-border">
+				{["one", "two", "three", "four", "five"].map((key) => (
+					<div
+						className="flex h-20 items-center gap-4 px-4"
+						key={`bonus-definition-loading-${key}`}
+					>
+						<div className="size-14 animate-pulse rounded-lg bg-muted/50" />
+						<div className="h-4 w-56 animate-pulse rounded bg-muted/50" />
+						<div className="ml-auto h-4 w-24 animate-pulse rounded bg-muted/50" />
+					</div>
+				))}
+			</div>
 		</output>
 	);
 }
@@ -1162,6 +1236,13 @@ function splitList(value: string) {
 		.split(",")
 		.map((item) => item.trim())
 		.filter(Boolean);
+}
+
+function formatMinor(value: number) {
+	return new Intl.NumberFormat("en-US", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	}).format(value / 100);
 }
 
 function errorMessage(error: unknown, fallback: string) {
