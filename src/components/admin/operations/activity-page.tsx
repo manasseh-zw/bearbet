@@ -167,23 +167,8 @@ export function ActivityPage({
 			</header>
 
 			<AdminTableToolbar ariaLabel="Activity filters">
-				<Select value={query.tab} onValueChange={changeTab}>
-					<SelectTrigger
-						aria-label="Activity view"
-						className="h-9 w-full lg:w-44"
-					>
-						<SelectValue>{tabLabels[query.tab]}</SelectValue>
-					</SelectTrigger>
-					<SelectContent align="start">
-						{(Object.keys(tabLabels) as AdminActivityTab[]).map((tab) => (
-							<SelectItem key={tab} value={tab}>
-								{tabLabels[tab]}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
 				<div className="relative min-w-0 flex-1 lg:max-w-md">
-					<SearchIcon className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground" />
+					<SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
 					<Input
 						aria-label="Search activity"
 						className="h-9 pl-9"
@@ -199,6 +184,21 @@ export function ActivityPage({
 						}}
 					/>
 				</div>
+				<Select value={query.tab} onValueChange={changeTab}>
+					<SelectTrigger
+						aria-label="Activity view"
+						className="h-9 w-full lg:w-44"
+					>
+						<SelectValue>{tabLabels[query.tab]}</SelectValue>
+					</SelectTrigger>
+					<SelectContent align="start">
+						{(Object.keys(tabLabels) as AdminActivityTab[]).map((tab) => (
+							<SelectItem key={tab} value={tab}>
+								{tabLabels[tab]}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 				{showTypeFilter ? (
 					<MultiSelect
 						ariaLabel="Activity operation types"
