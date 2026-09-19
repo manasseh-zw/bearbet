@@ -308,7 +308,7 @@ Borrow the session-query and middleware split from `/Users/manasseh/Projects/wor
 - Vercel's Nitro output gives the TanStack server-function RPC namespace a 45-second maximum duration. This covers the BigBang adapter's 20-second upstream request timeout plus database and response overhead while remaining within Hobby limits.
 - Better Auth trusts the canonical production origin plus the project-scoped Vercel preview/branch hostname pattern; arbitrary Vercel deployments remain untrusted.
 - Active provider boundaries remain short request-response functions: authenticate, validate, capture or execute one database transaction, persist the idempotent result, and respond. BigBang sandbox callbacks are capture-only for the current provider limitation; the authenticated close path owns session-level reconciliation.
-- Catalogue synchronization is triggered manually for the first demo with `npm run catalogue:sync` (the same domain service used by the protected admin action) and may later run as a scheduled job.
+- Catalogue synchronization is triggered manually for the first demo with `npm run catalogue:sync` (the same domain service used by the protected admin action), persists provider rows in batched upserts for serverless database latency, and may later run as a scheduled job.
 - Better Auth rate limiting uses database-backed storage in production because in-memory state is not shared across serverless instances.
 - Bearbet does not require a WebSocket server for the MVP.
 

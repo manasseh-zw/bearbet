@@ -22,6 +22,7 @@ const searchCache = new Map<
 >();
 const searchCacheTtlMs = 30_000;
 const searchCacheMaxEntries = 250;
+const catalogueUpsertBatchSize = 250;
 
 export function clearCatalogueSearchCache() {
 	searchCache.clear();
@@ -84,31 +85,41 @@ export async function syncGameCatalogue(input: {
 				.where(eq(game.providerId, integrationProvider));
 		}
 
-		for (const candidate of games) {
-			const values = toGameRecord(integrationProvider, candidate, now);
+		const gameRecords = games.map((candidate) =>
+			toGameRecord(integrationProvider, candidate, now),
+		);
+		for (
+			let offset = 0;
+			offset < gameRecords.length;
+			offset += catalogueUpsertBatchSize
+		) {
+			const batch = gameRecords.slice(
+				offset,
+				offset + catalogueUpsertBatchSize,
+			);
 			await transaction
 				.insert(game)
-				.values(values)
+				.values(batch)
 				.onConflictDoUpdate({
 					target: [game.providerId, game.externalId],
 					// Category is also an admin-owned curation field. Keep the
 					// existing value when a provider game is seen again.
 					set: {
-						code: values.code,
-						name: values.name,
-						contentProvider: values.contentProvider,
-						type: values.type,
-						description: values.description,
-						rtp: values.rtp,
-						bannerUrl: values.bannerUrl,
-						coverUrl: values.coverUrl,
-						supportsFun: values.supportsFun,
-						isAvailable: values.isAvailable,
-						isMobile: values.isMobile,
-						hasFreeSpins: values.hasFreeSpins,
-						hasLobby: values.hasLobby,
-						hasTables: values.hasTables,
-						lastSeenAt: values.lastSeenAt,
+						code: sql.raw("excluded.code"),
+						name: sql.raw("excluded.name"),
+						contentProvider: sql.raw("excluded.content_provider"),
+						type: sql.raw("excluded.type"),
+						description: sql.raw("excluded.description"),
+						rtp: sql.raw("excluded.rtp"),
+						bannerUrl: sql.raw("excluded.banner_url"),
+						coverUrl: sql.raw("excluded.cover_url"),
+						supportsFun: sql.raw("excluded.supports_fun"),
+						isAvailable: sql.raw("excluded.is_available"),
+						isMobile: sql.raw("excluded.is_mobile"),
+						hasFreeSpins: sql.raw("excluded.has_free_spins"),
+						hasLobby: sql.raw("excluded.has_lobby"),
+						hasTables: sql.raw("excluded.has_tables"),
+						lastSeenAt: sql.raw("excluded.last_seen_at"),
 						updatedAt: now,
 					},
 				});
