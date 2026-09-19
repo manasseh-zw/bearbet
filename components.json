@@ -23,6 +23,7 @@
   "menuAccent": "subtle",
   "registries": {
     "@unlumen-ui": "https://ui.unlumen.com/r/{name}.json",
-    "@efferd": "https://efferd.com/r/{style}/{name}.json"
+    "@efferd": "https://efferd.com/r/{style}/{name}.json",
+    "@coss": "https://coss.com/ui/r/{name}.json"
   }
 }
