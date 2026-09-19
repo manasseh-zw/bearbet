@@ -9,6 +9,17 @@ type PasswordResetEmailInput = {
 	url: string;
 };
 
+export function formatPasswordResetEmailPreview({
+	to,
+	url,
+}: PasswordResetEmailInput) {
+	return [
+		"[BearBet] Password reset email preview",
+		`To: ${to}`,
+		`Reset URL: ${url}`,
+	].join("\n");
+}
+
 export async function sendPasswordResetEmail({
 	to,
 	url,
@@ -20,9 +31,13 @@ export async function sendPasswordResetEmail({
 			);
 		}
 
-		console.warn(
-			"Password reset email skipped because Resend is not configured.",
-		);
+		if (env.NODE_ENV === "development") {
+			console.info(formatPasswordResetEmailPreview({ to, url }));
+		} else {
+			console.warn(
+				"Password reset email skipped because Resend is not configured.",
+			);
+		}
 		return;
 	}
 

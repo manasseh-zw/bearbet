@@ -9,7 +9,6 @@ import {
 	ChevronRightIcon,
 	CircleDollarSignIcon,
 	LoaderCircleIcon,
-	RefreshCcwIcon,
 	SearchIcon,
 	UserRoundIcon,
 	UserRoundPlusIcon,
@@ -20,8 +19,13 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
 	AdminDataTable,
+	AdminTableEmpty,
+	AdminTableError,
+	AdminTableLoading,
+	AdminTableMobileList,
 	type AdminTableColumn,
 	AdminTablePagination,
+	AdminTableToolbar,
 } from "#/components/admin/data-table";
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Badge } from "#/components/ui/badge";
@@ -51,7 +55,6 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "#/components/ui/sheet";
-import { Skeleton } from "#/components/ui/skeleton";
 import { Textarea } from "#/components/ui/textarea";
 import { adminUserQueries } from "#/lib/queries/admin-user.queries";
 import type {
@@ -133,8 +136,6 @@ const sortLabels: Record<AdminUserQueryType["sort"], string> = {
 	name: "Name",
 	email: "Email",
 };
-
-const loadingRowKeys = ["one", "two", "three", "four", "five", "six"];
 
 export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 	const usersQuery = useQuery(adminUserQueries.list(query));
@@ -311,10 +312,7 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 				</Badge>
 			</header>
 
-			<section
-				aria-label="User filters"
-				className="flex flex-col gap-3 py-5 lg:flex-row lg:items-center"
-			>
+			<AdminTableToolbar ariaLabel="User filters">
 				<div className="relative min-w-0 flex-1 lg:max-w-md">
 					<SearchIcon className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground" />
 					<Input
@@ -390,26 +388,47 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 						Clear
 					</Button>
 				) : null}
-			</section>
+			</AdminTableToolbar>
 
 			<section aria-label="User results" className="pt-5">
 				{usersQuery.isError ? (
-					<ErrorState onRetry={() => void usersQuery.refetch()} />
+					<AdminTableError
+						onRetry={() => void usersQuery.refetch()}
+						title="Users could not be loaded."
+					/>
 				) : usersQuery.isPending ? (
-					<LoadingState />
+					<AdminTableLoading />
 				) : rows.length === 0 ? (
-					<EmptyState
-						hasFilters={hasFilters}
-						onClear={() => {
-							setSearch("");
-							onQueryChange({
-								...query,
-								search: "",
-								status: "all",
-								role: "all",
-								page: 1,
-							});
-						}}
+					<AdminTableEmpty
+						action={
+							hasFilters ? (
+								<Button
+									className="mx-auto"
+									onClick={() => {
+										setSearch("");
+										onQueryChange({
+											...query,
+											search: "",
+											status: "all",
+											role: "all",
+											page: 1,
+										});
+									}}
+									variant="outline"
+								>
+									Clear filters
+								</Button>
+							) : null
+						}
+						description={
+							hasFilters
+								? "Try a different search or clear the filters."
+								: "Registered players will appear here."
+						}
+						icon={<UserRoundIcon />}
+						title={
+							hasFilters ? "No users match these filters." : "No users yet."
+						}
 					/>
 				) : (
 					<>
@@ -424,15 +443,13 @@ export function UsersPage({ query, onQueryChange }: UsersPageProps) {
 								tableClassName="[&_th]:px-4"
 							/>
 						</div>
-						<div className="grid gap-2 md:hidden">
-							{rows.map((row) => (
-								<MobileUserRow
-									key={row.user.id}
-									row={row}
-									onOpen={() => setSelectedUser(row)}
-								/>
-							))}
-						</div>
+						<AdminTableMobileList
+							getKey={(row) => row.user.id}
+							items={rows}
+							renderItem={(row) => (
+								<MobileUserRow row={row} onOpen={() => setSelectedUser(row)} />
+							)}
+						/>
 						<AdminTablePagination
 							pageCount={pageCount}
 							pageIndex={query.page - 1}
@@ -937,64 +954,4 @@ function formatMoney(minor: number, currency: string) {
 		currency,
 		minimumFractionDigits: 2,
 	}).format(minor / 100);
-}
-
-function LoadingState() {
-	return (
-		<div className="grid gap-3 rounded-xl border border-border p-4">
-			<div className="grid gap-3">
-				{loadingRowKeys.map((key) => (
-					<div className="flex items-center gap-3" key={key}>
-						<Skeleton className="size-9" />
-						<Skeleton className="h-4 flex-1" />
-						<Skeleton className="h-4 w-24" />
-						<Skeleton className="h-4 w-28" />
-					</div>
-				))}
-			</div>
-		</div>
-	);
-}
-function ErrorState({ onRetry }: { onRetry: () => void }) {
-	return (
-		<div
-			className="grid gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-8 text-center"
-			role="alert"
-		>
-			<p className="font-medium">Users could not be loaded.</p>
-			<p className="text-sm text-muted-foreground">
-				Check the connection and try again.
-			</p>
-			<Button onClick={onRetry} variant="outline">
-				<RefreshCcwIcon data-icon="inline-start" />
-				Retry
-			</Button>
-		</div>
-	);
-}
-function EmptyState({
-	hasFilters,
-	onClear,
-}: {
-	hasFilters: boolean;
-	onClear: () => void;
-}) {
-	return (
-		<div className="grid gap-3 rounded-xl border border-dashed border-border p-10 text-center">
-			<UserRoundIcon className="mx-auto text-muted-foreground" />
-			<p className="font-medium">
-				{hasFilters ? "No users match these filters." : "No users yet."}
-			</p>
-			<p className="text-sm text-muted-foreground">
-				{hasFilters
-					? "Try a different search or clear the filters."
-					: "Registered players will appear here."}
-			</p>
-			{hasFilters ? (
-				<Button className="mx-auto" onClick={onClear} variant="outline">
-					Clear filters
-				</Button>
-			) : null}
-		</div>
-	);
 }
