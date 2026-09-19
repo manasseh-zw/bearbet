@@ -79,7 +79,11 @@ src/
       admin.tsx
     api/
       auth/$
-      drakon/$key.ts
+      bigbang/
+        user-data.ts
+        balance-change.ts
+        webhook.ts
+      drakon/                    # historical compatibility routes only
   server/
     env.ts
     infra/
@@ -97,14 +101,18 @@ src/
         blob-storage.ts       # normalized public asset upload boundary
       providers/
         provider.types.ts
-        drakon/
-          drakon.types.ts
-          drakon.provider.ts
-          drakon.webhook.ts
         fixture/
           fixture.types.ts
           fixture.provider.ts
           games.json
+        bigbang/
+          bigbang.provider.ts
+          bigbang.wallet.ts
+          bigbang.webhook.ts
+        drakon/                    # historical adapter and evidence tests only
+          drakon.types.ts
+          drakon.provider.ts
+          drakon.webhook.ts
     domains/
       user/
         user.service.ts
@@ -240,7 +248,7 @@ When completed wagering reaches the required amount, Bearbet converts the award'
 
 ## Provider boundary
 
-The application depends on a small functional contract, not on Drakon:
+The application depends on a small provider-neutral functional contract:
 
 ```ts
 type CasinoProvider = {
@@ -249,24 +257,33 @@ type CasinoProvider = {
 }
 ```
 
-Callbacks use a provider-specific adapter that authenticates and normalizes the payload. The Drakon route dispatches each normalized callback directly to its owning domain: account details to player, balance reads to wallet, and bets, wins, or refunds to gameplay. For bets, the route resolves trusted category and content-provider metadata from the persisted catalogue before calling gameplay. Catalogue metadata is excluded from financial callback fingerprints. The `simulated` provider must produce the same normalized bet, win, and refund commands as Drakon. It is a development and demo dependency, not a separate fake wallet implementation.
+The fixture provider is the canonical Bearbet money path. It runs the production
+gameplay, bonus, wallet, ledger, and history services so every per-round result
+is owned and reconcilable by Bearbet.
 
-BigBang is also available behind this contract for its Standard sandbox catalogue and player launch flow. Its demo launches are isolated from wallets. Its sandbox seamless-wallet callbacks must return BigBang's synthetic balance without changing BearBet money, and Standard games report a net round rather than the separate operations required by the current gameplay engine. Keep BigBang financial callbacks disabled until the provider confirms a compatible live event contract. See `bigbang-sandbox-findings.md`.
+BigBang is the active genuine-playable provider. Its authenticated bridge creates
+a provider player from the signed-in Bearbet identity, launches a Standard game,
+stores the provider-account balance immediately after launch, and allows one
+active sandbox session at a time because the tested account balance is shared
+across provider players. At explicit close it calculates `final - launch
+snapshot` and, when sandbox reconciliation is enabled, applies only that delta
+through an idempotent, explicitly-labelled `provider_reconciliation` operation.
+It never copies BigBang's absolute synthetic balance or invents per-round
+transactions when callbacks are absent. The public sandbox launcher remains
+read-only with respect to BearBet wallets.
 
-For the submission, BearBet uses a deliberate hybrid boundary: the fixture
-provider remains the authoritative, database-backed wallet/ledger proof, while
-BigBang supplies the genuine playable provider session. The authenticated
-BigBang bridge creates a provider player from the signed-in BearBet identity,
-launches the game before taking the provider account baseline, and reconciles
-only the session-level balance delta (final minus that post-launch snapshot)
-through an idempotent, explicitly-labelled sandbox operation at close. The
-tested BigBang sandbox account shares its balance across provider players, so
-the bridge allows one active BigBang session at a time and serializes the final
-balance read with the BearBet wallet update. It never copies BigBang's absolute
-synthetic balance or invents per-round transactions when callbacks are absent.
-The public sandbox launcher remains read-only with respect to BearBet wallets.
+BigBang's `user_data`, `balance_change`, and webhook routes validate and capture
+provider traffic, but absent Standard-game callbacks are a documented sandbox
+limitation for the current environment. They must not be used to infer BearBet
+bet, win, or refund operations. See `bigbang-sandbox-findings.md`.
 
-The Greenbear V0 at `/Users/manasseh/Projects/work/greenbear-v0` is the behavioral reference for Drakon authentication, catalogue normalization, launch errors, callback probes, and refund edge cases.
+Drakon was evaluated and retired from the active delivery path. Its adapter,
+callback routes, focused tests, and findings remain for historical evidence and
+do not represent a supported playable integration. Repeated launches ended at
+the provider's `/game-error` page even after callback probes passed.
+
+The Greenbear V0 at `/Users/manasseh/Projects/work/greenbear-v0` remains the
+behavioral reference for that historical Drakon investigation.
 
 ## Route and authorization pattern
 
@@ -288,7 +305,7 @@ Borrow the session-query and middleware split from `/Users/manasseh/Projects/wor
 - Local development uses the pinned PostgreSQL image in `docker-compose.yml`.
 - The first hosted deployment targets Vercel through the existing Nitro integration and a managed Supabase PostgreSQL database.
 - Serverless database connections use Supabase's transaction pooler rather than opening unbounded direct connections.
-- Drakon callbacks remain short request-response functions: authenticate, validate, execute one database transaction, persist the idempotent result, and respond.
+- Active provider boundaries remain short request-response functions: authenticate, validate, capture or execute one database transaction, persist the idempotent result, and respond. BigBang sandbox callbacks are capture-only for the current provider limitation; the authenticated close path owns session-level reconciliation.
 - Catalogue synchronization is chunked and resumable. It is triggered manually for the first demo and may later run as a scheduled job.
 - Better Auth rate limiting uses database-backed storage in production because in-memory state is not shared across serverless instances.
 - Bearbet does not require a WebSocket server for the MVP.
@@ -325,10 +342,10 @@ The design pass must cover focus, hover, disabled, loading, empty, error, and un
 ```text
 Register or log in
 → receive persistent $1,000 cash credit exactly once
-→ browse a normalized simulated catalogue
-→ launch a simulated game
+→ browse the synchronized catalogue
+→ launch the fixture simulator or a BigBang playable session
 → place a bet and settle a win or loss
-→ retry the callback without moving money twice
+→ retry the simulator operation without moving money twice
 → view the same ledger as the player and as an admin
 ```
 

@@ -2,6 +2,12 @@
 
 Observed on 2026-09-17 with a BearBet BigBang sandbox key. Credentials and signed game URLs are intentionally omitted.
 
+Current status: BigBang is the active genuine-playable provider. The
+authenticated hybrid bridge is implemented in the normal player route; the
+fixture simulator remains the canonical BearBet wallet and per-round proof.
+Sandbox wallet callbacks are intentionally capture-only because the tested
+environment does not emit them.
+
 ## Proven behavior
 
 - `GET /api/v1/games?type=standard&limit=9` returned a usable Standard catalogue with IDs, display titles, providers, game types, and artwork.
@@ -71,7 +77,7 @@ On 2026-09-18, BearBet repeated the sandbox test with an append-only receiver ca
 - BigBang sent no `user_data` or `balance_change` request. BearBet's receiver file and ngrok inspector both recorded zero provider callbacks for the player.
 - BearBet repeated the test with a previously unknown `bearbet-seamless-*` token and deliberately skipped `POST /users/create` in case explicit player creation selected managed-wallet mode. BigBang still auto-created the provider player, processed the 1.50 USD debit in its own wallet, and sent zero callbacks.
 
-This contradicts the dashboard statement that sandbox wallet callbacks fire with `sandbox: true`. The tested sandbox session used BigBang's managed synthetic wallet even though Wallet RGS URLs were saved. Treat sandbox Wallet RGS support as a provider-side blocker until BigBang fixes or explains the account configuration. Do not redesign BearBet's money engine around the documented callback shape without provider-originated evidence.
+This contradicts the dashboard statement that sandbox wallet callbacks fire with `sandbox: true`. The tested sandbox session used BigBang's managed synthetic wallet even though Wallet RGS URLs were saved. Treat sandbox Wallet RGS support as a provider-side limitation, not as a release blocker for the hybrid path. Do not redesign BearBet's money engine around the documented callback shape without provider-originated evidence.
 
 ## Hybrid submission plan
 
@@ -108,21 +114,20 @@ but only as an explicit session-level reconciliation:
   reconciliation pending rather than guessing.
 
 This bridge is safe only behind an authenticated player session, an explicit
-sandbox flag, a stored baseline, and a unique reconciliation key. The current
-public throwaway launcher intentionally has none of those properties, so it
-must not mutate BearBet balances. Until that authenticated flow is implemented,
-the fixture simulator is the wallet source of truth and BigBang is the gameplay
-source of truth.
+sandbox flag, a stored baseline, and a unique reconciliation key. The public
+throwaway launcher intentionally has none of those properties, so it must not
+mutate BearBet balances. The authenticated bridge now owns the playable-provider
+flow, while the fixture simulator remains the wallet source of truth and BigBang
+is the gameplay source of truth.
 
-## Remaining integration work
+## Deferred provider work (not on the active MVP path)
 
 Bearbet now exposes separate `user_data` and `balance_change` routes. The balance-change boundary limits request size, validates the documented HMAC, parses signed decimal amounts into integer minor units, and rejects live money changes until the financial mapping is complete. Sandbox callbacks return the synthetic balance without touching Bearbet funds. A public ngrok probe confirmed both routes return successful responses, but a provider-originated callback still needs to be captured.
 
-1. Capture BigBang-originated sandbox callbacks and verify the observed payload, signature string representation, player identity, retry behavior, and event types.
-2. Persist duplicate callback responses by `transaction_id` before enabling live money changes.
-3. Decide on the live contract before connecting monetary callbacks. Standard games provide signed balance deltas with `round` metadata; Premium can provide separate bet, win, and refund events. A live seamless-wallet key or provider confirmation is needed before Bearbet changes its round model.
-4. Synchronize the BigBang catalogue into PostgreSQL, expose it in the normal lobby, and replace the throwaway launcher with the persisted Bearbet game-session UI. This authenticated hybrid bridge is now implemented; the configured sandbox catalogue currently imports 3,247 Standard games.
-5. Add provider-originated proof that a real callback produces one correct wallet operation, ledger movement, round result, and history entry.
+1. Capture BigBang-originated sandbox callbacks and verify the observed payload, signature string representation, player identity, retry behavior, and event types if the provider begins emitting them.
+2. Persist duplicate callback responses by `transaction_id` before enabling any future live callback money changes.
+3. Revisit the live contract if BigBang supplies a compatible seamless-wallet key or provider confirmation. Standard games currently provide net rounds, while the Bearbet engine models separate bet, win, and refund evidence.
+4. Add provider-originated per-round wallet proof only after a compatible callback contract exists. This is not required by the current simulator-plus-BigBang MVP path.
 
 Do not use sandbox callbacks to alter BearBet balances. The fixture provider remains the repeatable, database-backed demo for the current project.
 

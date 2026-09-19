@@ -28,15 +28,33 @@ An administrator must be able to manage users, demo balances, bonuses, games, tr
 ## Architecture
 
 ```text
-Browser → Bearbet backend → Casino provider module → Drakon API
-                     ↑
-              Drakon callbacks
+Browser → Bearbet backend → provider boundary → fixture simulator or BigBang
+                                      ↑
+                         provider-specific callbacks (when available)
 ```
 
 - Sensitive provider credentials remain on the server.
 - Bearbet owns users, wallets, bonuses, wagering progress, transactions, favourites, and recently played games.
-- Keep the casino integration behind a provider boundary so Drakon can be replaced without rebuilding the product.
+- Keep the casino integration behind a provider boundary so the fixture and BigBang paths can evolve without rebuilding the product.
 - Persist gameplay operations idempotently so callback retries cannot move money twice.
+
+### Superseding provider decision
+
+The original brief assumed Drakon as the external provider. That integration was
+tested but is not usable for the current delivery: playable launches repeatedly
+ended at the provider's `/game-error` page even after callback probes passed.
+The implementation decision now supersedes that assumption:
+
+- The deterministic fixture simulator is the canonical Bearbet wallet, bonus,
+  immutable-ledger, and per-round history demonstration.
+- BigBang is the genuine playable-provider path. Its authenticated bridge stores
+  the provider balance baseline after launch and reconciles only the final
+  session delta at explicit close.
+- BigBang sandbox callbacks remain capture-only when they are absent or do not
+  expose a compatible per-round contract. They must not be used to invent
+  Bearbet bet, win, or refund operations.
+- Drakon code and findings remain historical evidence only and are not a release
+  dependency.
 
 ## Functional requirements
 
@@ -60,7 +78,7 @@ Browser → Bearbet backend → Casino provider module → Drakon API
 
 ### Casino lobby and catalogue
 
-- Synchronize games from Drakon rather than hardcoding them.
+- Synchronize games from the configured provider rather than hardcoding them. The active external catalogue is BigBang; the fixture catalogue remains the deterministic fallback.
 - Store provider game ID, name, provider, category where available, thumbnail, status, and launch metadata.
 - Support search by name, provider, and category.
 - Present useful sections such as featured, popular, new, categories, favourites, and recently played.
@@ -146,7 +164,7 @@ Operations:
 
 - Registration/login and profile.
 - Cash and bonus wallets with demo funding.
-- Drakon integration, catalogue, launch, bet, win, and refund handling.
+- Provider-boundary catalogue and launch handling, with the fixture simulator proving bet, win, refund, and wallet behavior and BigBang supplying genuine playable sessions.
 - Bonus and wagering systems.
 - Search, categories, transaction history, and bet history.
 - Admin panel, responsive UI, basic security, and error handling.
@@ -162,12 +180,16 @@ Operations:
 Before treating the provider integration as complete, prove:
 
 ```text
-Agent authentication → Catalogue → Display games → Launch one game
-→ Identify Bearbet player → Demo bet → Win/loss → Wallet update
-→ Persist transaction
+Provider authentication → Catalogue → Display games → Launch one game
+→ Identify Bearbet player → Playable provider session or fixture round
+→ Wallet/history proof → Persist transaction evidence
 ```
 
-The technical evidence should identify endpoints, authentication, launch and player identity, wallet callbacks, transaction behavior, and provider limitations. The Greenbear V0 completed this investigation as far as the available Drakon agent allowed; see `drakon-v0-findings.md`.
+The technical evidence should identify endpoints, authentication, launch and
+player identity, wallet callbacks where they exist, transaction behavior, and
+provider limitations. BigBang evidence and the authenticated hybrid bridge are
+the active external-provider proof; the Greenbear V0 and Drakon findings are
+archival investigation records.
 
 ## Definition of done
 

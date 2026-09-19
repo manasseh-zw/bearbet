@@ -1,8 +1,8 @@
 # Money engine review
 
-Review date: 2026-09-12. Scope: wallet, bonus, gameplay, simulator, withdrawals, Drakon callback wiring, schema constraints, and existing policy and integration tests. Production code was not changed.
+Review date: 2026-09-12. Scope: wallet, bonus, gameplay, simulator, withdrawals, historical Drakon callback wiring, schema constraints, and existing policy and integration tests. Production code was not changed.
 
-Resolution status: all findings were addressed after this review. The game catalogue now persists trusted category and content-provider metadata, the Drakon route supplies that metadata to gameplay, and callback fingerprints exclude the mutable enrichment.
+Resolution status: the findings were addressed after this review. The game catalogue now persists trusted category and content-provider metadata, and callback fingerprints exclude mutable enrichment. Drakon callback behavior is retained in this document as historical evidence only; the active delivery path is the fixture simulator plus the authenticated BigBang bridge.
 
 ## Findings
 
@@ -60,4 +60,6 @@ Ran `npm test` against local PostgreSQL with the two new assertions enabled norm
 
 Final checks: `npm test` reports 44 passed and 2 TODO; `npm run typecheck`, `npm run check`, and `npm run build` pass. No migrations were needed or applied. Dependencies were restored with `npm ci` from the committed package-lock after an initial pnpm invocation created temporary package-manager files; those files were removed and no dependency changes are included.
 
-Prioritize the three P1 fixes, then callback eligibility wiring. Review findings remain open; the existing green checks do not establish lifecycle correctness.
+The reproductions above remain useful regression context. Current lifecycle and
+access-boundary gaps are tracked in `master-task-list.md`; no active MVP task
+depends on completing a live Drakon callback path.

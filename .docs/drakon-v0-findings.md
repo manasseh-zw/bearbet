@@ -1,5 +1,8 @@
 # Drakon V0 findings
 
+> Historical evidence only. Drakon was retired from the active delivery path
+> after repeated playable launches ended at the provider's `/game-error` page.
+
 Observed against a live self-registered Drakon agent during the Greenbear V0 proof. Credentials, callback keys, and session URLs are intentionally omitted.
 
 ## Proven behavior
@@ -40,7 +43,7 @@ Catalogue entries include `only_demo`, which the guide omits. In practice:
 - Select the monetary value according to `method`, rather than choosing the first generic amount field.
 - Compatibility exceptions should be limited to authenticated `game=test_game` probes. Normal gameplay remains strict.
 
-## Current launch blocker
+## Historical launch blocker
 
 Drakon returns HTTP `200` when it fails to create a playable session. A fresh fun-mode request for demo-compatible game `2108` returned a game object with `only_demo: 1`, followed by:
 

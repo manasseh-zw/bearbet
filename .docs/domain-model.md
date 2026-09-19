@@ -24,9 +24,16 @@ Bearbet verifies the user, game, and playable balance. It creates a game session
 
 ### 5. Play and update the wallet
 
-The provider sends bets, wins, and refunds. Bearbet authenticates each callback, resolves the user, session, game, and round, records the provider operation, moves the wallet balance, and inserts ledger evidence in one database transaction.
+The fixture simulator sends normalized bet, win, and refund commands through the
+production gameplay service. Bearbet resolves the user, session, game, and round,
+records the provider operation, moves the wallet balance, and inserts ledger
+evidence in one database transaction. An identical operation returns the stored
+response without moving funds again.
 
-An identical callback returns the original response without moving funds again.
+The active BigBang path is a genuine provider session. Its authenticated bridge
+stores the provider-account balance after launch and, on explicit close,
+reconciles only the final session delta. Absent sandbox callbacks are not
+interpreted as per-round Bearbet financial events.
 
 ### 6. Use a bonus
 
@@ -115,7 +122,11 @@ Types include welcome credit, demo top-up, bet, win, refund, withdrawal reserve,
 
 ### Game provider
 
-The content vendor reported by the casino integration, such as Evolution. It supports provider filtering and provider-level metadata. Drakon itself is the integration provider, not necessarily the content vendor.
+The content vendor reported by the configured casino integration, such as
+Evolution. It supports provider filtering and provider-level metadata. BigBang
+is the active external integration provider; the fixture provider supplies the
+deterministic catalogue. Drakon is retained only as a historical investigation
+record, not as an active integration.
 
 ### Game
 

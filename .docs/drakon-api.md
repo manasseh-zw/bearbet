@@ -1,5 +1,9 @@
 # Drakon integration reference
 
+> Historical reference only. Drakon is not an active Bearbet delivery
+> dependency. The current playable path uses the fixture simulator plus the
+> authenticated BigBang bridge.
+
 Normalized from `drakon_api_integration_en_v1.pdf`. Base URL:
 
 ```text

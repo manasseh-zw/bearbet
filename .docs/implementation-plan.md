@@ -12,11 +12,11 @@ This is the current administration and release sequence. Update this section whe
 - **Phase 2, users, complete.** Admin user queries, URL-backed filters and sorting, responsive users UI, detail actions, wallet adjustments, bonus assignment, fresh-session authorization, session revocation, and transaction-scoped audits are implemented and tested.
 - **Phase 3, withdrawals and operations, complete.** Admin withdrawal projections, offset-paginated review queue, cursor-paginated wallet/gameplay/withdrawal/audit activity, responsive review controls, and URL-backed operational filters are implemented and tested on top of the audited review mutation. The UI closeout puts search first in the Users, Withdrawals, and Activity toolbars and uses input-sized search icons throughout.
 - **Phase 4, games, complete.** The admin Games route now syncs the provider catalogue, filters and paginates the local catalogue, and applies reason-confirmed audited enable/disable, category, featured, popular, and new curation changes while preserving local fields during sync.
-- **Phase 5, bonuses, complete.** The admin Bonuses route lists, creates, edits, activates, and deactivates audited definitions while preserving the rules snapshotted into existing awards.
+- **Phase 5, bonuses, complete.** The admin Bonuses route lists, creates, edits, activates, and deactivates audited definitions, supports managed public thumbnails, and preserves the rules snapshotted into existing awards.
 - **Phase 6, live overview and player gaps, current.** Replace illustrative overview data with live operational counts, then finish profile reads and edits and lifecycle/access-boundary proof.
 - **Phase 7, release gate, final.** Complete rate limits, redacted logs, secure headers, health checks, clean-install verification, accessibility checks, and reviewer evidence.
 
-The Phase 3 foundation and UI closeout, the Phase 4 game-management slice, and the Phase 5 bonus-definition slice are complete and verified. The next slice is the live admin overview; remaining player profile and access-boundary proof stays in the verification queue.
+The Phase 3 foundation and UI closeout, the Phase 4 game-management slice, and the Phase 5 bonus-definition and thumbnail slice are complete and verified. The next slice is the live admin overview; remaining player profile and access-boundary proof stays in the verification queue.
 
 ## Where the project stands
 
@@ -33,7 +33,8 @@ The Phase 3 foundation and UI closeout, the Phase 4 game-management slice, and t
 - The wallet engine performs exact, atomic, retry-safe movements across cash, bonus, and reserved cash.
 - The bonus engine handles activation, eligibility, wagering progress, completion, conversion, refund effects, expiry, exhaustion, and cancellation.
 - The gameplay engine handles bets, wins, losses, and refunds through the same wallet and bonus services used by the rest of the application.
-- The deterministic fixture runner exercises production gameplay logic. The Drakon and BigBang adapters and callback boundaries have contract tests.
+- The deterministic fixture runner exercises the production gameplay, bonus, wallet, and ledger services. It is the canonical BearBet money demonstration. The BigBang adapter provides the genuine playable-provider path; its authenticated bridge persists a provider baseline and reconciles only the final session delta at explicit close.
+- Drakon was investigated and is no longer an active delivery dependency. Its adapter, callback route, tests, and findings remain as historical evidence only; no release milestone depends on a playable Drakon session.
 - The configured BigBang sandbox catalogue has been synchronized into PostgreSQL. Authenticated game cards can open a signed BigBang Standard session, preserve the provider-managed balance baseline, and reconcile only the final session delta at explicit close.
 - Catalogue synchronization persists provider data and preserves Bearbet-owned availability and curation fields.
 - The protected admin shell and users slice are live. Admin users can search and filter accounts, inspect player and wallet projections, suspend or activate accounts, adjust cash, and assign bonuses with reasons and audit evidence.
@@ -46,13 +47,13 @@ The Phase 3 foundation and UI closeout, the Phase 4 game-management slice, and t
 
 The player wallet, game, history, and bonus journeys are connected to the domain services. Access-boundary and full journey tests still need to prove cross-user rejection, suspended-player rejection, duplicate-click behavior, failed over-withdrawals, password lifecycle behavior, and refresh persistence. Profile reads and safe edits are still pending.
 
-The admin shell, shared table foundation, password security flows, users slice, withdrawals/operations slice, Games slice, and bonus-definition slice are complete. The withdrawal queue returns explicit player, wallet, reviewer, and decision projections. Activity reads cover immutable wallet operations, provider gameplay operations, withdrawal history, and admin audit entries with cursor pagination. Admin filter toolbars now use a consistent search-first order with compact search affordances, and the admin page headings use the standard bold text treatment with tighter header spacing. Live Drakon play remains separately blocked by provider launch behavior.
+The admin shell, shared table foundation, password security flows, users slice, withdrawals/operations slice, Games slice, and bonus-definition slice are complete. The withdrawal queue returns explicit player, wallet, reviewer, and decision projections. Activity reads cover immutable wallet operations, provider gameplay operations, withdrawal history, and admin audit entries with cursor pagination. Admin filter toolbars now use a consistent search-first order with compact search affordances, and the admin page headings use the standard bold text treatment with tighter header spacing. The provider decision is now closed: the fixture simulator is the wallet and ledger source of truth, while BigBang supplies genuine playable sessions. Drakon's failed launch behavior is retained as historical evidence, not as a current blocker.
 
 A reviewer can now drive top-ups and withdrawal reservations from the Wallet, manage users, review pending withdrawals, curate the provider game catalogue, manage bonus definitions, and inspect the resulting wallet, withdrawal, gameplay, and audit activity from the admin portal. The next reviewer-visible outcome is a live operational overview.
 
 ### Agreed delivery direction
 
-The original player-first order has delivered the wallet, playable fixture, history, bonus, game catalogue, and player collection journeys. The remaining work now follows the current delivery phases above: build the live overview and remaining player gaps, then complete release hardening. Promotions and VIP remain honest unavailable states until a later scope defines them.
+The original player-first order has delivered the wallet, playable fixture, history, bonus, game catalogue, player collection, BigBang playable-session, and admin bonus-management journeys. The remaining work now follows the current delivery phases above: build the live overview and remaining player gaps, then complete release hardening. Promotions and VIP remain honest unavailable states until a later scope defines them.
 
 ## Delivery rules
 
@@ -61,7 +62,7 @@ The original player-first order has delivered the wallet, playable fixture, hist
 3. Every protected server function authenticates the session and checks player status, ownership, or administrator role. Route guards only manage navigation.
 4. Components call TanStack server functions. Domain services keep business rules and call Drizzle directly.
 5. The wallet and immutable ledger remain the only money record. History screens read those records instead of introducing presentation-specific transaction tables.
-6. The fixture provider, Drakon, and BigBang use the same normalized catalogue and launch boundary. The fixture remains the authoritative per-round wallet demonstration; BigBang's sandbox balance is reconciled only at explicit session close.
+6. The fixture provider and BigBang use the same normalized catalogue and launch boundary. The fixture remains the authoritative per-round wallet demonstration; BigBang's sandbox balance is reconciled only at explicit session close. Drakon is retained only for historical adapter and callback evidence.
 7. Each slice includes loading, empty, error, disabled, unavailable, keyboard, mobile, and reduced-motion behavior that applies to it.
 8. Finish the focused tests first, then run the full repository checks, inspect the diff, commit, and push the atomic task.
 
@@ -84,11 +85,11 @@ Register -> receive $1,000.00 -> refresh and retain the balance
 
 This stage delivers tasks P01 through P10 in `master-task-list.md`.
 
-## Stage 2: playable fixture journey
+## Stage 2: playable simulator and BigBang journey
 
 The first-party BearBet demo path authenticates an active player, resolves a persisted enabled game, checks playable balance, records a retry-safe session, and wires authenticated game cards to the simulator. The BigBang branch calls the configured provider, creates the provider player, persists the signed launch result and balance baseline, and returns the provider sandbox player UI.
 
-Authenticated browser functions now resolve Lucky Number wins and losses on the server and run them through the existing gameplay service. The interface labels the experience as a BearBet demo and refreshes wallet and transaction history after each round. The Bets view groups persisted operations into round results. Starting the same game resumes the player's active session, including after refresh, while concurrent launches serialize so they cannot create competing sessions. Refund behavior remains implemented in the shared gameplay engine, but its browser proof is deferred until the live provider's cancellation and rollback contract is known.
+Authenticated browser functions now resolve Lucky Number wins and losses on the server and run them through the existing gameplay service. The interface labels the experience as a BearBet demo and refreshes wallet and transaction history after each round. The Bets view groups persisted operations into round results. Starting the same game resumes the player's active session, including after refresh, while concurrent launches serialize so they cannot create competing sessions. Refund behavior remains implemented in the shared gameplay engine; BigBang's sandbox callbacks are capture-only, so provider-originated per-round refund proof is outside the active MVP path.
 
 The BigBang sandbox path deliberately does not treat absent Standard-game
 callbacks as BearBet bet/win events. It takes the provider-account balance
@@ -150,21 +151,30 @@ Admin finds a player -> changes status or balance with a reason
 
 This stage delivers tasks P22 through P24 and A01 through A07.
 
-## Stage 5: live Drakon proof
+## Stage 5: hybrid provider path
 
-The Drakon adapter and callback normalization already have focused tests. Live completion still requires an approved agent and provider-originated evidence.
+The supported playable-provider path is now complete. The deterministic fixture
+simulator is the canonical, fully reconcilable BearBet wallet demonstration. The
+authenticated BigBang bridge supplies a genuine playable Standard-game session,
+stores the provider-account baseline after launch, allows one active sandbox
+session at a time, and applies only `final - launch snapshot` as an idempotent,
+labelled `provider_reconciliation` operation when the player explicitly closes
+the session. Missing BigBang Standard callbacks are not treated as per-round
+BearBet bet, win, or refund events.
 
-Use the same launch orchestration and player UI built for the fixture provider. Preserve token caching, one refresh after authorization failure, request timeouts, fun-mode enforcement, unavailable-game detection, callback authentication, request-size limits, and dashboard probe compatibility.
+Drakon launch and callback work is closed as a historical investigation. The
+adapter and callback tests remain useful evidence, but repeated playable launches
+ended at the provider's `/game-error` page, so Drakon is not part of the active
+release path and no further live-provider milestone depends on it.
 
 Checkpoint:
 
 ```text
-Drakon authentication -> catalogue sync -> supported game launch
--> Bearbet player identity -> provider bet and settlement callback
--> persistent wallet, transaction history, and bet history update once
+Sign in -> launch a persisted BigBang game
+-> play in the provider sandbox -> close explicitly
+-> reconcile only the final session delta once
+-> use the fixture simulator for per-round wallet, bonus, ledger, and history proof
 ```
-
-A catalogue response or a URL that ends at Drakon's game-error page does not pass. Approved Drakon credentials remain the only external blocker. This stage delivers D01 through D04.
 
 ## Stage 6: release and handover
 
@@ -189,6 +199,6 @@ Notifications, advanced filters, two-factor authentication, player limits, VIP, 
 
 ## Immediate task
 
-Phase 5 is complete: the admin Bonuses route manages audited, future-facing bonus definitions while issued awards retain their snapshotted rules. Phase 4 remains complete: the admin Games route syncs and manages the provider catalogue with audited local curation, while authenticated players can favorite games and see prioritized Favorites and Recently played collections. The Users, Withdrawals, and Activity toolbars put search first with input-sized search icons, and the admin page headings now share the Overview typography and tighter spacing.
+Phase 5 is complete: the admin Bonuses route manages audited, future-facing bonus definitions, uploads public thumbnails through the blob-storage infrastructure boundary, and preserves snapshotted rules on issued awards. Phase 4 remains complete: the admin Games route syncs and manages the provider catalogue with audited local curation, while authenticated players can favorite games and see prioritized Favorites and Recently played collections. The hybrid simulator plus BigBang provider path is the active playable strategy; Drakon is archival evidence only. The Users, Withdrawals, and Activity toolbars put search first with input-sized search icons, and the admin page headings now share the Overview typography and tighter spacing.
 
 Keep P04, P10, P22, and P24 in the verification queue. They are important release evidence, but they do not change the next implementation slice.
