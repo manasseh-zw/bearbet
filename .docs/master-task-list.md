@@ -125,7 +125,7 @@ being mistaken for a current implementation blocker.
 - [ ] **R06. Add critical end-to-end coverage.** Automate the reviewer journey and the main admin flow against a known database state.
 - [ ] **R07. Run release checks from a clean install.** Verify migrations, build, typecheck, Biome, unit and integration tests, and critical end-to-end tests.
 - [ ] **R08. Complete visual and accessibility QA.** Check 375, 768, 1280, and 1440 pixel widths, keyboard use, focus order, contrast, labels, reduced motion, layout shift, and broken artwork.
-- [ ] **R09. Deploy with persistent PostgreSQL and production secrets.** Apply migrations, seed the reviewer state, configure the callback URL, and verify restart persistence.
+- [~] **R09. Deploy with persistent PostgreSQL and production secrets.** The `bearbet` Vercel project is live at `https://bearbet.vercel.app` with a public Blob store, a Neon PostgreSQL project, applied migrations, BigBang sandbox credentials, and a seeded administrator. Restart persistence and the remaining release-gate checks still need proof.
 - [ ] **R10. Prepare reviewer evidence.** Document setup, demo credentials, simulator controls, provider status, known limits, and the exact review flow. Capture polished desktop and mobile screenshots plus a short demo.
 
 ## Deferred until after the MVP

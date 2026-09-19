@@ -303,8 +303,8 @@ Borrow the session-query and middleware split from `/Users/manasseh/Projects/wor
 ## Runtime and deployment
 
 - Local development uses the pinned PostgreSQL image in `docker-compose.yml`.
-- The first hosted deployment targets Vercel through the existing Nitro integration and a managed Supabase PostgreSQL database.
-- Serverless database connections use Supabase's transaction pooler rather than opening unbounded direct connections.
+- The hosted deployment runs on Vercel through the existing Nitro integration and a managed Neon PostgreSQL project.
+- Serverless database connections use Neon's pooled endpoint, while Drizzle migrations use the direct Neon endpoint.
 - Active provider boundaries remain short request-response functions: authenticate, validate, capture or execute one database transaction, persist the idempotent result, and respond. BigBang sandbox callbacks are capture-only for the current provider limitation; the authenticated close path owns session-level reconciliation.
 - Catalogue synchronization is chunked and resumable. It is triggered manually for the first demo and may later run as a scheduled job.
 - Better Auth rate limiting uses database-backed storage in production because in-memory state is not shared across serverless instances.

@@ -12,3 +12,6 @@ dist-ssr
 __unconfig*
 todos.json
 data/*.raw.json
+.vercel
+.env*
+.neon
