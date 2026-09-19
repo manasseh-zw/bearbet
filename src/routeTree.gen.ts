@@ -18,8 +18,10 @@ import { Route as AppPlayerRouteRouteImport } from './routes/_app/_player/route'
 import { Route as AppBigbangSandboxRouteImport } from './routes/_app/bigbang-sandbox'
 import { Route as AppPromotionsRouteImport } from './routes/_app/promotions'
 import { Route as AppVipRouteImport } from './routes/_app/vip'
+import { Route as GuestForgotPasswordRouteImport } from './routes/_guest/forgot-password'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
 import { Route as GuestRegisterRouteImport } from './routes/_guest/register'
+import { Route as GuestResetPasswordRouteImport } from './routes/_guest/reset-password'
 import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin/index'
 import { Route as AdminAdminActivityRouteImport } from './routes/_admin/admin/activity'
 import { Route as AdminAdminBonusesRouteImport } from './routes/_admin/admin/bonuses'
@@ -79,6 +81,11 @@ const AppVipRoute = AppVipRouteImport.update({
   path: '/vip',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const GuestForgotPasswordRoute = GuestForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => GuestRouteRoute,
+} as any)
 const GuestLoginRoute = GuestLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -87,6 +94,11 @@ const GuestLoginRoute = GuestLoginRouteImport.update({
 const GuestRegisterRoute = GuestRegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => GuestRouteRoute,
+} as any)
+const GuestResetPasswordRoute = GuestResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => GuestRouteRoute,
 } as any)
 const AdminAdminIndexRoute = AdminAdminIndexRouteImport.update({
@@ -182,8 +194,10 @@ export interface FileRoutesByFullPath {
   '/bigbang-sandbox': typeof AppBigbangSandboxRoute
   '/promotions': typeof AppPromotionsRoute
   '/vip': typeof AppVipRoute
+  '/forgot-password': typeof GuestForgotPasswordRoute
   '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
+  '/reset-password': typeof GuestResetPasswordRoute
   '/admin/activity': typeof AdminAdminActivityRoute
   '/admin/bonuses': typeof AdminAdminBonusesRoute
   '/admin/games': typeof AdminAdminGamesRoute
@@ -207,8 +221,10 @@ export interface FileRoutesByTo {
   '/bigbang-sandbox': typeof AppBigbangSandboxRoute
   '/promotions': typeof AppPromotionsRoute
   '/vip': typeof AppVipRoute
+  '/forgot-password': typeof GuestForgotPasswordRoute
   '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
+  '/reset-password': typeof GuestResetPasswordRoute
   '/admin/activity': typeof AdminAdminActivityRoute
   '/admin/bonuses': typeof AdminAdminBonusesRoute
   '/admin/games': typeof AdminAdminGamesRoute
@@ -237,8 +253,10 @@ export interface FileRoutesById {
   '/_app/bigbang-sandbox': typeof AppBigbangSandboxRoute
   '/_app/promotions': typeof AppPromotionsRoute
   '/_app/vip': typeof AppVipRoute
+  '/_guest/forgot-password': typeof GuestForgotPasswordRoute
   '/_guest/login': typeof GuestLoginRoute
   '/_guest/register': typeof GuestRegisterRoute
+  '/_guest/reset-password': typeof GuestResetPasswordRoute
   '/_app/': typeof AppIndexRoute
   '/_admin/admin/activity': typeof AdminAdminActivityRoute
   '/_admin/admin/bonuses': typeof AdminAdminBonusesRoute
@@ -266,8 +284,10 @@ export interface FileRouteTypes {
     | '/bigbang-sandbox'
     | '/promotions'
     | '/vip'
+    | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/admin/activity'
     | '/admin/bonuses'
     | '/admin/games'
@@ -291,8 +311,10 @@ export interface FileRouteTypes {
     | '/bigbang-sandbox'
     | '/promotions'
     | '/vip'
+    | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/admin/activity'
     | '/admin/bonuses'
     | '/admin/games'
@@ -320,8 +342,10 @@ export interface FileRouteTypes {
     | '/_app/bigbang-sandbox'
     | '/_app/promotions'
     | '/_app/vip'
+    | '/_guest/forgot-password'
     | '/_guest/login'
     | '/_guest/register'
+    | '/_guest/reset-password'
     | '/_app/'
     | '/_admin/admin/activity'
     | '/_admin/admin/bonuses'
@@ -419,6 +443,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVipRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_guest/forgot-password': {
+      id: '/_guest/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof GuestForgotPasswordRouteImport
+      parentRoute: typeof GuestRouteRoute
+    }
     '/_guest/login': {
       id: '/_guest/login'
       path: '/login'
@@ -431,6 +462,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof GuestRegisterRouteImport
+      parentRoute: typeof GuestRouteRoute
+    }
+    '/_guest/reset-password': {
+      id: '/_guest/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof GuestResetPasswordRouteImport
       parentRoute: typeof GuestRouteRoute
     }
     '/_admin/admin/': {
@@ -630,13 +668,17 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 )
 
 interface GuestRouteRouteChildren {
+  GuestForgotPasswordRoute: typeof GuestForgotPasswordRoute
   GuestLoginRoute: typeof GuestLoginRoute
   GuestRegisterRoute: typeof GuestRegisterRoute
+  GuestResetPasswordRoute: typeof GuestResetPasswordRoute
 }
 
 const GuestRouteRouteChildren: GuestRouteRouteChildren = {
+  GuestForgotPasswordRoute: GuestForgotPasswordRoute,
   GuestLoginRoute: GuestLoginRoute,
   GuestRegisterRoute: GuestRegisterRoute,
+  GuestResetPasswordRoute: GuestResetPasswordRoute,
 }
 
 const GuestRouteRouteWithChildren = GuestRouteRoute._addFileChildren(

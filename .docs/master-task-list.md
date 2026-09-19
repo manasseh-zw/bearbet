@@ -84,8 +84,8 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 ### 6. Account completion
 
 - [ ] **P22. Build profile reads and safe edits.** Show personal details, status, registration date, currency, and balances. Never expose role or status as player-controlled fields.
-- [ ] **P23. Complete password flows.** Add forgot-password, reset-password, and fresh-session password change. Local preview or clearly simulated email delivery is acceptable.
-- [ ] **P24. Verify account lifecycle.** Cover refresh, restart persistence, reset token behavior, password change session handling, and suspended account behavior.
+- [x] **P23. Complete password flows.** Forgot-password and reset-password use Better Auth's single-use, expiring tokens with a server-only Resend transport, and the authenticated profile includes a current-password change flow that revokes other sessions. Local development skips delivery with a clear configuration warning until `RESEND_API_KEY` and `RESEND_FROM_EMAIL` are supplied.
+- [~] **P24. Verify account lifecycle.** Password form contracts are covered; refresh, restart persistence, reset-token behavior, password-change session handling, and suspended-account behavior still need browser and integration proof.
 
 ### 7. Administration
 

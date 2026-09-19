@@ -166,6 +166,15 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 						}}
 					</form.Field>
 
+					<div className="-mt-2 text-right">
+						<Link
+							to="/forgot-password"
+							className="text-xs font-medium text-muted-foreground hover:text-primary hover:underline"
+						>
+							Forgot password?
+						</Link>
+					</div>
+
 					<form.Subscribe
 						selector={(state) => [state.canSubmit, state.isSubmitting]}
 					>

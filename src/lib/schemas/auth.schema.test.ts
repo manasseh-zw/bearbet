@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { playerProfileInputSchema } from "./auth.schema";
+import {
+	changePasswordFormSchema,
+	forgotPasswordFormSchema,
+	passwordResetFormSchema,
+	playerProfileInputSchema,
+} from "./auth.schema";
 
 const validProfile = {
 	firstName: "Test",
@@ -26,5 +31,35 @@ test("player profiles reject unsupported currency codes", () => {
 				currencyCode: "BTC",
 			}),
 		/Choose a supported currency/,
+	);
+});
+
+test("password reset forms require matching passwords", () => {
+	assert.throws(
+		() =>
+			passwordResetFormSchema.parse({
+				password: "new-password",
+				confirmPassword: "different-password",
+			}),
+		/Passwords do not match/,
+	);
+});
+
+test("change password forms reject reusing the current password", () => {
+	assert.throws(
+		() =>
+			changePasswordFormSchema.parse({
+				currentPassword: "same-password",
+				password: "same-password",
+				confirmPassword: "same-password",
+			}),
+		/Choose a password different from your current password/,
+	);
+});
+
+test("forgot password forms require an email address", () => {
+	assert.throws(
+		() => forgotPasswordFormSchema.parse({ email: "not-an-email" }),
+		/Invalid email address|valid email address/,
 	);
 });

@@ -12,6 +12,7 @@ import { env } from "#/server/env";
 import { db } from "#/server/infra/db";
 import * as schema from "#/server/infra/db/schema";
 
+import { sendPasswordResetEmail } from "../email/email.service";
 import { provisionNewPlayer } from "./player-provisioning";
 
 export const auth = betterAuth({
@@ -24,7 +25,11 @@ export const auth = betterAuth({
 	trustedOrigins: [env.BETTER_AUTH_URL],
 	emailAndPassword: {
 		enabled: true,
+		resetPasswordTokenExpiresIn: 30 * 60,
 		revokeSessionsOnPasswordReset: true,
+		sendResetPassword: async ({ user, url }) => {
+			await sendPasswordResetEmail({ to: user.email, url });
+		},
 	},
 	session: {
 		cookieCache: {
@@ -40,6 +45,7 @@ export const auth = betterAuth({
 			"/sign-in/email": { max: 5, window: 60 },
 			"/sign-in/username": { max: 5, window: 60 },
 			"/sign-up/email": { max: 3, window: 60 },
+			"/request-password-reset": { max: 3, window: 60 },
 		},
 	},
 	hooks: {

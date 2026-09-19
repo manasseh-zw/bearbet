@@ -108,7 +108,7 @@ This stage delivers tasks P19 through P21. It depends on wallet and gameplay. Ad
 
 ## Stage 4: account, catalogue completion, and administration
 
-Complete player profile and password recovery. Profile edits must exclude role, status, balances, and audit fields. Password changes require a fresh session.
+Complete the player profile and verify the password recovery journey. Forgot-password and reset-password are now wired through Better Auth with a server-only Resend transport, while the authenticated profile provides a current-password change that revokes other sessions. Profile edits must exclude role, status, balances, and audit fields; lifecycle and fresh-session behavior still need browser proof.
 
 Use the persisted player–game favorite and recent-game projections, then move catalogue filtering to indexed, paginated PostgreSQL reads with provider filters, URL state, and the local featured, popular, and new curation flags. These close the original product brief, but they follow the playable and bonus journeys.
 

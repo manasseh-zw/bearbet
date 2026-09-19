@@ -1,6 +1,6 @@
 # Bearbet domain model
 
-Status: identity, player, wallet, welcome credit, wallet operation, bonus, withdrawal, game-session, round, provider-operation, game-engagement, and admin-audit schemas are implemented. Money, wagering, gameplay, and withdrawal rules are enforced by pure policy tests and PostgreSQL integration tests. The first administrator mutation slice now uses fresh-session authorization, an in-transaction active-admin check, and audited withdrawal review; remaining management workflows are planned.
+Status: identity, player, wallet, welcome credit, wallet operation, bonus, withdrawal, game-session, round, provider-operation, game-engagement, and admin-audit schemas are implemented. Money, wagering, gameplay, and withdrawal rules are enforced by pure policy tests and PostgreSQL integration tests. Better Auth now owns the complete password recovery/change path, with Resend as the server-only reset-email transport. The first administrator mutation slice now uses fresh-session authorization, an in-transaction active-admin check, and audited withdrawal review; remaining management workflows are planned.
 
 ## Required player journey
 

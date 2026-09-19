@@ -55,11 +55,45 @@ export const loginFormSchema = z.object({
 	password: z.string().min(1, "Enter your password"),
 });
 
+export const passwordSchema = z.string().min(8).max(128);
+
+export const forgotPasswordFormSchema = z.object({
+	email: z.email("Enter a valid email address"),
+});
+
+export const passwordResetFormSchema = z
+	.object({
+		password: passwordSchema,
+		confirmPassword: z.string().min(1, "Confirm your password"),
+	})
+	.refine((input) => input.password === input.confirmPassword, {
+		message: "Passwords do not match",
+		path: ["confirmPassword"],
+	});
+
+export const changePasswordFormSchema = z
+	.object({
+		currentPassword: z.string().min(1, "Enter your current password"),
+		password: passwordSchema,
+		confirmPassword: z.string().min(1, "Confirm your password"),
+	})
+	.refine((input) => input.password === input.confirmPassword, {
+		message: "Passwords do not match",
+		path: ["confirmPassword"],
+	})
+	.refine((input) => input.currentPassword !== input.password, {
+		message: "Choose a password different from your current password",
+		path: ["password"],
+	});
+
 export type PlayerProfileInput = z.input<typeof playerProfileInputSchema>;
 export type PlayerProfile = z.output<typeof playerProfileInputSchema>;
 export type RegisterPlayerInput = z.input<typeof registerPlayerInputSchema>;
 export type RegistrationFormInput = z.input<typeof registrationFormSchema>;
 export type LoginFormInput = z.input<typeof loginFormSchema>;
+export type ForgotPasswordFormInput = z.input<typeof forgotPasswordFormSchema>;
+export type PasswordResetFormInput = z.input<typeof passwordResetFormSchema>;
+export type ChangePasswordFormInput = z.input<typeof changePasswordFormSchema>;
 
 function isAtLeastAge(
 	dateOfBirth: string,

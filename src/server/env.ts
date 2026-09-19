@@ -22,6 +22,8 @@ const serverEnvSchema = z.object({
 	DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 	BETTER_AUTH_URL: z.string().url(),
 	BETTER_AUTH_SECRET: z.string().min(32),
+	RESEND_API_KEY: optionalServerString,
+	RESEND_FROM_EMAIL: optionalServerString,
 	CASINO_PROVIDER: providerName.default("fixture"),
 	DRAKON_BASE_URL: z.url().default("https://gator.drakon.casino/api/v1/"),
 	DRAKON_AGENT_CODE: optionalServerString,
