@@ -564,13 +564,19 @@ function BonusDefinitionDialog({
 	) => void;
 }) {
 	const [values, setValues] = useState<BonusFormValues>(emptyForm());
+	const [initialValues, setInitialValues] = useState<BonusFormValues>(
+		emptyForm(),
+	);
 	const [validationError, setValidationError] = useState<string | null>(null);
 	const [uploadError, setUploadError] = useState<string | null>(null);
 	const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 	const [uploading, setUploading] = useState(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	useEffect(() => {
-		setValues(editor?.mode === "edit" ? rowToForm(editor.row) : emptyForm());
+		const nextValues =
+			editor?.mode === "edit" ? rowToForm(editor.row) : emptyForm();
+		setValues(nextValues);
+		setInitialValues(nextValues);
 		setValidationError(null);
 		setUploadError(null);
 		setUploadProgress(null);
@@ -578,6 +584,16 @@ function BonusDefinitionDialog({
 	if (!editor) return null;
 	const currentEditor = editor;
 	const isCreate = editor.mode === "create";
+	const generatedCode = isCreate
+		? generatedBonusCode(values.name)
+		: editor.row.code;
+	const hasDefinitionChanges =
+		formSnapshot(values) !== formSnapshot(initialValues);
+	const canSubmit =
+		!pending &&
+		!uploading &&
+		Boolean(values.reason.trim()) &&
+		(isCreate ? Boolean(values.name.trim()) : hasDefinitionChanges);
 	const set = (key: keyof BonusFormValues, value: string) =>
 		setValues((current) => ({ ...current, [key]: value }));
 
@@ -619,7 +635,7 @@ function BonusDefinitionDialog({
 		try {
 			const blob = await uploadBonusThumbnail({
 				file,
-				code: values.code,
+				code: generatedCode,
 				onUploadProgress: setUploadProgress,
 			});
 			set("thumbnailUrl", blob.url);
@@ -637,383 +653,457 @@ function BonusDefinitionDialog({
 
 	return (
 		<Dialog open onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[92vh] sm:max-w-4xl">
-				<DialogHeader>
-					<DialogTitle>
-						{isCreate ? "Create bonus definition" : "Edit bonus definition"}
+			<DialogContent className="inset-0 top-0 left-0 flex h-[100dvh] max-h-none w-full max-w-none translate-x-0 translate-y-0 flex-col rounded-none p-0">
+				<DialogHeader className="shrink-0 border-b border-border px-5 py-5 pr-16 sm:px-8">
+					<DialogTitle className="text-lg font-medium">
+						{isCreate ? "Create bonus" : "Edit bonus"}
 					</DialogTitle>
 					<DialogDescription>
 						{isCreate
-							? "Define the rules for a new player offer."
-							: "Changes apply to future awards. Existing awards keep their snapshot."}
+							? "Set up the offer players will see in the lobby."
+							: "Updates apply to future awards. Existing awards keep their snapshot."}
 					</DialogDescription>
 				</DialogHeader>
-				<div className="flex flex-col gap-8">
-					<section
-						aria-labelledby="bonus-artwork-heading"
-						className="space-y-3"
-					>
-						<div>
-							<h3 className="text-sm font-semibold" id="bonus-artwork-heading">
-								Offer artwork
-							</h3>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Give the offer a visual anchor players can recognize at a
-								glance.
-							</p>
-						</div>
-						<Field label="Thumbnail" hint="JPEG, PNG, or WebP · 5 MB maximum">
-							<div className="flex flex-col gap-4 rounded-2xl border border-border bg-muted/20 p-3 sm:flex-row sm:items-center sm:p-4">
-								<div className="aspect-[4/3] w-full max-w-52 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
-									{values.thumbnailUrl ? (
-										<img
-											alt="Bonus thumbnail preview"
-											className="size-full object-cover"
-											src={values.thumbnailUrl}
-										/>
-									) : (
-										<div className="grid size-full place-items-center px-3 text-center text-xs text-muted-foreground">
-											No thumbnail yet
-										</div>
-									)}
-								</div>
-								<div className="min-w-0 space-y-2">
-									<p className="text-sm font-medium">
-										{values.thumbnailUrl
-											? "Thumbnail ready"
-											: "Add a thumbnail"}
-									</p>
-									<p className="max-w-sm text-sm leading-5 text-muted-foreground">
-										Use a clear campaign image with enough contrast to read in
-										the player lobby.
-									</p>
-									<div className="flex flex-wrap gap-2">
-										<input
-											accept="image/jpeg,image/png,image/webp"
-											className="sr-only"
-											onChange={(event) => {
-												const file = event.target.files?.[0];
-												if (file) void uploadThumbnail(file);
-												event.target.value = "";
-											}}
-											ref={fileInputRef}
-											type="file"
-										/>
-										<Button
-											disabled={uploading}
-											onClick={() => fileInputRef.current?.click()}
-											type="button"
-											variant="outline"
-										>
-											{uploading ? (
-												<LoaderCircleIcon className="animate-spin" />
-											) : (
-												<ImagePlusIcon />
-											)}
-											{uploading
-												? `Uploading ${uploadProgress ?? 0}%`
-												: values.thumbnailUrl
-													? "Replace image"
-													: "Upload image"}
-										</Button>
+
+				<form
+					className="flex min-h-0 flex-1 flex-col"
+					onSubmit={(event) => {
+						event.preventDefault();
+						submit();
+					}}
+				>
+					<div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)]">
+						<aside className="border-b border-border bg-muted/15 px-5 py-6 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-6">
+							<div className="mx-auto max-w-sm lg:mx-0">
+								<p className="text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
+									Live preview
+								</p>
+								<div className="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+									<div className="aspect-[4/3] overflow-hidden bg-muted">
 										{values.thumbnailUrl ? (
-											<Button
-												disabled={uploading}
-												onClick={() => set("thumbnailUrl", "")}
-												type="button"
-												variant="ghost"
-											>
-												<Trash2Icon /> Remove
-											</Button>
-										) : null}
+											<img
+												alt="Bonus thumbnail preview"
+												className="size-full object-cover"
+												src={values.thumbnailUrl}
+											/>
+										) : (
+											<div className="grid size-full place-items-center px-8 text-center text-sm text-muted-foreground">
+												Your thumbnail will appear here
+											</div>
+										)}
 									</div>
+									<div className="space-y-4 p-4">
+										<div className="flex items-start justify-between gap-3">
+											<div className="min-w-0">
+												<p className="truncate text-base font-medium">
+													{values.name || "New bonus"}
+												</p>
+												<p className="mt-1 text-xs text-muted-foreground">
+													{generatedCode}
+												</p>
+											</div>
+											<Badge variant="outline">
+												{isCreate
+													? "Draft"
+													: editor.row.isActive
+														? "Active"
+														: "Inactive"}
+											</Badge>
+										</div>
+										{values.description ? (
+											<p className="line-clamp-3 text-sm leading-5 text-muted-foreground">
+												{values.description}
+											</p>
+										) : (
+											<p className="text-sm text-muted-foreground">
+												Add a short player-facing description.
+											</p>
+										)}
+										<div className="grid grid-cols-2 gap-3 border-t border-border pt-4 text-sm">
+											<div>
+												<p className="text-xs text-muted-foreground">Award</p>
+												<p className="mt-1 font-medium tabular-nums">
+													{values.amountMajor ? `${values.amountMajor}` : "--"}
+												</p>
+											</div>
+											<div>
+												<p className="text-xs text-muted-foreground">
+													Wagering
+												</p>
+												<p className="mt-1 font-medium tabular-nums">
+													{values.wageringMultiplier
+														? `${values.wageringMultiplier}x`
+														: "--"}
+												</p>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div className="mt-5 space-y-2">
+									<input
+										accept="image/jpeg,image/png,image/webp"
+										className="sr-only"
+										onChange={(event) => {
+											const file = event.target.files?.[0];
+											if (file) void uploadThumbnail(file);
+											event.target.value = "";
+										}}
+										ref={fileInputRef}
+										type="file"
+									/>
+									<Button
+										className="w-full"
+										disabled={uploading}
+										onClick={() => fileInputRef.current?.click()}
+										type="button"
+										variant="outline"
+									>
+										{uploading ? (
+											<LoaderCircleIcon className="animate-spin" />
+										) : (
+											<ImagePlusIcon />
+										)}
+										{uploading
+											? `Uploading ${uploadProgress ?? 0}%`
+											: values.thumbnailUrl
+												? "Replace thumbnail"
+												: "Upload thumbnail"}
+									</Button>
+									{values.thumbnailUrl ? (
+										<Button
+											className="w-full"
+											disabled={uploading}
+											onClick={() => set("thumbnailUrl", "")}
+											type="button"
+											variant="ghost"
+										>
+											<Trash2Icon /> Remove thumbnail
+										</Button>
+									) : null}
+									<p className="text-xs leading-5 text-muted-foreground">
+										JPEG, PNG, or WebP. Maximum 5 MB.
+									</p>
 									{uploadError ? (
-										<p className="text-sm text-destructive">{uploadError}</p>
+										<p className="text-sm text-destructive" role="alert">
+											{uploadError}
+										</p>
 									) : null}
 								</div>
 							</div>
-						</Field>
-					</section>
+						</aside>
 
-					<section
-						aria-labelledby="bonus-details-heading"
-						className="space-y-4"
-					>
-						<div className="border-b border-border pb-3">
-							<h3 className="text-sm font-semibold" id="bonus-details-heading">
-								Offer details
-							</h3>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Set the name and the player-facing message for this campaign.
-							</p>
-						</div>
-						<div className="grid gap-4 sm:grid-cols-2">
-							{isCreate ? (
-								<Field
-									id="bonus-code"
-									label="Code"
-									hint="Stable identifier, 3–64 characters"
+						<div className="min-w-0 px-5 py-7 sm:px-8 lg:px-10">
+							<div className="mx-auto max-w-4xl space-y-10">
+								<section
+									aria-labelledby="bonus-details-heading"
+									className="space-y-4"
 								>
-									<Input
-										id="bonus-code"
-										value={values.code}
-										onChange={(event) => set("code", event.target.value)}
-										placeholder="WELCOME_2026"
+									<SectionHeading
+										id="bonus-details-heading"
+										title="Offer details"
+										description="Name the offer and write the message players will see."
 									/>
-								</Field>
-							) : (
-								<Field
-									id="bonus-code"
-									label="Code"
-									hint="Stable after creation"
+									<div className="grid gap-5 sm:grid-cols-2">
+										<Field id="bonus-name" label="Name">
+											<Input
+												className="h-10 rounded-lg"
+												id="bonus-name"
+												value={values.name}
+												onChange={(event) => set("name", event.target.value)}
+												placeholder="Welcome bonus"
+											/>
+											<p className="text-xs text-muted-foreground">
+												Generated code:{" "}
+												<code className="rounded bg-muted px-1 py-0.5 font-medium text-foreground">
+													{generatedCode}
+												</code>
+											</p>
+										</Field>
+										<Field id="bonus-type" label="Type">
+											<Select
+												value={values.type}
+												onValueChange={(value) =>
+													set("type", value ?? "welcome")
+												}
+											>
+												<SelectTrigger
+													aria-label="Bonus type"
+													className="h-10 w-full rounded-lg"
+													id="bonus-type"
+												>
+													<SelectValue>
+														{typeLabels[values.type as AdminBonusType]}
+													</SelectValue>
+												</SelectTrigger>
+												<SelectContent>
+													{bonusDefinitionTypes.map((type) => (
+														<SelectItem key={type} value={type}>
+															{typeLabels[type]}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</Field>
+										<div className="sm:col-span-2">
+											<Field id="bonus-description" label="Description">
+												<Textarea
+													className="min-h-24 rounded-lg"
+													id="bonus-description"
+													value={values.description}
+													onChange={(event) =>
+														set("description", event.target.value)
+													}
+													placeholder="Explain the offer in the player-facing campaign."
+												/>
+											</Field>
+										</div>
+									</div>
+								</section>
+
+								<section
+									aria-labelledby="bonus-rules-heading"
+									className="space-y-4"
 								>
-									<Input disabled id="bonus-code" value={values.code} />
-								</Field>
-							)}
-							<Field id="bonus-name" label="Name">
-								<Input
-									id="bonus-name"
-									value={values.name}
-									onChange={(event) => set("name", event.target.value)}
-									placeholder="Welcome bonus"
-								/>
-							</Field>
-							<Field id="bonus-type" label="Type">
-								<Select
-									value={values.type}
-									onValueChange={(value) => set("type", value ?? "welcome")}
-								>
-									<SelectTrigger aria-label="Bonus type" id="bonus-type">
-										<SelectValue>
-											{typeLabels[values.type as AdminBonusType]}
-										</SelectValue>
-									</SelectTrigger>
-									<SelectContent>
-										{bonusDefinitionTypes.map((type) => (
-											<SelectItem key={type} value={type}>
-												{typeLabels[type]}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</Field>
-							<div className="sm:col-span-2">
-								<Field id="bonus-description" label="Description">
-									<Textarea
-										id="bonus-description"
-										value={values.description}
-										onChange={(event) => set("description", event.target.value)}
-										placeholder="Explain the offer in the player-facing campaign."
+									<SectionHeading
+										id="bonus-rules-heading"
+										title="Bonus rules"
+										description="Set the award, wagering requirement, and deposit limits."
 									/>
-								</Field>
+									<div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+										<Field
+											id="bonus-amount"
+											label="Award amount"
+											hint="Major currency units"
+										>
+											<Input
+												className="h-10 rounded-lg"
+												id="bonus-amount"
+												inputMode="decimal"
+												value={values.amountMajor}
+												onChange={(event) =>
+													set("amountMajor", event.target.value)
+												}
+												placeholder="100"
+											/>
+										</Field>
+										<Field id="bonus-wagering" label="Wagering multiplier">
+											<Input
+												className="h-10 rounded-lg"
+												id="bonus-wagering"
+												inputMode="numeric"
+												value={values.wageringMultiplier}
+												onChange={(event) =>
+													set("wageringMultiplier", event.target.value)
+												}
+												placeholder="5"
+											/>
+										</Field>
+										<Field id="bonus-expires" label="Expires after (days)">
+											<Input
+												className="h-10 rounded-lg"
+												id="bonus-expires"
+												inputMode="numeric"
+												value={values.expiresAfterDays}
+												onChange={(event) =>
+													set("expiresAfterDays", event.target.value)
+												}
+												placeholder="30"
+											/>
+										</Field>
+										<Field
+											id="bonus-match"
+											label="Match percentage"
+											hint="Deposit bonuses only"
+										>
+											<Input
+												className="h-10 rounded-lg"
+												disabled={values.type !== "deposit"}
+												id="bonus-match"
+												inputMode="decimal"
+												value={values.matchPercentage}
+												onChange={(event) =>
+													set("matchPercentage", event.target.value)
+												}
+												placeholder="25"
+											/>
+										</Field>
+										<Field
+											id="bonus-minimum-deposit"
+											label="Minimum deposit"
+											hint="Optional"
+										>
+											<Input
+												className="h-10 rounded-lg"
+												id="bonus-minimum-deposit"
+												inputMode="decimal"
+												value={values.minimumDepositMajor}
+												onChange={(event) =>
+													set("minimumDepositMajor", event.target.value)
+												}
+												placeholder="50"
+											/>
+										</Field>
+										<Field
+											id="bonus-maximum-award"
+											label="Maximum award"
+											hint="Optional"
+										>
+											<Input
+												className="h-10 rounded-lg"
+												id="bonus-maximum-award"
+												inputMode="decimal"
+												value={values.maximumAwardMajor}
+												onChange={(event) =>
+													set("maximumAwardMajor", event.target.value)
+												}
+												placeholder="500"
+											/>
+										</Field>
+									</div>
+								</section>
+
+								<section
+									aria-labelledby="bonus-eligibility-heading"
+									className="space-y-4"
+								>
+									<SectionHeading
+										id="bonus-eligibility-heading"
+										title="Eligibility"
+										description="Leave these blank to include the full catalogue."
+									/>
+									<div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+										<Field
+											id="bonus-game-ids"
+											label="Game IDs"
+											hint="Comma-separated"
+										>
+											<Input
+												className="h-10 rounded-lg"
+												id="bonus-game-ids"
+												value={values.eligibleGameIds}
+												onChange={(event) =>
+													set("eligibleGameIds", event.target.value)
+												}
+												placeholder="game-id-1, game-id-2"
+											/>
+										</Field>
+										<Field
+											id="bonus-categories"
+											label="Categories"
+											hint="Comma-separated"
+										>
+											<Input
+												className="h-10 rounded-lg"
+												id="bonus-categories"
+												value={values.eligibleCategories}
+												onChange={(event) =>
+													set("eligibleCategories", event.target.value)
+												}
+												placeholder="Slots, Table"
+											/>
+										</Field>
+										<Field
+											id="bonus-providers"
+											label="Providers"
+											hint="Comma-separated"
+										>
+											<Input
+												className="h-10 rounded-lg"
+												id="bonus-providers"
+												value={values.eligibleProviders}
+												onChange={(event) =>
+													set("eligibleProviders", event.target.value)
+												}
+												placeholder="BigBang"
+											/>
+										</Field>
+									</div>
+								</section>
+
+								<section
+									aria-labelledby="bonus-audit-heading"
+									className="space-y-4"
+								>
+									<SectionHeading
+										id="bonus-audit-heading"
+										title="Audit note"
+										description="Add a short reason so this change stays traceable."
+									/>
+									<Field id="bonus-reason" label="Reason for change">
+										<Textarea
+											className="min-h-24 rounded-lg"
+											id="bonus-reason"
+											value={values.reason}
+											onChange={(event) => set("reason", event.target.value)}
+											placeholder="Explain the campaign or rule change"
+											maxLength={500}
+										/>
+									</Field>
+								</section>
 							</div>
 						</div>
-					</section>
+					</div>
 
-					<section aria-labelledby="bonus-rules-heading" className="space-y-4">
-						<div className="border-b border-border pb-3">
-							<h3 className="text-sm font-semibold" id="bonus-rules-heading">
-								Bonus rules
-							</h3>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Control the award value, wagering commitment, and deposit
-								limits.
-							</p>
+					<DialogFooter className="mt-0 shrink-0 border-t border-border bg-popover px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+						<div className="min-w-0 text-xs text-muted-foreground">
+							{!values.reason.trim()
+								? "Add a reason to enable saving."
+								: !isCreate && !hasDefinitionChanges
+									? "No changes to save."
+									: isCreate || hasDefinitionChanges
+										? "Your thumbnail and form changes will be saved together."
+										: ""}
 						</div>
-						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-							<Field
-								id="bonus-amount"
-								label="Award amount"
-								hint="Major currency units, for example 100 = 100.00 in the player's currency"
+						<div className="flex flex-col-reverse gap-2 sm:flex-row">
+							<Button
+								disabled={pending || uploading}
+								onClick={() => onOpenChange(false)}
+								type="button"
+								variant="ghost"
 							>
-								<Input
-									id="bonus-amount"
-									inputMode="decimal"
-									value={values.amountMajor}
-									onChange={(event) => set("amountMajor", event.target.value)}
-									placeholder="100"
-								/>
-							</Field>
-							<Field id="bonus-wagering" label="Wagering multiplier">
-								<Input
-									id="bonus-wagering"
-									inputMode="numeric"
-									value={values.wageringMultiplier}
-									onChange={(event) =>
-										set("wageringMultiplier", event.target.value)
-									}
-									placeholder="5"
-								/>
-							</Field>
-							<Field id="bonus-expires" label="Expires after (days)">
-								<Input
-									id="bonus-expires"
-									inputMode="numeric"
-									value={values.expiresAfterDays}
-									onChange={(event) =>
-										set("expiresAfterDays", event.target.value)
-									}
-									placeholder="30"
-								/>
-							</Field>
-							<Field
-								id="bonus-match"
-								label="Match percentage"
-								hint="Deposit bonuses only. Leave blank for a fixed award."
-							>
-								<Input
-									id="bonus-match"
-									disabled={values.type !== "deposit"}
-									inputMode="decimal"
-									value={values.matchPercentage}
-									onChange={(event) =>
-										set("matchPercentage", event.target.value)
-									}
-									placeholder="25"
-								/>
-							</Field>
-							<Field
-								id="bonus-minimum-deposit"
-								label="Minimum deposit"
-								hint="Optional major currency units"
-							>
-								<Input
-									id="bonus-minimum-deposit"
-									inputMode="decimal"
-									value={values.minimumDepositMajor}
-									onChange={(event) =>
-										set("minimumDepositMajor", event.target.value)
-									}
-									placeholder="50"
-								/>
-							</Field>
-							<Field
-								id="bonus-maximum-award"
-								label="Maximum award"
-								hint="Optional major currency units"
-							>
-								<Input
-									id="bonus-maximum-award"
-									inputMode="decimal"
-									value={values.maximumAwardMajor}
-									onChange={(event) =>
-										set("maximumAwardMajor", event.target.value)
-									}
-									placeholder="500"
-								/>
-							</Field>
+								Cancel
+							</Button>
+							<Button disabled={!canSubmit} type="submit">
+								{pending || uploading ? (
+									<LoaderCircleIcon className="animate-spin" />
+								) : (
+									<ShieldCheckIcon />
+								)}
+								{isCreate ? "Create bonus" : "Save changes"}
+							</Button>
 						</div>
-					</section>
-
-					<section
-						aria-labelledby="bonus-eligibility-heading"
-						className="space-y-4"
+					</DialogFooter>
+				</form>
+				{validationError || error ? (
+					<div
+						className="absolute right-5 bottom-20 left-5 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive sm:right-8 sm:left-8"
+						role="alert"
 					>
-						<div className="border-b border-border pb-3">
-							<h3
-								className="text-sm font-semibold"
-								id="bonus-eligibility-heading"
-							>
-								Eligibility
-							</h3>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Leave a field blank to make this offer available across the full
-								catalogue.
-							</p>
-						</div>
-						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-							<Field
-								id="bonus-game-ids"
-								label="Eligible game IDs"
-								hint="Comma-separated. Leave blank for all games."
-							>
-								<Input
-									id="bonus-game-ids"
-									value={values.eligibleGameIds}
-									onChange={(event) =>
-										set("eligibleGameIds", event.target.value)
-									}
-									placeholder="game-id-1, game-id-2"
-								/>
-							</Field>
-							<Field
-								id="bonus-categories"
-								label="Eligible categories"
-								hint="Comma-separated. Leave blank for all categories."
-							>
-								<Input
-									id="bonus-categories"
-									value={values.eligibleCategories}
-									onChange={(event) =>
-										set("eligibleCategories", event.target.value)
-									}
-									placeholder="Slots, Table"
-								/>
-							</Field>
-							<Field
-								id="bonus-providers"
-								label="Eligible providers"
-								hint="Comma-separated. Leave blank for all providers."
-							>
-								<Input
-									id="bonus-providers"
-									value={values.eligibleProviders}
-									onChange={(event) =>
-										set("eligibleProviders", event.target.value)
-									}
-									placeholder="BigBang"
-								/>
-							</Field>
-						</div>
-					</section>
-
-					<section aria-labelledby="bonus-audit-heading" className="space-y-4">
-						<div className="border-b border-border pb-3">
-							<h3 className="text-sm font-semibold" id="bonus-audit-heading">
-								Audit note
-							</h3>
-							<p className="mt-1 text-sm text-muted-foreground">
-								A short reason is required so campaign changes stay traceable.
-							</p>
-						</div>
-						<Field id="bonus-reason" label="Reason for change">
-							<Textarea
-								id="bonus-reason"
-								value={values.reason}
-								onChange={(event) => set("reason", event.target.value)}
-								placeholder="Explain the campaign or rule change"
-								maxLength={500}
-							/>
-						</Field>
-					</section>
-				</div>
-				{validationError || uploadError || error ? (
-					<p className="text-sm text-destructive">
-						{validationError ?? uploadError ?? error}
-					</p>
+						{validationError ?? error}
+					</div>
 				) : null}
-				<DialogFooter>
-					<Button
-						disabled={pending || uploading}
-						onClick={() => onOpenChange(false)}
-						variant="ghost"
-					>
-						Cancel
-					</Button>
-					<Button
-						disabled={pending || uploading || !values.reason.trim()}
-						onClick={submit}
-					>
-						{pending || uploading ? (
-							<LoaderCircleIcon className="animate-spin" />
-						) : (
-							<ShieldCheckIcon />
-						)}
-						{isCreate ? "Create definition" : "Save changes"}
-					</Button>
-				</DialogFooter>
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+function SectionHeading({
+	id,
+	title,
+	description,
+}: {
+	id: string;
+	title: string;
+	description: string;
+}) {
+	return (
+		<div className="border-b border-border pb-3">
+			<h3 className="text-sm font-medium" id={id}>
+				{title}
+			</h3>
+			<p className="mt-1 text-sm text-muted-foreground">{description}</p>
+		</div>
 	);
 }
 
@@ -1126,7 +1216,6 @@ function DefinitionListSkeleton() {
 }
 
 type BonusFormValues = {
-	code: string;
 	name: string;
 	description: string;
 	thumbnailUrl: string;
@@ -1145,7 +1234,6 @@ type BonusFormValues = {
 
 function emptyForm(): BonusFormValues {
 	return {
-		code: "",
 		name: "",
 		description: "",
 		thumbnailUrl: "",
@@ -1165,7 +1253,6 @@ function emptyForm(): BonusFormValues {
 
 function rowToForm(row: DefinitionRow): BonusFormValues {
 	return {
-		code: row.code,
 		name: row.name,
 		description: row.description ?? "",
 		thumbnailUrl: row.thumbnailUrl ?? "",
@@ -1219,12 +1306,31 @@ function toDefinitionInput(values: BonusFormValues, editor: Editor) {
 	return editor.mode === "create"
 		? createAdminBonusDefinitionInputSchema.safeParse({
 				...base,
-				code: values.code,
+				code: generatedBonusCode(values.name),
 			})
 		: updateAdminBonusDefinitionInputSchema.safeParse({
 				...base,
 				definitionId: editor.row.id,
 			});
+}
+
+function generatedBonusCode(name: string) {
+	const normalized = name
+		.trim()
+		.normalize("NFKD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toUpperCase();
+	const base = normalized
+		.replace(/[^A-Z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "")
+		.slice(0, 60);
+
+	if (!base) return "BONUS";
+	return base.length >= 3 ? base : `BONUS-${base}`;
+}
+
+function formSnapshot(values: BonusFormValues) {
+	return JSON.stringify({ ...values, reason: "" });
 }
 
 function toMinor(value: string) {
