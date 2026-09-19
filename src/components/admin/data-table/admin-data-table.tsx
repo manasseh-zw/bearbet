@@ -37,6 +37,11 @@ export type AdminTableColumn<TData extends RowData> = ColumnDef<
 	TData
 >;
 
+export type AdminTableColumnMeta = {
+	cellClassName?: string;
+	headerClassName?: string;
+};
+
 export type AdminDataTableProps<TData extends RowData> = {
 	columns: Array<AdminTableColumn<TData>>;
 	data: TData[];
@@ -92,7 +97,16 @@ export function AdminDataTable<TData extends RowData>({
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow className={headerRowClassName} key={headerGroup.id}>
 							{headerGroup.headers.map((header) => (
-								<TableHead key={header.id}>
+								<TableHead
+									className={
+										(
+											header.column.columnDef.meta as
+												| AdminTableColumnMeta
+												| undefined
+										)?.headerClassName
+									}
+									key={header.id}
+								>
 									{header.isPlaceholder
 										? null
 										: flexRender(
@@ -130,7 +144,16 @@ export function AdminDataTable<TData extends RowData>({
 								tabIndex={onRowClick ? 0 : undefined}
 							>
 								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id}>
+									<TableCell
+										className={
+											(
+												cell.column.columnDef.meta as
+													| AdminTableColumnMeta
+													| undefined
+											)?.cellClassName
+										}
+										key={cell.id}
+									>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
 									</TableCell>
 								))}

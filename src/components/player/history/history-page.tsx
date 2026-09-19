@@ -3,8 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
 	ArrowDownLeftIcon,
-	ArrowLeftIcon,
-	ArrowRightIcon,
 	ArrowUpRightIcon,
 	CoinsIcon,
 	Gamepad2Icon,
@@ -17,9 +15,13 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useId, useMemo } from "react";
 
+import {
+	AdminDataTable,
+	type AdminTableColumn,
+	AdminTablePagination,
+} from "#/components/admin/data-table";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
-import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import {
 	Select,
@@ -30,21 +32,17 @@ import {
 	SelectValue,
 } from "#/components/ui/select";
 import { Skeleton } from "#/components/ui/skeleton";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "#/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { historyQueries } from "#/lib/queries/history.queries";
 import {
 	type HistoryCategory,
+	type HistoryDirection,
 	type HistoryOperationType,
 	type HistoryQuery,
+	type HistoryTimeRange,
+	historyDirections,
 	historyOperationTypes,
+	historyTimeRanges,
 } from "#/lib/schemas/history.schema";
 import { cn } from "#/lib/utils";
 
@@ -75,6 +73,19 @@ const transactionLabels: Record<HistoryOperationType, string> = {
 	provider_reconciliation: "BigBang sandbox reconciliation",
 };
 
+const timeRangeLabels: Record<HistoryTimeRange, string> = {
+	all: "All time",
+	today: "Today",
+};
+
+const directionLabels: Record<HistoryDirection, string> = {
+	desc: "Newest first",
+	asc: "Oldest first",
+};
+
+const historyTableClassName =
+	"[&_th]:h-11 [&_th]:px-4 [&_th]:text-xs [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted-foreground [&_th:first-child]:pl-6 [&_th:last-child]:pr-6 [&_td]:px-4 [&_td:first-child]:pl-6 [&_td:last-child]:pr-6";
+
 type HistoryPageProps = {
 	query: HistoryQuery;
 	onQueryChange: (next: HistoryQuery) => void;
@@ -94,7 +105,10 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 		[currencyCode],
 	);
 	const hasExtraFilters = Boolean(
-		query.bucket || query.type || query.from || query.to,
+		query.bucket ||
+			query.type ||
+			query.timeRange !== "all" ||
+			query.direction !== "desc",
 	);
 
 	function patchQuery(patch: Partial<HistoryQuery>) {
@@ -113,11 +127,8 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 				</p>
 			</header>
 
-			<section
-				aria-label="Transaction history"
-				className="overflow-hidden rounded-2xl border bg-card shadow-none"
-			>
-				<div className="flex flex-col px-4 pt-4 sm:px-6">
+			<section aria-label="Transaction history" className="grid gap-5">
+				<div className="flex flex-col gap-4">
 					<div className="flex items-center justify-between gap-4">
 						<Tabs
 							className="min-w-0"
@@ -155,11 +166,11 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 						) : null}
 					</div>
 
-					<div className="flex flex-col gap-3 pt-6 pb-4 lg:flex-row lg:items-end">
+					<div className="flex flex-col gap-3 lg:flex-row lg:items-end">
 						<div
 							className={cn(
 								"grid flex-1 grid-cols-2 gap-3",
-								query.category === "bet" ? "sm:grid-cols-2" : "sm:grid-cols-4",
+								query.category === "bet" ? "lg:grid-cols-3" : "lg:grid-cols-4",
 							)}
 						>
 							{query.category !== "bet" ? (
@@ -202,15 +213,25 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 									]}
 								/>
 							) : null}
-							<DateFilter
-								label="From"
-								value={query.from ?? ""}
-								onChange={(value) => patchQuery({ from: value || undefined })}
+							<FilterSelect
+								label="Period"
+								value={query.timeRange}
+								onChange={(value) =>
+									patchQuery({ timeRange: value as HistoryTimeRange })
+								}
+								options={historyTimeRanges.map(
+									(value) => [value, timeRangeLabels[value]] as const,
+								)}
 							/>
-							<DateFilter
-								label="To"
-								value={query.to ?? ""}
-								onChange={(value) => patchQuery({ to: value || undefined })}
+							<FilterSelect
+								label="Sort"
+								value={query.direction}
+								onChange={(value) =>
+									patchQuery({ direction: value as HistoryDirection })
+								}
+								options={historyDirections.map(
+									(value) => [value, directionLabels[value]] as const,
+								)}
 							/>
 						</div>
 						{hasExtraFilters ? (
@@ -218,7 +239,12 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 								variant="ghost"
 								size="sm"
 								onClick={() =>
-									onQueryChange({ category: query.category, page: 1 })
+									onQueryChange({
+										category: query.category,
+										page: 1,
+										timeRange: "all",
+										direction: "desc",
+									})
 								}
 							>
 								<RotateCcwIcon data-icon="inline-start" />
@@ -228,35 +254,41 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 					</div>
 				</div>
 
-				{history.isPending ? (
-					<HistorySkeleton />
-				) : history.isError ? (
-					<HistoryError
-						isRetrying={history.isFetching}
-						onRetry={() => history.refetch()}
+				<div className="overflow-hidden rounded-xl border border-border">
+					{history.isPending ? (
+						<HistorySkeleton />
+					) : history.isError ? (
+						<HistoryError
+							isRetrying={history.isFetching}
+							onRetry={() => history.refetch()}
+						/>
+					) : history.data ? (
+						<AnimatePresence mode="wait" initial={false}>
+							<motion.div
+								key={`${query.category}:${query.page}:${query.bucket}:${query.type}:${query.timeRange}:${query.direction}`}
+								initial={reducedMotion ? false : { opacity: 0, y: 5 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={reducedMotion ? undefined : { opacity: 0, y: -3 }}
+								transition={{ duration: reducedMotion ? 0 : 0.18 }}
+							>
+								{query.category === "bet" ? (
+									<BetRoundsTable
+										rounds={history.data.betRounds}
+										money={money}
+									/>
+								) : (
+									<HistoryTable items={history.data.items} money={money} />
+								)}
+							</motion.div>
+						</AnimatePresence>
+					) : null}
+				</div>
+				{history.data ? (
+					<AdminTablePagination
+						pageCount={history.data.pagination.totalPages}
+						pageIndex={history.data.pagination.page - 1}
+						onPageChange={(page) => patchQuery({ page: page + 1 })}
 					/>
-				) : history.data ? (
-					<AnimatePresence mode="wait" initial={false}>
-						<motion.div
-							key={`${query.category}:${query.page}:${query.bucket}:${query.type}:${query.from}:${query.to}`}
-							initial={reducedMotion ? false : { opacity: 0, y: 5 }}
-							animate={{ opacity: 1, y: 0 }}
-							exit={reducedMotion ? undefined : { opacity: 0, y: -3 }}
-							transition={{ duration: reducedMotion ? 0 : 0.18 }}
-						>
-							{query.category === "bet" ? (
-								<BetRoundsTable rounds={history.data.betRounds} money={money} />
-							) : (
-								<HistoryTable items={history.data.items} money={money} />
-							)}
-							<HistoryPagination
-								page={history.data.pagination.page}
-								total={history.data.pagination.total}
-								totalPages={history.data.pagination.totalPages}
-								onPageChange={(page) => patchQuery({ page })}
-							/>
-						</motion.div>
-					</AnimatePresence>
 				) : null}
 			</section>
 		</main>
@@ -298,32 +330,6 @@ function FilterSelect({
 	);
 }
 
-function DateFilter({
-	label,
-	value,
-	onChange,
-}: {
-	label: string;
-	value: string;
-	onChange: (value: string) => void;
-}) {
-	const id = useId();
-	return (
-		<div className="flex min-w-0 flex-col gap-1.5">
-			<Label htmlFor={id} className="text-xs">
-				{label}
-			</Label>
-			<Input
-				id={id}
-				type="date"
-				value={value}
-				onChange={(event) => onChange(event.target.value)}
-				className="w-full bg-background"
-			/>
-		</div>
-	);
-}
-
 type HistoryItem = Awaited<
 	ReturnType<
 		typeof import("#/server/domains/history/history.service").getPlayerHistory
@@ -343,104 +349,110 @@ function HistoryTable({
 	items: HistoryItem[];
 	money: Intl.NumberFormat;
 }) {
-	if (items.length === 0) {
-		return (
-			<div className="grid min-h-72 place-items-center border-t px-6 py-12 text-center">
-				<div className="flex max-w-sm flex-col items-center gap-2">
-					<span className="grid size-10 place-items-center rounded-full bg-muted text-muted-foreground">
-						<WalletCardsIcon className="size-5" />
-					</span>
-					<p className="font-medium">No activity found</p>
-					<p className="text-sm text-muted-foreground">
-						Try another category or clear the detailed filters.
-					</p>
-				</div>
-			</div>
-		);
-	}
-
-	return (
-		<Table>
-			<TableHeader>
-				<TableRow className="border-t bg-muted/30 hover:bg-muted/30">
-					<TableHead className="h-11 pl-6 text-xs uppercase tracking-wide text-muted-foreground">
-						Activity
-					</TableHead>
-					<TableHead className="hidden text-xs uppercase tracking-wide text-muted-foreground md:table-cell">
-						Bucket
-					</TableHead>
-					<TableHead className="hidden text-xs uppercase tracking-wide text-muted-foreground lg:table-cell">
-						Reference
-					</TableHead>
-					<TableHead className="hidden text-xs uppercase tracking-wide text-muted-foreground sm:table-cell">
-						Date
-					</TableHead>
-					<TableHead className="pr-6 text-right text-xs uppercase tracking-wide text-muted-foreground">
-						Amount
-					</TableHead>
-				</TableRow>
-			</TableHeader>
-			<TableBody>
-				{items.map((item) => {
-					const isCredit = item.amountMinor > 0;
+	const columns = useMemo<AdminTableColumn<HistoryItem>[]>(
+		() => [
+			{
+				id: "activity",
+				header: "Activity",
+				cell: ({ row }) => {
+					const item = row.original;
 					const Icon = iconForType(item.type);
 					const tone = transactionTone(item.type, item.amountMinor);
 					return (
-						<TableRow key={item.id} className="h-16">
-							<TableCell className="pl-6">
-								<div className="flex items-center gap-3">
-									<Icon className={cn("size-4 shrink-0", tone)} />
-									<div className="min-w-0">
-										<p>{transactionLabels[item.type]}</p>
-										{item.gameName ? (
-											<p className="mt-1 truncate text-xs text-muted-foreground">
-												{item.gameName}
-											</p>
-										) : null}
-										<p className="mt-1 text-xs text-muted-foreground sm:hidden">
-											{formatDateTime(item.createdAt)}
-										</p>
-									</div>
-								</div>
-							</TableCell>
-							<TableCell className="hidden md:table-cell">
-								<div className="flex flex-wrap gap-1">
-									{item.buckets.map((bucket) => (
-										<Badge
-											key={bucket}
-											variant="outline"
-											className="capitalize"
-										>
-											{bucket.replace("_", " ")}
-										</Badge>
-									))}
-								</div>
-							</TableCell>
-							<TableCell className="hidden max-w-52 lg:table-cell">
-								<p className="truncate text-sm">{item.publicReference}</p>
-								{item.gameName && item.provider ? (
-									<p className="text-xs capitalize text-muted-foreground">
-										{item.provider}
+						<div className="flex items-center gap-3">
+							<Icon className={cn("size-4 shrink-0", tone)} />
+							<div className="min-w-0">
+								<p>{transactionLabels[item.type]}</p>
+								{item.gameName ? (
+									<p className="mt-1 truncate text-xs text-muted-foreground">
+										{item.gameName}
 									</p>
 								) : null}
-							</TableCell>
-							<TableCell className="hidden text-muted-foreground sm:table-cell">
-								{formatDateTime(item.createdAt)}
-							</TableCell>
-							<TableCell
-								className={cn(
-									"pr-6 text-right font-semibold tabular-nums",
-									tone,
-								)}
-							>
-								{isCredit ? "+" : item.amountMinor < 0 ? "-" : ""}
-								{formatMinorUnits(Math.abs(item.amountMinor), money)}
-							</TableCell>
-						</TableRow>
+								<p className="mt-1 text-xs text-muted-foreground sm:hidden">
+									{formatDateTime(item.createdAt)}
+								</p>
+							</div>
+						</div>
 					);
-				})}
-			</TableBody>
-		</Table>
+				},
+			},
+			{
+				id: "bucket",
+				header: "Bucket",
+				meta: {
+					cellClassName: "hidden md:table-cell",
+					headerClassName: "hidden md:table-cell",
+				},
+				cell: ({ row }) => (
+					<div className="flex flex-wrap gap-1">
+						{row.original.buckets.map((bucket) => (
+							<Badge key={bucket} variant="outline" className="capitalize">
+								{bucket.replace("_", " ")}
+							</Badge>
+						))}
+					</div>
+				),
+			},
+			{
+				id: "reference",
+				header: "Reference",
+				meta: {
+					cellClassName: "hidden max-w-52 lg:table-cell",
+					headerClassName: "hidden lg:table-cell",
+				},
+				cell: ({ row }) => (
+					<div>
+						<p className="truncate text-sm">{row.original.publicReference}</p>
+						{row.original.gameName && row.original.provider ? (
+							<p className="text-xs capitalize text-muted-foreground">
+								{row.original.provider}
+							</p>
+						) : null}
+					</div>
+				),
+			},
+			{
+				id: "date",
+				header: "Date",
+				meta: {
+					cellClassName: "hidden text-muted-foreground sm:table-cell",
+					headerClassName: "hidden sm:table-cell",
+				},
+				cell: ({ row }) => formatDateTime(row.original.createdAt),
+			},
+			{
+				id: "amount",
+				header: "Amount",
+				cell: ({ row }) => {
+					const isCredit = row.original.amountMinor > 0;
+					const tone = transactionTone(
+						row.original.type,
+						row.original.amountMinor,
+					);
+					return (
+						<span className={cn("font-semibold tabular-nums", tone)}>
+							{isCredit ? "+" : row.original.amountMinor < 0 ? "-" : ""}
+							{formatMinorUnits(Math.abs(row.original.amountMinor), money)}
+						</span>
+					);
+				},
+			},
+		],
+		[money],
+	);
+
+	if (items.length === 0) {
+		return <HistoryEmpty />;
+	}
+
+	return (
+		<AdminDataTable
+			columns={columns}
+			data={items}
+			getRowId={(row) => row.id}
+			rowClassName="h-14"
+			tableClassName={historyTableClassName}
+		/>
 	);
 }
 
@@ -451,86 +463,108 @@ function BetRoundsTable({
 	rounds: BetRound[];
 	money: Intl.NumberFormat;
 }) {
+	const columns = useMemo<AdminTableColumn<BetRound>[]>(
+		() => [
+			{
+				id: "game",
+				header: "Game",
+				cell: ({ row }) => {
+					const tone = transactionTone("bet", row.original.netMinor);
+					return (
+						<div className="flex items-center gap-3">
+							<Gamepad2Icon className={cn("size-4 shrink-0", tone)} />
+							<div className="min-w-0">
+								<p className="truncate font-medium">
+									{row.original.gameName ?? "Casino game"}
+								</p>
+								<p className="mt-1 text-xs capitalize text-muted-foreground">
+									{row.original.provider}
+								</p>
+							</div>
+						</div>
+					);
+				},
+			},
+			{
+				id: "result",
+				header: "Result",
+				meta: {
+					cellClassName: "hidden md:table-cell",
+					headerClassName: "hidden md:table-cell",
+				},
+				cell: ({ row }) => (
+					<div>
+						<p className="font-medium capitalize">{row.original.outcome}</p>
+						<p className="mt-1 text-xs text-muted-foreground">
+							Stake {formatMinorUnits(row.original.stakeMinor, money)}
+							{row.original.returnedMinor > 0
+								? ` · Returned ${formatMinorUnits(row.original.returnedMinor, money)}`
+								: ""}
+							{row.original.refundedMinor > 0
+								? ` · Refunded ${formatMinorUnits(row.original.refundedMinor, money)}`
+								: ""}
+						</p>
+					</div>
+				),
+			},
+			{
+				id: "reference",
+				header: "Reference",
+				meta: {
+					cellClassName: "hidden lg:table-cell",
+					headerClassName: "hidden lg:table-cell",
+				},
+				cell: ({ row }) => (
+					<p className="font-mono text-sm">{row.original.publicReference}</p>
+				),
+			},
+			{
+				id: "date",
+				header: "Date",
+				meta: {
+					cellClassName: "hidden text-muted-foreground sm:table-cell",
+					headerClassName: "hidden sm:table-cell",
+				},
+				cell: ({ row }) => formatDateTime(row.original.createdAt),
+			},
+			{
+				id: "net",
+				header: "Net",
+				cell: ({ row }) => {
+					const tone = transactionTone("bet", row.original.netMinor);
+					return (
+						<span className={cn("font-semibold tabular-nums", tone)}>
+							{row.original.netMinor > 0
+								? "+"
+								: row.original.netMinor < 0
+									? "-"
+									: ""}
+							{formatMinorUnits(Math.abs(row.original.netMinor), money)}
+						</span>
+					);
+				},
+			},
+		],
+		[money],
+	);
+
 	if (rounds.length === 0) return <HistoryEmpty icon="game" />;
 
 	return (
-		<Table>
-			<TableHeader>
-				<TableRow className="border-t bg-muted/30 hover:bg-muted/30">
-					<TableHead className="h-11 pl-6 text-xs uppercase tracking-wide text-muted-foreground">
-						Game
-					</TableHead>
-					<TableHead className="hidden text-xs uppercase tracking-wide text-muted-foreground md:table-cell">
-						Result
-					</TableHead>
-					<TableHead className="hidden text-xs uppercase tracking-wide text-muted-foreground lg:table-cell">
-						Reference
-					</TableHead>
-					<TableHead className="hidden text-xs uppercase tracking-wide text-muted-foreground sm:table-cell">
-						Date
-					</TableHead>
-					<TableHead className="pr-6 text-right text-xs uppercase tracking-wide text-muted-foreground">
-						Net
-					</TableHead>
-				</TableRow>
-			</TableHeader>
-			<TableBody>
-				{rounds.map((round) => {
-					const tone = transactionTone("bet", round.netMinor);
-					return (
-						<TableRow key={round.id} className="h-16">
-							<TableCell className="max-w-64 pl-6">
-								<div className="flex items-center gap-3">
-									<Gamepad2Icon className={cn("size-4 shrink-0", tone)} />
-									<div className="min-w-0">
-										<p className="truncate font-medium">
-											{round.gameName ?? "Casino game"}
-										</p>
-										<p className="mt-1 text-xs capitalize text-muted-foreground">
-											{round.provider}
-										</p>
-									</div>
-								</div>
-							</TableCell>
-							<TableCell className="hidden md:table-cell">
-								<p className="font-medium capitalize">{round.outcome}</p>
-								<p className="mt-1 text-xs text-muted-foreground">
-									Stake {formatMinorUnits(round.stakeMinor, money)}
-									{round.returnedMinor > 0
-										? ` · Returned ${formatMinorUnits(round.returnedMinor, money)}`
-										: ""}
-									{round.refundedMinor > 0
-										? ` · Refunded ${formatMinorUnits(round.refundedMinor, money)}`
-										: ""}
-								</p>
-							</TableCell>
-							<TableCell className="hidden lg:table-cell">
-								<p className="font-mono text-sm">{round.publicReference}</p>
-							</TableCell>
-							<TableCell className="hidden text-muted-foreground sm:table-cell">
-								{formatDateTime(round.createdAt)}
-							</TableCell>
-							<TableCell
-								className={cn(
-									"pr-6 text-right font-semibold tabular-nums",
-									tone,
-								)}
-							>
-								{round.netMinor > 0 ? "+" : round.netMinor < 0 ? "-" : ""}
-								{formatMinorUnits(Math.abs(round.netMinor), money)}
-							</TableCell>
-						</TableRow>
-					);
-				})}
-			</TableBody>
-		</Table>
+		<AdminDataTable
+			columns={columns}
+			data={rounds}
+			getRowId={(row) => row.id}
+			rowClassName="h-14"
+			tableClassName={historyTableClassName}
+		/>
 	);
 }
 
 function HistoryEmpty({ icon = "wallet" }: { icon?: "wallet" | "game" }) {
 	const Icon = icon === "game" ? Gamepad2Icon : WalletCardsIcon;
 	return (
-		<div className="grid min-h-72 place-items-center border-t px-6 py-12 text-center">
+		<div className="grid min-h-72 place-items-center px-6 py-12 text-center">
 			<div className="flex max-w-sm flex-col items-center gap-2">
 				<span className="grid size-10 place-items-center rounded-full bg-muted text-muted-foreground">
 					<Icon className="size-5" />
@@ -544,59 +578,9 @@ function HistoryEmpty({ icon = "wallet" }: { icon?: "wallet" | "game" }) {
 	);
 }
 
-function HistoryPagination({
-	page,
-	total,
-	totalPages,
-	onPageChange,
-}: {
-	page: number;
-	total: number;
-	totalPages: number;
-	onPageChange: (page: number) => void;
-}) {
-	return (
-		<footer className="flex items-center justify-between gap-4 border-t px-4 py-4 text-sm sm:px-6">
-			<p className="text-muted-foreground">
-				<span className="font-medium text-foreground tabular-nums">
-					{total}
-				</span>{" "}
-				{total === 1 ? "entry" : "entries"}
-			</p>
-			<div className="flex items-center gap-3">
-				<Button
-					variant="outline"
-					size="icon-sm"
-					disabled={page <= 1}
-					onClick={() => onPageChange(page - 1)}
-					aria-label="Previous page"
-				>
-					<ArrowLeftIcon />
-				</Button>
-				<span className="text-muted-foreground tabular-nums">
-					Page <span className="font-medium text-foreground">{page}</span> of{" "}
-					{totalPages}
-				</span>
-				<Button
-					variant="outline"
-					size="icon-sm"
-					disabled={page >= totalPages}
-					onClick={() => onPageChange(page + 1)}
-					aria-label="Next page"
-				>
-					<ArrowRightIcon />
-				</Button>
-			</div>
-		</footer>
-	);
-}
-
 function HistorySkeleton() {
 	return (
-		<output
-			aria-label="Loading history"
-			className="block border-t px-4 py-2 sm:px-6"
-		>
+		<output aria-label="Loading history" className="block px-4 py-2 sm:px-6">
 			{[1, 2, 3, 4, 5].map((key) => (
 				<div
 					key={key}
@@ -622,7 +606,7 @@ function HistoryError({
 	onRetry: () => void;
 }) {
 	return (
-		<div className="grid min-h-72 place-items-center border-t px-6 py-12 text-center">
+		<div className="grid min-h-72 place-items-center px-6 py-12 text-center">
 			<div className="flex max-w-sm flex-col items-center gap-3">
 				<p className="font-medium">Your history could not be loaded</p>
 				<p className="text-sm text-muted-foreground">

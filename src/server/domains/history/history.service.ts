@@ -8,7 +8,6 @@ import {
 	eq,
 	gte,
 	inArray,
-	lte,
 	notInArray,
 	sql,
 } from "drizzle-orm";
@@ -16,6 +15,7 @@ import {
 import {
 	type HistoryCategory,
 	type HistoryQuery,
+	type HistoryQueryInput,
 	historyQuerySchema,
 } from "#/lib/schemas/history.schema";
 import { WalletOperationError } from "#/server/domains/wallet/wallet.service";
@@ -46,7 +46,10 @@ type HistoryMovement = {
 	movementIndex: number | null;
 };
 
-export async function getPlayerHistory(playerId: string, input: HistoryQuery) {
+export async function getPlayerHistory(
+	playerId: string,
+	input: HistoryQueryInput,
+) {
 	const query = historyQuerySchema.parse(input);
 	const [current] = await db
 		.select({ wallet, banned: user.banned })
@@ -74,15 +77,10 @@ export async function getPlayerHistory(playerId: string, input: HistoryQuery) {
 	if (categoryCondition) conditions.push(categoryCondition);
 	if (query.type) conditions.push(eq(walletOperation.type, query.type));
 	if (query.bucket) conditions.push(eq(ledgerEntry.bucket, query.bucket));
-	if (query.from) {
-		conditions.push(
-			gte(walletOperation.createdAt, new Date(`${query.from}T00:00:00.000Z`)),
-		);
-	}
-	if (query.to) {
-		conditions.push(
-			lte(walletOperation.createdAt, new Date(`${query.to}T23:59:59.999Z`)),
-		);
+	if (query.timeRange === "today") {
+		const startOfToday = new Date();
+		startOfToday.setUTCHours(0, 0, 0, 0);
+		conditions.push(gte(walletOperation.createdAt, startOfToday));
 	}
 
 	const filtered = and(...conditions);
@@ -105,6 +103,14 @@ export async function getPlayerHistory(playerId: string, input: HistoryQuery) {
 	const total = totalResult[0]?.count ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 	const page = Math.min(query.page, totalPages);
+	const createdAtOrder =
+		query.direction === "asc"
+			? asc(walletOperation.createdAt)
+			: desc(walletOperation.createdAt);
+	const idOrder =
+		query.direction === "asc"
+			? asc(walletOperation.id)
+			: desc(walletOperation.id);
 	const operations = await db
 		.select({
 			id: walletOperation.id,
@@ -135,7 +141,7 @@ export async function getPlayerHistory(playerId: string, input: HistoryQuery) {
 		)
 		.where(filtered)
 		.groupBy(walletOperation.id, providerOperation.id, gameRound.id, game.id)
-		.orderBy(desc(walletOperation.createdAt), desc(walletOperation.id))
+		.orderBy(createdAtOrder, idOrder)
 		.limit(PAGE_SIZE)
 		.offset((page - 1) * PAGE_SIZE);
 
@@ -197,15 +203,10 @@ async function getPlayerBetRoundHistory(input: {
 	query: HistoryQuery;
 }) {
 	const roundConditions = [eq(gameRound.playerId, input.playerId)];
-	if (input.query.from) {
-		roundConditions.push(
-			gte(gameRound.createdAt, new Date(`${input.query.from}T00:00:00.000Z`)),
-		);
-	}
-	if (input.query.to) {
-		roundConditions.push(
-			lte(gameRound.createdAt, new Date(`${input.query.to}T23:59:59.999Z`)),
-		);
+	if (input.query.timeRange === "today") {
+		const startOfToday = new Date();
+		startOfToday.setUTCHours(0, 0, 0, 0);
+		roundConditions.push(gte(gameRound.createdAt, startOfToday));
 	}
 	const [totalResult, typeCounts] = await Promise.all([
 		db
@@ -231,6 +232,12 @@ async function getPlayerBetRoundHistory(input: {
 	const total = totalResult[0]?.count ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 	const page = Math.min(input.query.page, totalPages);
+	const createdAtOrder =
+		input.query.direction === "asc"
+			? asc(gameRound.createdAt)
+			: desc(gameRound.createdAt);
+	const idOrder =
+		input.query.direction === "asc" ? asc(gameRound.id) : desc(gameRound.id);
 	const rounds = await db
 		.select({
 			id: gameRound.id,
@@ -261,7 +268,7 @@ async function getPlayerBetRoundHistory(input: {
 		.where(and(...roundConditions))
 		.groupBy(gameRound.id, game.id)
 		.having(sql`count(*) filter (where ${providerOperation.type} = 'bet') > 0`)
-		.orderBy(desc(gameRound.createdAt), desc(gameRound.id))
+		.orderBy(createdAtOrder, idOrder)
 		.limit(PAGE_SIZE)
 		.offset((page - 1) * PAGE_SIZE);
 	const roundMovements = rounds.length

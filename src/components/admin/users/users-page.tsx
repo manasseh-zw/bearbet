@@ -893,10 +893,7 @@ function UserAvatar({ name, size }: { name: string; size: "detail" | "row" }) {
 			className={cn("shrink-0", size === "detail" ? "size-10" : "size-8")}
 		>
 			<AvatarFallback
-				className={cn(
-					"font-semibold text-primary-foreground",
-					avatarColor(name),
-				)}
+				className={cn("font-normal text-primary-foreground", avatarColor(name))}
 			>
 				{initials(name)}
 			</AvatarFallback>

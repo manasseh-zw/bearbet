@@ -11,7 +11,7 @@ Bearbet has finished its main domain-engine phase. The next phase turns those se
 - Guests can browse a branded casino lobby and open registration or login.
 - Players can register with the required profile fields, receive `$1,000.00` in virtual cash once, sign in with email or username, retain a database-backed session, and sign out.
 - Signed-in players can open the Wallet to read persisted playable, cash, bonus, and reserved balances. They can add one of the supported demo amounts, request a withdrawal, inspect pending reservations, and review recent ledger activity. Successful money actions refresh the shared wallet query and publish an app-level toast.
-- Signed-in players can open History to review paginated wallet operations as one row per transaction. Category tabs and URL-backed bucket, operation, and date filters query the immutable ledger and include gameplay references where available.
+- Signed-in players can open History to review paginated wallet operations as one row per transaction. Category tabs and URL-backed bucket, operation, period, and sort filters query the immutable ledger and include gameplay references where available; advanced date filtering remains deferred.
 - Signed-in players can browse the synchronized catalogue with client-side search and category filters.
 - The responsive shell has desktop navigation, a mobile drawer, a persistent playable balance with cash and bonus detail, account controls, loading and wallet retry states, catalogue error recovery, and artwork fallbacks.
 - PostgreSQL stores Better Auth identity, player profiles, wallets, wallet operations, immutable ledger entries, withdrawals, bonus definitions and awards, games, sessions, rounds, and provider operations.
