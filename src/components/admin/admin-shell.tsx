@@ -106,7 +106,9 @@ function AdminNavigationGroup({
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map(({ icon: Icon, label: itemLabel, to }) => {
-						const isActive = pathname === to || pathname.startsWith(`${to}/`);
+						const isActive =
+							pathname === to ||
+							(to !== "/admin" && pathname.startsWith(`${to}/`));
 
 						return (
 							<SidebarMenuItem key={to}>
