@@ -654,16 +654,14 @@ function BonusDefinitionDialog({
 	return (
 		<Dialog open onOpenChange={onOpenChange}>
 			<DialogContent className="inset-0 top-0 left-0 flex h-[100dvh] max-h-none w-full max-w-none translate-x-0 translate-y-0 flex-col rounded-none p-0">
-				<DialogHeader className="shrink-0 border-b border-border px-5 py-5 pr-16 sm:px-8">
-					<DialogTitle className="text-lg font-medium">
-						{isCreate ? "Create bonus" : "Edit bonus"}
-					</DialogTitle>
-					<DialogDescription>
-						{isCreate
-							? "Set up the offer players will see in the lobby."
-							: "Updates apply to future awards. Existing awards keep their snapshot."}
-					</DialogDescription>
-				</DialogHeader>
+				<DialogTitle className="sr-only">
+					{isCreate ? "Create bonus" : "Edit bonus"}
+				</DialogTitle>
+				<DialogDescription className="sr-only">
+					{isCreate
+						? "Set up the offer players will see in the lobby."
+						: "Updates apply to future awards. Existing awards keep their snapshot."}
+				</DialogDescription>
 
 				<form
 					className="flex min-h-0 flex-1 flex-col"
@@ -672,72 +670,26 @@ function BonusDefinitionDialog({
 						submit();
 					}}
 				>
-					<div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)]">
-						<aside className="border-b border-border bg-muted/15 px-5 py-6 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-6">
-							<div className="mx-auto max-w-sm lg:mx-0">
-								<p className="text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
-									Live preview
+					<div className="grid min-h-0 flex-1 overflow-y-auto lg:overflow-hidden lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)]">
+						<aside className="border-b border-border bg-muted/15 px-5 py-6 lg:border-r lg:border-b-0 lg:px-6">
+							<div className="mx-auto max-w-sm lg:sticky lg:top-6 lg:mx-0">
+								<h2 className="text-sm font-medium">Thumbnail</h2>
+								<p className="mt-1 text-sm text-muted-foreground">
+									Use a clear campaign image that reads well in the player
+									lobby.
 								</p>
-								<div className="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-									<div className="aspect-[4/3] overflow-hidden bg-muted">
-										{values.thumbnailUrl ? (
-											<img
-												alt="Bonus thumbnail preview"
-												className="size-full object-cover"
-												src={values.thumbnailUrl}
-											/>
-										) : (
-											<div className="grid size-full place-items-center px-8 text-center text-sm text-muted-foreground">
-												Your thumbnail will appear here
-											</div>
-										)}
-									</div>
-									<div className="space-y-4 p-4">
-										<div className="flex items-start justify-between gap-3">
-											<div className="min-w-0">
-												<p className="truncate text-base font-medium">
-													{values.name || "New bonus"}
-												</p>
-												<p className="mt-1 text-xs text-muted-foreground">
-													{generatedCode}
-												</p>
-											</div>
-											<Badge variant="outline">
-												{isCreate
-													? "Draft"
-													: editor.row.isActive
-														? "Active"
-														: "Inactive"}
-											</Badge>
+								<div className="mt-4 aspect-[4/3] overflow-hidden rounded-xl border border-border bg-muted">
+									{values.thumbnailUrl ? (
+										<img
+											alt="Bonus thumbnail preview"
+											className="size-full object-cover"
+											src={values.thumbnailUrl}
+										/>
+									) : (
+										<div className="grid size-full place-items-center px-8 text-center text-sm text-muted-foreground">
+											No thumbnail uploaded
 										</div>
-										{values.description ? (
-											<p className="line-clamp-3 text-sm leading-5 text-muted-foreground">
-												{values.description}
-											</p>
-										) : (
-											<p className="text-sm text-muted-foreground">
-												Add a short player-facing description.
-											</p>
-										)}
-										<div className="grid grid-cols-2 gap-3 border-t border-border pt-4 text-sm">
-											<div>
-												<p className="text-xs text-muted-foreground">Award</p>
-												<p className="mt-1 font-medium tabular-nums">
-													{values.amountMajor ? `${values.amountMajor}` : "--"}
-												</p>
-											</div>
-											<div>
-												<p className="text-xs text-muted-foreground">
-													Wagering
-												</p>
-												<p className="mt-1 font-medium tabular-nums">
-													{values.wageringMultiplier
-														? `${values.wageringMultiplier}x`
-														: "--"}
-												</p>
-											</div>
-										</div>
-									</div>
+									)}
 								</div>
 
 								<div className="mt-5 space-y-2">
@@ -793,7 +745,7 @@ function BonusDefinitionDialog({
 							</div>
 						</aside>
 
-						<div className="min-w-0 px-5 py-7 sm:px-8 lg:px-10">
+						<div className="min-w-0 px-5 py-7 sm:px-8 lg:min-h-0 lg:overflow-y-auto lg:px-10">
 							<div className="mx-auto max-w-4xl space-y-10">
 								<section
 									aria-labelledby="bonus-details-heading"
@@ -1041,48 +993,47 @@ function BonusDefinitionDialog({
 										/>
 									</Field>
 								</section>
+
+								{validationError || error ? (
+									<div
+										className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+										role="alert"
+									>
+										{validationError ?? error}
+									</div>
+								) : null}
+
+								<div className="flex flex-col gap-4 pt-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
+									<p className="text-xs text-muted-foreground">
+										{!values.reason.trim()
+											? "Add a reason to enable saving."
+											: !isCreate && !hasDefinitionChanges
+												? "No changes to save."
+												: "Your thumbnail and form changes will be saved together."}
+									</p>
+									<div className="flex flex-col-reverse gap-2 sm:flex-row">
+										<Button
+											disabled={pending || uploading}
+											onClick={() => onOpenChange(false)}
+											type="button"
+											variant="ghost"
+										>
+											Cancel
+										</Button>
+										<Button disabled={!canSubmit} type="submit">
+											{pending || uploading ? (
+												<LoaderCircleIcon className="animate-spin" />
+											) : (
+												<ShieldCheckIcon />
+											)}
+											{isCreate ? "Create bonus" : "Save changes"}
+										</Button>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
-
-					<DialogFooter className="mt-0 shrink-0 border-t border-border bg-popover px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-						<div className="min-w-0 text-xs text-muted-foreground">
-							{!values.reason.trim()
-								? "Add a reason to enable saving."
-								: !isCreate && !hasDefinitionChanges
-									? "No changes to save."
-									: isCreate || hasDefinitionChanges
-										? "Your thumbnail and form changes will be saved together."
-										: ""}
-						</div>
-						<div className="flex flex-col-reverse gap-2 sm:flex-row">
-							<Button
-								disabled={pending || uploading}
-								onClick={() => onOpenChange(false)}
-								type="button"
-								variant="ghost"
-							>
-								Cancel
-							</Button>
-							<Button disabled={!canSubmit} type="submit">
-								{pending || uploading ? (
-									<LoaderCircleIcon className="animate-spin" />
-								) : (
-									<ShieldCheckIcon />
-								)}
-								{isCreate ? "Create bonus" : "Save changes"}
-							</Button>
-						</div>
-					</DialogFooter>
 				</form>
-				{validationError || error ? (
-					<div
-						className="absolute right-5 bottom-20 left-5 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive sm:right-8 sm:left-8"
-						role="alert"
-					>
-						{validationError ?? error}
-					</div>
-				) : null}
 			</DialogContent>
 		</Dialog>
 	);
