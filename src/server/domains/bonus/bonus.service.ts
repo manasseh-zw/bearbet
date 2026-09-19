@@ -1,6 +1,6 @@
 import "@tanstack/react-start/server-only";
 
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 
 import {
 	calculateRequiredWager,
@@ -56,6 +56,21 @@ export async function createBonusDefinition(input: CreateBonusDefinitionInput) {
 		);
 	}
 	return definition;
+}
+
+export async function listActiveBonusDefinitions() {
+	return db
+		.select({
+			id: bonusDefinition.id,
+			code: bonusDefinition.code,
+			name: bonusDefinition.name,
+			amountMinor: bonusDefinition.amountMinor,
+			matchPercentageBps: bonusDefinition.matchPercentageBps,
+			type: bonusDefinition.type,
+		})
+		.from(bonusDefinition)
+		.where(eq(bonusDefinition.isActive, true))
+		.orderBy(asc(bonusDefinition.name));
 }
 
 export async function getPlayerBonusOverview(
@@ -120,149 +135,161 @@ export async function activateBonusAward(input: {
 	qualifyingDepositOperationId?: string;
 	now?: Date;
 }) {
-	return db.transaction(async (transaction) => {
-		const [playerWallet] = await transaction
-			.select({ id: wallet.id })
-			.from(wallet)
-			.where(eq(wallet.playerId, input.playerId))
-			.for("update");
-		if (!playerWallet) {
-			throw new BonusServiceError(
-				"Player wallet was not found",
-				"BONUS_UNAVAILABLE",
-			);
-		}
+	return db.transaction((transaction) =>
+		activateBonusAwardInTransaction(transaction, input),
+	);
+}
 
-		const [existing] = await transaction
-			.select()
-			.from(bonusAward)
-			.where(eq(bonusAward.idempotencyKey, input.idempotencyKey));
-		if (existing) {
-			if (
-				existing.playerId !== input.playerId ||
-				existing.definitionId !== input.definitionId ||
-				existing.qualifyingDepositOperationId !==
-					(input.qualifyingDepositOperationId ?? null)
-			) {
-				throw new BonusServiceError(
-					"Idempotency key was used for another bonus award",
-					"IDEMPOTENCY_CONFLICT",
-				);
-			}
-			return { award: existing, isDuplicate: true };
-		}
-
-		const [definition] = await transaction
-			.select()
-			.from(bonusDefinition)
-			.where(eq(bonusDefinition.id, input.definitionId));
-		if (!definition) {
-			throw new BonusServiceError(
-				"Bonus definition was not found",
-				"BONUS_NOT_FOUND",
-			);
-		}
-		if (!definition.isActive) {
-			throw new BonusServiceError("Bonus is not active", "BONUS_UNAVAILABLE");
-		}
-
-		const [alreadyClaimed] = await transaction
-			.select({ id: bonusAward.id })
-			.from(bonusAward)
-			.where(
-				and(
-					eq(bonusAward.playerId, input.playerId),
-					eq(bonusAward.definitionId, input.definitionId),
-				),
-			);
-		if (alreadyClaimed) {
-			throw new BonusServiceError(
-				"Player has already claimed this bonus",
-				"BONUS_ALREADY_CLAIMED",
-			);
-		}
-
-		const [activeAward] = await transaction
-			.select({ id: bonusAward.id })
-			.from(bonusAward)
-			.where(
-				and(
-					eq(bonusAward.playerId, input.playerId),
-					eq(bonusAward.status, "active"),
-				),
-			);
-		if (activeAward) {
-			throw new BonusServiceError(
-				"Player already has an active bonus",
-				"ACTIVE_BONUS_EXISTS",
-			);
-		}
-
-		const qualifyingDeposit = await resolveQualifyingDeposit(
-			transaction,
-			definition,
-			input,
+export async function activateBonusAwardInTransaction(
+	transaction: DatabaseTransaction,
+	input: {
+		playerId: string;
+		definitionId: string;
+		idempotencyKey: string;
+		qualifyingDepositOperationId?: string;
+		actorUserId?: string;
+		now?: Date;
+	},
+) {
+	const [playerWallet] = await transaction
+		.select({ id: wallet.id })
+		.from(wallet)
+		.where(eq(wallet.playerId, input.playerId))
+		.for("update");
+	if (!playerWallet) {
+		throw new BonusServiceError(
+			"Player wallet was not found",
+			"BONUS_UNAVAILABLE",
 		);
+	}
 
-		const now = input.now ?? new Date();
-		const calculatedAmountMinor = definition.matchPercentageBps
-			? Math.floor(
-					((qualifyingDeposit?.amountMinor ?? 0) *
-						definition.matchPercentageBps) /
-						10_000,
-				)
-			: definition.amountMinor;
-		const amountMinor = Math.min(
-			calculatedAmountMinor,
-			definition.maximumAwardMinor ?? calculatedAmountMinor,
+	const [existing] = await transaction
+		.select()
+		.from(bonusAward)
+		.where(eq(bonusAward.idempotencyKey, input.idempotencyKey));
+	if (existing) {
+		if (
+			existing.playerId !== input.playerId ||
+			existing.definitionId !== input.definitionId ||
+			existing.qualifyingDepositOperationId !==
+				(input.qualifyingDepositOperationId ?? null)
+		) {
+			throw new BonusServiceError(
+				"Idempotency key was used for another bonus award",
+				"IDEMPOTENCY_CONFLICT",
+			);
+		}
+		return { award: existing, isDuplicate: true };
+	}
+
+	const [definition] = await transaction
+		.select()
+		.from(bonusDefinition)
+		.where(eq(bonusDefinition.id, input.definitionId));
+	if (!definition) {
+		throw new BonusServiceError(
+			"Bonus definition was not found",
+			"BONUS_NOT_FOUND",
 		);
-		if (amountMinor <= 0) {
-			throw new BonusServiceError(
-				"Qualifying top-up does not produce a bonus award",
-				"DEPOSIT_NOT_ELIGIBLE",
-			);
-		}
-		const expiresAt = new Date(now);
-		expiresAt.setUTCDate(expiresAt.getUTCDate() + definition.expiresAfterDays);
+	}
+	if (!definition.isActive) {
+		throw new BonusServiceError("Bonus is not active", "BONUS_UNAVAILABLE");
+	}
 
-		const [award] = await transaction
-			.insert(bonusAward)
-			.values({
-				definitionId: definition.id,
-				playerId: input.playerId,
-				qualifyingDepositOperationId: qualifyingDeposit?.operationId,
-				awardedAmountMinor: amountMinor,
-				bonusBalanceMinor: amountMinor,
-				requiredWagerMinor: calculateRequiredWager(
-					amountMinor,
-					definition.wageringMultiplier,
-				),
-				eligibleGameIds: definition.eligibleGameIds,
-				eligibleCategories: definition.eligibleCategories,
-				eligibleProviders: definition.eligibleProviders,
-				idempotencyKey: input.idempotencyKey,
-				activatedAt: now,
-				expiresAt,
-			})
-			.returning();
-		if (!award) {
-			throw new BonusServiceError(
-				"Bonus award was not created",
-				"INVALID_BONUS",
-			);
-		}
+	const [alreadyClaimed] = await transaction
+		.select({ id: bonusAward.id })
+		.from(bonusAward)
+		.where(
+			and(
+				eq(bonusAward.playerId, input.playerId),
+				eq(bonusAward.definitionId, input.definitionId),
+			),
+		);
+	if (alreadyClaimed) {
+		throw new BonusServiceError(
+			"Player has already claimed this bonus",
+			"BONUS_ALREADY_CLAIMED",
+		);
+	}
 
-		await applyWalletOperationInTransaction(transaction, {
+	const [activeAward] = await transaction
+		.select({ id: bonusAward.id })
+		.from(bonusAward)
+		.where(
+			and(
+				eq(bonusAward.playerId, input.playerId),
+				eq(bonusAward.status, "active"),
+			),
+		);
+	if (activeAward) {
+		throw new BonusServiceError(
+			"Player already has an active bonus",
+			"ACTIVE_BONUS_EXISTS",
+		);
+	}
+
+	const qualifyingDeposit = await resolveQualifyingDeposit(
+		transaction,
+		definition,
+		input,
+	);
+
+	const now = input.now ?? new Date();
+	const calculatedAmountMinor = definition.matchPercentageBps
+		? Math.floor(
+				((qualifyingDeposit?.amountMinor ?? 0) *
+					definition.matchPercentageBps) /
+					10_000,
+			)
+		: definition.amountMinor;
+	const amountMinor = Math.min(
+		calculatedAmountMinor,
+		definition.maximumAwardMinor ?? calculatedAmountMinor,
+	);
+	if (amountMinor <= 0) {
+		throw new BonusServiceError(
+			"Qualifying top-up does not produce a bonus award",
+			"DEPOSIT_NOT_ELIGIBLE",
+		);
+	}
+	const expiresAt = new Date(now);
+	expiresAt.setUTCDate(expiresAt.getUTCDate() + definition.expiresAfterDays);
+
+	const [award] = await transaction
+		.insert(bonusAward)
+		.values({
+			definitionId: definition.id,
 			playerId: input.playerId,
-			type: "bonus_credit",
-			idempotencyKey: `bonus-award:${award.id}:credit`,
-			movements: [{ bucket: "bonus", amountMinor }],
-			sourceType: "bonus_award",
-			sourceId: award.id,
-		});
+			qualifyingDepositOperationId: qualifyingDeposit?.operationId,
+			awardedAmountMinor: amountMinor,
+			bonusBalanceMinor: amountMinor,
+			requiredWagerMinor: calculateRequiredWager(
+				amountMinor,
+				definition.wageringMultiplier,
+			),
+			eligibleGameIds: definition.eligibleGameIds,
+			eligibleCategories: definition.eligibleCategories,
+			eligibleProviders: definition.eligibleProviders,
+			idempotencyKey: input.idempotencyKey,
+			activatedAt: now,
+			expiresAt,
+		})
+		.returning();
+	if (!award) {
+		throw new BonusServiceError("Bonus award was not created", "INVALID_BONUS");
+	}
 
-		return { award, isDuplicate: false };
+	await applyWalletOperationInTransaction(transaction, {
+		playerId: input.playerId,
+		type: "bonus_credit",
+		idempotencyKey: `bonus-award:${award.id}:credit`,
+		movements: [{ bucket: "bonus", amountMinor }],
+		sourceType: "bonus_award",
+		sourceId: award.id,
+		actorUserId: input.actorUserId,
 	});
+
+	return { award, isDuplicate: false };
 }
 
 export async function settleBonusAward(input: {

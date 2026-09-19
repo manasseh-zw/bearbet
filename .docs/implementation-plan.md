@@ -121,6 +121,8 @@ Add a nested administrator route group with a fresh-session server-side role che
 5. Wallet and gameplay inspection plus withdrawal review.
 6. Extend the transaction-scoped audit writer over the new admin-audit table for every administrator mutation.
 
+The user slice is now implemented: the users query returns explicit identity, player, wallet, and balance projections; the page keeps search, filters, sorting, and pagination in the URL; and the detail sheet exposes suspend, activate, audited cash adjustment, and bonus assignment actions. Remaining administration work starts with games and bonus-definition management.
+
 The overview comes from those operational reads. It should report useful counts and recent events, not invented gambling revenue.
 
 Checkpoint:
