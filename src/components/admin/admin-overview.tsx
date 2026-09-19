@@ -263,7 +263,17 @@ export function AdminOverview() {
 						</CardDescription>
 					</div>
 					<Button
-						render={<Link to="/admin/activity" />}
+						render={
+							<Link
+								search={{
+									tab: "wallet",
+									search: "",
+									withdrawalStatus: "all",
+									limit: 25,
+								}}
+								to="/admin/activity"
+							/>
+						}
 						size="sm"
 						variant="ghost"
 					>

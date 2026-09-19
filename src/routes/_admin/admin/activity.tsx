@@ -1,16 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RoutePlaceholder } from "#/components/shared/route-placeholder";
+
+import { ActivityPage } from "#/components/admin/operations/activity-page";
+import { adminActivityQuerySchema } from "#/lib/schemas/admin-operations.schema";
 
 export const Route = createFileRoute("/_admin/admin/activity")({
+	validateSearch: (search) => {
+		const parsed = adminActivityQuerySchema.safeParse(search);
+		return parsed.success ? parsed.data : adminActivityQuerySchema.parse({});
+	},
 	head: () => ({ meta: [{ title: "Activity | BearBet Admin" }] }),
-	component: ActivityAdminPage,
+	component: ActivityRoute,
 });
 
-function ActivityAdminPage() {
+function ActivityRoute() {
+	const query = Route.useSearch();
+	const navigate = Route.useNavigate();
+
 	return (
-		<RoutePlaceholder
-			description="Inspect wallet, gameplay, bonus, withdrawal, and administrative operations."
-			title="Activity"
+		<ActivityPage
+			query={query}
+			onQueryChange={(search) =>
+				navigate({ search, replace: true, resetScroll: false })
+			}
 		/>
 	);
 }
