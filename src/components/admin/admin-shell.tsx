@@ -6,6 +6,7 @@ import {
 	BadgePercentIcon,
 	ChevronUpIcon,
 	CircleDollarSignIcon,
+	CircleHelpIcon,
 	DicesIcon,
 	FileClockIcon,
 	LayoutDashboardIcon,
@@ -99,7 +100,7 @@ function AdminNavigationGroup({
 
 	return (
 		<SidebarGroup className="p-0">
-			<SidebarGroupLabel className="mb-1 h-7 px-2 text-xs font-medium text-sidebar-foreground/50">
+			<SidebarGroupLabel className="mb-1 h-7 px-2 text-xs font-medium text-sidebar-foreground/55">
 				{label}
 			</SidebarGroupLabel>
 			<SidebarGroupContent>
@@ -109,12 +110,19 @@ function AdminNavigationGroup({
 
 						return (
 							<SidebarMenuItem key={to}>
+								{isActive ? (
+									<span
+										aria-hidden="true"
+										className="absolute top-1/2 -left-4 h-6 w-[3px] -translate-y-1/2 rounded-full bg-primary"
+									/>
+								) : null}
 								<SidebarMenuButton
 									isActive={isActive}
 									render={<Link to={to} onClick={() => setOpenMobile(false)} />}
 									tooltip={itemLabel}
+									className="h-10 gap-3 rounded-lg px-2 text-sm font-medium text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-active:bg-transparent data-active:text-sidebar-foreground data-active:[&_svg]:text-primary"
 								>
-									<Icon />
+									<Icon className="size-5 text-sidebar-foreground/45" />
 									<span>{itemLabel}</span>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
@@ -158,7 +166,7 @@ function AdminProfile() {
 			<DropdownMenuTrigger
 				render={
 					<SidebarMenuButton
-						className="h-auto gap-3 rounded-xl px-2 py-2.5 hover:bg-sidebar-accent"
+						className="h-auto gap-3 rounded-lg px-2 py-2.5 hover:bg-sidebar-accent"
 						size="lg"
 					/>
 				}
@@ -206,7 +214,11 @@ function AdminProfile() {
 
 function AdminSidebar() {
 	return (
-		<Sidebar collapsible="offcanvas" variant="sidebar">
+		<Sidebar
+			collapsible="offcanvas"
+			variant="sidebar"
+			className="group-data-[side=left]:border-r-0 group-data-[side=right]:border-l-0"
+		>
 			<SidebarHeader className="gap-3 p-4">
 				<div className="flex items-center justify-between">
 					<Link aria-label="BearBet admin overview" to="/admin">
@@ -219,15 +231,40 @@ function AdminSidebar() {
 					<span>Operations portal</span>
 				</div>
 			</SidebarHeader>
-			<SidebarContent className="gap-5 px-3 py-2">
+			<SidebarContent className="gap-8 px-4 py-6">
 				<AdminNavigationGroup
 					items={operationalNavigation}
 					label="Operations"
 				/>
 				<AdminNavigationGroup items={catalogueNavigation} label="Catalogue" />
 			</SidebarContent>
-			<SidebarFooter className="p-3">
-				<AdminProfile />
+			<SidebarFooter className="gap-0 p-0">
+				<div className="px-4 py-3">
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<SidebarMenuButton className="h-9 gap-3 rounded-lg px-2 text-sidebar-foreground/65 hover:text-sidebar-foreground">
+								<ShieldCheckIcon className="size-5 text-sidebar-foreground/40" />
+								<span>Responsible play</span>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+						<SidebarMenuItem>
+							<SidebarMenuButton className="h-9 gap-3 rounded-lg px-2 text-sidebar-foreground/65 hover:text-sidebar-foreground">
+								<CircleHelpIcon className="size-5 text-sidebar-foreground/40" />
+								<span>Support</span>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</div>
+
+				<div aria-hidden="true" className="h-px w-full bg-sidebar-border" />
+
+				<div className="p-4">
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<AdminProfile />
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</div>
 			</SidebarFooter>
 		</Sidebar>
 	);
