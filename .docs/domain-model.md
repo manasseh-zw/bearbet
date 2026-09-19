@@ -52,7 +52,7 @@ The user can create a demo top-up and request a simulated withdrawal. The wallet
 An administrator can:
 
 - Find users, inspect profiles and balances, suspend or activate accounts, adjust demo funds, and assign bonuses.
-- Inspect synchronized games and change local status, category, and featured state.
+- Inspect synchronized games and change local status and curation flags; provider category metadata is read-only.
 - Create and update bonus definitions.
 - Inspect wallet and gameplay activity.
 - Approve or reject simulated withdrawals.

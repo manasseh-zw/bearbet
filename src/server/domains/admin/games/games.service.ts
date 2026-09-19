@@ -34,7 +34,6 @@ export async function updateAdminGame(
 			gameId: input.gameId,
 			reason: input.reason,
 			isEnabled: input.isEnabled,
-			category: input.category,
 			isFeatured: input.isFeatured,
 			isPopular: input.isPopular,
 			isNew: input.isNew,
@@ -53,15 +52,12 @@ export async function updateAdminGame(
 
 		const next = {
 			isEnabled: command.isEnabled ?? current.isEnabled,
-			category:
-				command.category !== undefined ? command.category : current.category,
 			isFeatured: command.isFeatured ?? current.isFeatured,
 			isPopular: command.isPopular ?? current.isPopular,
 			isNew: command.isNew ?? current.isNew,
 		};
 		const isDuplicate =
 			current.isEnabled === next.isEnabled &&
-			current.category === next.category &&
 			current.isFeatured === next.isFeatured &&
 			current.isPopular === next.isPopular &&
 			current.isNew === next.isNew;
@@ -85,7 +81,6 @@ export async function updateAdminGame(
 				name: current.name,
 				previous: {
 					isEnabled: current.isEnabled,
-					category: current.category,
 					isFeatured: current.isFeatured,
 					isPopular: current.isPopular,
 					isNew: current.isNew,

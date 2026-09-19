@@ -10,7 +10,7 @@ import {
 	SearchIcon,
 	XIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -53,7 +53,7 @@ type AdminGameRow = Awaited<
 >["items"][number];
 type GamePatch = Pick<
 	UpdateAdminGameInput,
-	"isEnabled" | "category" | "isFeatured" | "isPopular" | "isNew"
+	"isEnabled" | "isFeatured" | "isPopular" | "isNew"
 >;
 
 type PendingChange = {
@@ -152,7 +152,6 @@ export function GamesPage({
 	const hasFilters = Boolean(
 		query.search ||
 			query.provider ||
-			query.category ||
 			query.availability !== "all" ||
 			query.status !== "all" ||
 			query.curation !== "all",
@@ -174,18 +173,12 @@ export function GamesPage({
 			...query,
 			search: "",
 			provider: "",
-			category: "",
 			availability: "all",
 			status: "all",
 			curation: "all",
 			page: 1,
 		});
 	}
-
-	const categoryOptions = useMemo(
-		() => ["__none", ...(filters?.categories ?? [])],
-		[filters?.categories],
-	);
 
 	return (
 		<main className="mx-auto w-full max-w-[1600px] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
@@ -247,7 +240,7 @@ export function GamesPage({
 				role="toolbar"
 				aria-label="Game filters"
 			>
-				<div className="relative min-w-0 flex-1 xl:max-w-md">
+				<div className="relative min-w-0 flex-1 xl:max-w-xl">
 					<SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
 					<Input
 						aria-label="Search games"
@@ -267,15 +260,6 @@ export function GamesPage({
 					names={{ __all: "All providers" }}
 					onChange={(value) =>
 						patchQuery({ provider: value === "__all" ? "" : value })
-					}
-				/>
-				<FilterSelect
-					label="Category"
-					value={query.category || "__all"}
-					options={["__all", ...(filters?.categories ?? [])]}
-					names={{ __all: "All categories" }}
-					onChange={(value) =>
-						patchQuery({ category: value === "__all" ? "" : value })
 					}
 				/>
 				<FilterSelect
@@ -385,12 +369,7 @@ export function GamesPage({
 				) : (
 					<div className="space-y-3">
 						{rows.map((row) => (
-							<GameAdminRow
-								key={row.id}
-								row={row}
-								categoryOptions={categoryOptions}
-								onChange={openChange}
-							/>
+							<GameAdminRow key={row.id} row={row} onChange={openChange} />
 						))}
 						<footer className="flex flex-col gap-3 pt-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
 							<span>
@@ -449,11 +428,9 @@ export function GamesPage({
 
 function GameAdminRow({
 	row,
-	categoryOptions,
 	onChange,
 }: {
 	row: AdminGameRow;
-	categoryOptions: string[];
 	onChange: (row: AdminGameRow, patch: GamePatch, label: string) => void;
 }) {
 	return (
@@ -537,32 +514,6 @@ function GameAdminRow({
 							)
 						}
 					/>
-					<div className="col-span-2 sm:col-span-4">
-						<Select
-							value={row.category ?? "__none"}
-							onValueChange={(value) =>
-								onChange(
-									row,
-									{ category: value === "__none" ? null : value },
-									"Change game category",
-								)
-							}
-						>
-							<SelectTrigger
-								aria-label={`Category for ${row.name}`}
-								className="h-9 w-full"
-							>
-								<SelectValue>{row.category ?? "Uncategorized"}</SelectValue>
-							</SelectTrigger>
-							<SelectContent align="start">
-								{categoryOptions.map((value) => (
-									<SelectItem key={value} value={value}>
-										{value === "__none" ? "Uncategorized" : value}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
 				</div>
 			</div>
 		</article>

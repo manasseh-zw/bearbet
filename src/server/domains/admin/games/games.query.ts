@@ -24,7 +24,6 @@ export async function listAdminGames(input: AdminGameQuery) {
 		);
 	}
 	if (query.provider) conditions.push(eq(game.contentProvider, query.provider));
-	if (query.category) conditions.push(eq(game.category, query.category));
 	if (query.availability === "available")
 		conditions.push(eq(game.isAvailable, true));
 	if (query.availability === "unavailable")
@@ -43,18 +42,13 @@ export async function listAdminGames(input: AdminGameQuery) {
 	}[query.sort];
 	const orderDirection = query.direction === "asc" ? asc : desc;
 
-	const [totalRows, providers, categories] = await Promise.all([
+	const [totalRows, providers] = await Promise.all([
 		db.select({ value: sql<number>`count(*)::int` }).from(game).where(where),
 		db
 			.selectDistinct({ value: game.contentProvider })
 			.from(game)
 			.where(eq(game.providerId, env.CASINO_PROVIDER))
 			.orderBy(asc(game.contentProvider)),
-		db
-			.selectDistinct({ value: game.category })
-			.from(game)
-			.where(eq(game.providerId, env.CASINO_PROVIDER))
-			.orderBy(asc(game.category)),
 	]);
 
 	const total = totalRows[0]?.value ?? 0;
@@ -72,7 +66,6 @@ export async function listAdminGames(input: AdminGameQuery) {
 		items: rows,
 		filters: {
 			providers: providers.flatMap((row) => (row.value ? [row.value] : [])),
-			categories: categories.flatMap((row) => (row.value ? [row.value] : [])),
 		},
 		pagination: {
 			page,

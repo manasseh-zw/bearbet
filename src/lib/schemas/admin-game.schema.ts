@@ -18,7 +18,6 @@ export const adminGameQuerySchema = z
 		pageSize: adminPageSizeSchema.default(24),
 		search: z.string().trim().max(100).default(""),
 		provider: z.string().trim().max(120).default(""),
-		category: z.string().trim().max(120).default(""),
 		availability: z.enum(adminGameAvailability).default("all"),
 		status: z.enum(adminGameStatuses).default("all"),
 		curation: z.enum(adminGameCuration).default("all"),
@@ -34,7 +33,6 @@ export const updateAdminGameInputSchema = z
 		gameId: z.string().uuid(),
 		reason: reasonSchema,
 		isEnabled: z.boolean().optional(),
-		category: z.string().trim().max(120).nullable().optional(),
 		isFeatured: z.boolean().optional(),
 		isPopular: z.boolean().optional(),
 		isNew: z.boolean().optional(),
@@ -43,7 +41,6 @@ export const updateAdminGameInputSchema = z
 	.refine(
 		(input) =>
 			input.isEnabled !== undefined ||
-			input.category !== undefined ||
 			input.isFeatured !== undefined ||
 			input.isPopular !== undefined ||
 			input.isNew !== undefined,

@@ -6,8 +6,8 @@ import {
 	catalogueScopePriorityCategories,
 	promotionCatalogueCategories,
 } from "#/lib/schemas/catalogue.schema";
-import { env } from "#/server/env";
 import { recordAuditEntryInTransaction } from "#/server/domains/audit/audit.service";
+import { env } from "#/server/env";
 import { db } from "#/server/infra/db";
 import { game, gameProvider } from "#/server/infra/db/schema";
 import { createCasinoProvider } from "#/server/infra/providers";
@@ -102,12 +102,13 @@ export async function syncGameCatalogue(input: {
 				.values(batch)
 				.onConflictDoUpdate({
 					target: [game.providerId, game.externalId],
-					// Category is also an admin-owned curation field. Keep the
-					// existing value when a provider game is seen again.
 					set: {
 						code: sql.raw("excluded.code"),
 						name: sql.raw("excluded.name"),
 						contentProvider: sql.raw("excluded.content_provider"),
+						// Provider metadata is authoritative; local curation fields below
+						// are intentionally omitted so syncs preserve administrator choices.
+						category: sql.raw("excluded.category"),
 						type: sql.raw("excluded.type"),
 						description: sql.raw("excluded.description"),
 						rtp: sql.raw("excluded.rtp"),

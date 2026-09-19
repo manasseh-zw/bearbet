@@ -146,7 +146,7 @@ test("catalogue sync persists provider games and marks missing games unavailable
 	const stored = await findGame(integrationProvider, "game-1");
 	assert.equal(stored?.provider, "updated-studio");
 	assert.equal(stored?.type, "roulette");
-	assert.equal(stored?.category, "Admin curated");
+	assert.equal(stored?.category, "Playtech");
 });
 
 test("catalogue search ranks fuzzy matches and configured scope priorities", async () => {
@@ -168,7 +168,7 @@ test("catalogue search ranks fuzzy matches and configured scope priorities", asy
 	);
 	assert.deepEqual(
 		promotions.games.map((candidate) => candidate.name),
-		["Alpha Pragmatic game", "Zulu Booming game"],
+		["Alpha Pragmatic game", "Zulu Booming game", "Renamed game"],
 	);
 
 	const cached = await searchGames(
