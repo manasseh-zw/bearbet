@@ -13,7 +13,7 @@ import {
 	WalletCardsIcon,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useId, useMemo } from "react";
+import { useMemo } from "react";
 
 import {
 	AdminDataTable,
@@ -22,7 +22,6 @@ import {
 } from "#/components/admin/data-table";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
-import { Label } from "#/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -166,16 +165,12 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 						) : null}
 					</div>
 
-					<div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-						<div
-							className={cn(
-								"grid flex-1 grid-cols-2 gap-3",
-								query.category === "bet" ? "lg:grid-cols-3" : "lg:grid-cols-4",
-							)}
-						>
+					<div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+						<div className="flex flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap">
 							{query.category !== "bet" ? (
 								<FilterSelect
 									label="Wallet bucket"
+									className="sm:w-40"
 									value={query.bucket ?? "all"}
 									onChange={(value) =>
 										patchQuery({
@@ -196,6 +191,7 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 							{query.category !== "bet" ? (
 								<FilterSelect
 									label="Operation"
+									className="sm:w-44"
 									value={query.type ?? "all"}
 									onChange={(value) =>
 										patchQuery({
@@ -215,6 +211,7 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 							) : null}
 							<FilterSelect
 								label="Period"
+								className="sm:w-36"
 								value={query.timeRange}
 								onChange={(value) =>
 									patchQuery({ timeRange: value as HistoryTimeRange })
@@ -225,6 +222,7 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 							/>
 							<FilterSelect
 								label="Sort"
+								className="sm:w-40"
 								value={query.direction}
 								onChange={(value) =>
 									patchQuery({ direction: value as HistoryDirection })
@@ -300,33 +298,31 @@ function FilterSelect({
 	value,
 	onChange,
 	options,
+	className,
 }: {
 	label: string;
 	value: string;
 	onChange: (value: string) => void;
 	options: readonly (readonly [string, string])[];
+	className?: string;
 }) {
-	const id = useId();
 	return (
-		<div className="flex min-w-0 flex-col gap-1.5">
-			<Label htmlFor={id} className="text-xs">
-				{label}
-			</Label>
-			<Select value={value} onValueChange={(next) => next && onChange(next)}>
-				<SelectTrigger id={id} className="w-full bg-background">
-					<SelectValue />
-				</SelectTrigger>
-				<SelectContent>
-					<SelectGroup>
-						{options.map(([optionValue, optionLabel]) => (
-							<SelectItem key={optionValue} value={optionValue}>
-								{optionLabel}
-							</SelectItem>
-						))}
-					</SelectGroup>
-				</SelectContent>
-			</Select>
-		</div>
+		<Select value={value} onValueChange={(next) => next && onChange(next)}>
+			<SelectTrigger aria-label={label} className={cn("h-9 w-full", className)}>
+				<SelectValue>
+					{options.find(([optionValue]) => optionValue === value)?.[1] ?? value}
+				</SelectValue>
+			</SelectTrigger>
+			<SelectContent align="start">
+				<SelectGroup>
+					{options.map(([optionValue, optionLabel]) => (
+						<SelectItem key={optionValue} value={optionValue}>
+							{optionLabel}
+						</SelectItem>
+					))}
+				</SelectGroup>
+			</SelectContent>
+		</Select>
 	);
 }
 
