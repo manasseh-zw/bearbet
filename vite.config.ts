@@ -9,6 +9,11 @@ import { defineConfig } from "vite";
 
 const config = defineConfig({
 	resolve: { tsconfigPaths: true },
+	// Discover Base UI's deep imports in one pass so later component imports do not
+	// invalidate shared optimizer chunks while the browser is loading the app.
+	optimizeDeps: {
+		include: ["@base-ui/react/**/*.mjs"],
+	},
 	// The sandbox callback receiver is tested through ephemeral ngrok hosts.
 	server: { allowedHosts: [".ngrok-free.app"] },
 	plugins: [

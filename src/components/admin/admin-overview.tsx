@@ -263,6 +263,7 @@ export function AdminOverview() {
 						</CardDescription>
 					</div>
 					<Button
+						nativeButton={false}
 						render={
 							<Link
 								search={{

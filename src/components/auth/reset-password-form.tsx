@@ -62,7 +62,12 @@ export function ResetPasswordForm({
 
 			{resetComplete ? (
 				<div className="mt-7">
-					<Button render={<Link to="/login" />} size="lg" className="w-full">
+					<Button
+						className="w-full"
+						nativeButton={false}
+						render={<Link to="/login" />}
+						size="lg"
+					>
 						Continue to sign in
 					</Button>
 				</div>
