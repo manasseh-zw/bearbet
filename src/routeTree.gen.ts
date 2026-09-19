@@ -12,7 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteRouteImport } from './routes/_admin/route'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as GuestRouteRouteImport } from './routes/_guest/route'
-import { Route as AdminAdminRouteImport } from './routes/_admin/admin'
+import { Route as AdminAdminRouteRouteImport } from './routes/_admin/admin/route'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppPlayerRouteRouteImport } from './routes/_app/_player/route'
 import { Route as AppBigbangSandboxRouteImport } from './routes/_app/bigbang-sandbox'
@@ -20,6 +20,12 @@ import { Route as AppPromotionsRouteImport } from './routes/_app/promotions'
 import { Route as AppVipRouteImport } from './routes/_app/vip'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
 import { Route as GuestRegisterRouteImport } from './routes/_guest/register'
+import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin/index'
+import { Route as AdminAdminActivityRouteImport } from './routes/_admin/admin/activity'
+import { Route as AdminAdminBonusesRouteImport } from './routes/_admin/admin/bonuses'
+import { Route as AdminAdminGamesRouteImport } from './routes/_admin/admin/games'
+import { Route as AdminAdminUsersRouteImport } from './routes/_admin/admin/users'
+import { Route as AdminAdminWithdrawalsRouteImport } from './routes/_admin/admin/withdrawals'
 import { Route as AppPlayerBonusesRouteImport } from './routes/_app/_player/bonuses'
 import { Route as AppPlayerHistoryRouteImport } from './routes/_app/_player/history'
 import { Route as AppPlayerProfileRouteImport } from './routes/_app/_player/profile'
@@ -44,7 +50,7 @@ const GuestRouteRoute = GuestRouteRouteImport.update({
   id: '/_guest',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAdminRoute = AdminAdminRouteImport.update({
+const AdminAdminRouteRoute = AdminAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AdminRouteRoute,
@@ -82,6 +88,36 @@ const GuestRegisterRoute = GuestRegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => GuestRouteRoute,
+} as any)
+const AdminAdminIndexRoute = AdminAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminAdminRouteRoute,
+} as any)
+const AdminAdminActivityRoute = AdminAdminActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AdminAdminRouteRoute,
+} as any)
+const AdminAdminBonusesRoute = AdminAdminBonusesRouteImport.update({
+  id: '/bonuses',
+  path: '/bonuses',
+  getParentRoute: () => AdminAdminRouteRoute,
+} as any)
+const AdminAdminGamesRoute = AdminAdminGamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => AdminAdminRouteRoute,
+} as any)
+const AdminAdminUsersRoute = AdminAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminAdminRouteRoute,
+} as any)
+const AdminAdminWithdrawalsRoute = AdminAdminWithdrawalsRouteImport.update({
+  id: '/withdrawals',
+  path: '/withdrawals',
+  getParentRoute: () => AdminAdminRouteRoute,
 } as any)
 const AppPlayerBonusesRoute = AppPlayerBonusesRouteImport.update({
   id: '/bonuses',
@@ -142,12 +178,17 @@ const ApiDrakonWebhookKeyDrakon_apiRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
-  '/admin': typeof AdminAdminRoute
+  '/admin': typeof AdminAdminRouteRouteWithChildren
   '/bigbang-sandbox': typeof AppBigbangSandboxRoute
   '/promotions': typeof AppPromotionsRoute
   '/vip': typeof AppVipRoute
   '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
+  '/admin/activity': typeof AdminAdminActivityRoute
+  '/admin/bonuses': typeof AdminAdminBonusesRoute
+  '/admin/games': typeof AdminAdminGamesRoute
+  '/admin/users': typeof AdminAdminUsersRoute
+  '/admin/withdrawals': typeof AdminAdminWithdrawalsRoute
   '/bonuses': typeof AppPlayerBonusesRoute
   '/history': typeof AppPlayerHistoryRoute
   '/profile': typeof AppPlayerProfileRoute
@@ -157,17 +198,22 @@ export interface FileRoutesByFullPath {
   '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
   '/api/bigbang/webhook': typeof ApiBigbangWebhookRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
+  '/admin/': typeof AdminAdminIndexRoute
   '/games/$gameId': typeof AppPlayerGamesGameIdRoute
   '/api/drakon/webhook/$key/drakon_api': typeof ApiDrakonWebhookKeyDrakon_apiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
-  '/admin': typeof AdminAdminRoute
   '/bigbang-sandbox': typeof AppBigbangSandboxRoute
   '/promotions': typeof AppPromotionsRoute
   '/vip': typeof AppVipRoute
   '/login': typeof GuestLoginRoute
   '/register': typeof GuestRegisterRoute
+  '/admin/activity': typeof AdminAdminActivityRoute
+  '/admin/bonuses': typeof AdminAdminBonusesRoute
+  '/admin/games': typeof AdminAdminGamesRoute
+  '/admin/users': typeof AdminAdminUsersRoute
+  '/admin/withdrawals': typeof AdminAdminWithdrawalsRoute
   '/bonuses': typeof AppPlayerBonusesRoute
   '/history': typeof AppPlayerHistoryRoute
   '/profile': typeof AppPlayerProfileRoute
@@ -177,6 +223,7 @@ export interface FileRoutesByTo {
   '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
   '/api/bigbang/webhook': typeof ApiBigbangWebhookRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
+  '/admin': typeof AdminAdminIndexRoute
   '/games/$gameId': typeof AppPlayerGamesGameIdRoute
   '/api/drakon/webhook/$key/drakon_api': typeof ApiDrakonWebhookKeyDrakon_apiRoute
 }
@@ -185,14 +232,19 @@ export interface FileRoutesById {
   '/_admin': typeof AdminRouteRouteWithChildren
   '/_app': typeof AppRouteRouteWithChildren
   '/_guest': typeof GuestRouteRouteWithChildren
+  '/_admin/admin': typeof AdminAdminRouteRouteWithChildren
   '/_app/_player': typeof AppPlayerRouteRouteWithChildren
-  '/_admin/admin': typeof AdminAdminRoute
   '/_app/bigbang-sandbox': typeof AppBigbangSandboxRoute
   '/_app/promotions': typeof AppPromotionsRoute
   '/_app/vip': typeof AppVipRoute
   '/_guest/login': typeof GuestLoginRoute
   '/_guest/register': typeof GuestRegisterRoute
   '/_app/': typeof AppIndexRoute
+  '/_admin/admin/activity': typeof AdminAdminActivityRoute
+  '/_admin/admin/bonuses': typeof AdminAdminBonusesRoute
+  '/_admin/admin/games': typeof AdminAdminGamesRoute
+  '/_admin/admin/users': typeof AdminAdminUsersRoute
+  '/_admin/admin/withdrawals': typeof AdminAdminWithdrawalsRoute
   '/_app/_player/bonuses': typeof AppPlayerBonusesRoute
   '/_app/_player/history': typeof AppPlayerHistoryRoute
   '/_app/_player/profile': typeof AppPlayerProfileRoute
@@ -202,6 +254,7 @@ export interface FileRoutesById {
   '/api/bigbang/user-data': typeof ApiBigbangUserDataRoute
   '/api/bigbang/webhook': typeof ApiBigbangWebhookRoute
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
+  '/_admin/admin/': typeof AdminAdminIndexRoute
   '/_app/_player/games/$gameId': typeof AppPlayerGamesGameIdRoute
   '/api/drakon/webhook/$key/drakon_api': typeof ApiDrakonWebhookKeyDrakon_apiRoute
 }
@@ -215,6 +268,11 @@ export interface FileRouteTypes {
     | '/vip'
     | '/login'
     | '/register'
+    | '/admin/activity'
+    | '/admin/bonuses'
+    | '/admin/games'
+    | '/admin/users'
+    | '/admin/withdrawals'
     | '/bonuses'
     | '/history'
     | '/profile'
@@ -224,17 +282,22 @@ export interface FileRouteTypes {
     | '/api/bigbang/user-data'
     | '/api/bigbang/webhook'
     | '/api/drakon/$key'
+    | '/admin/'
     | '/games/$gameId'
     | '/api/drakon/webhook/$key/drakon_api'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/bigbang-sandbox'
     | '/promotions'
     | '/vip'
     | '/login'
     | '/register'
+    | '/admin/activity'
+    | '/admin/bonuses'
+    | '/admin/games'
+    | '/admin/users'
+    | '/admin/withdrawals'
     | '/bonuses'
     | '/history'
     | '/profile'
@@ -244,6 +307,7 @@ export interface FileRouteTypes {
     | '/api/bigbang/user-data'
     | '/api/bigbang/webhook'
     | '/api/drakon/$key'
+    | '/admin'
     | '/games/$gameId'
     | '/api/drakon/webhook/$key/drakon_api'
   id:
@@ -251,14 +315,19 @@ export interface FileRouteTypes {
     | '/_admin'
     | '/_app'
     | '/_guest'
-    | '/_app/_player'
     | '/_admin/admin'
+    | '/_app/_player'
     | '/_app/bigbang-sandbox'
     | '/_app/promotions'
     | '/_app/vip'
     | '/_guest/login'
     | '/_guest/register'
     | '/_app/'
+    | '/_admin/admin/activity'
+    | '/_admin/admin/bonuses'
+    | '/_admin/admin/games'
+    | '/_admin/admin/users'
+    | '/_admin/admin/withdrawals'
     | '/_app/_player/bonuses'
     | '/_app/_player/history'
     | '/_app/_player/profile'
@@ -268,6 +337,7 @@ export interface FileRouteTypes {
     | '/api/bigbang/user-data'
     | '/api/bigbang/webhook'
     | '/api/drakon/$key'
+    | '/_admin/admin/'
     | '/_app/_player/games/$gameId'
     | '/api/drakon/webhook/$key/drakon_api'
   fileRoutesById: FileRoutesById
@@ -311,7 +381,7 @@ declare module '@tanstack/react-router' {
       id: '/_admin/admin'
       path: '/admin'
       fullPath: '/admin'
-      preLoaderRoute: typeof AdminAdminRouteImport
+      preLoaderRoute: typeof AdminAdminRouteRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/_app/': {
@@ -362,6 +432,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/register'
       preLoaderRoute: typeof GuestRegisterRouteImport
       parentRoute: typeof GuestRouteRoute
+    }
+    '/_admin/admin/': {
+      id: '/_admin/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminAdminIndexRouteImport
+      parentRoute: typeof AdminAdminRouteRoute
+    }
+    '/_admin/admin/activity': {
+      id: '/_admin/admin/activity'
+      path: '/activity'
+      fullPath: '/admin/activity'
+      preLoaderRoute: typeof AdminAdminActivityRouteImport
+      parentRoute: typeof AdminAdminRouteRoute
+    }
+    '/_admin/admin/bonuses': {
+      id: '/_admin/admin/bonuses'
+      path: '/bonuses'
+      fullPath: '/admin/bonuses'
+      preLoaderRoute: typeof AdminAdminBonusesRouteImport
+      parentRoute: typeof AdminAdminRouteRoute
+    }
+    '/_admin/admin/games': {
+      id: '/_admin/admin/games'
+      path: '/games'
+      fullPath: '/admin/games'
+      preLoaderRoute: typeof AdminAdminGamesRouteImport
+      parentRoute: typeof AdminAdminRouteRoute
+    }
+    '/_admin/admin/users': {
+      id: '/_admin/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminAdminUsersRouteImport
+      parentRoute: typeof AdminAdminRouteRoute
+    }
+    '/_admin/admin/withdrawals': {
+      id: '/_admin/admin/withdrawals'
+      path: '/withdrawals'
+      fullPath: '/admin/withdrawals'
+      preLoaderRoute: typeof AdminAdminWithdrawalsRouteImport
+      parentRoute: typeof AdminAdminRouteRoute
     }
     '/_app/_player/bonuses': {
       id: '/_app/_player/bonuses'
@@ -443,12 +555,34 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminAdminRouteRouteChildren {
+  AdminAdminActivityRoute: typeof AdminAdminActivityRoute
+  AdminAdminBonusesRoute: typeof AdminAdminBonusesRoute
+  AdminAdminGamesRoute: typeof AdminAdminGamesRoute
+  AdminAdminUsersRoute: typeof AdminAdminUsersRoute
+  AdminAdminWithdrawalsRoute: typeof AdminAdminWithdrawalsRoute
+  AdminAdminIndexRoute: typeof AdminAdminIndexRoute
+}
+
+const AdminAdminRouteRouteChildren: AdminAdminRouteRouteChildren = {
+  AdminAdminActivityRoute: AdminAdminActivityRoute,
+  AdminAdminBonusesRoute: AdminAdminBonusesRoute,
+  AdminAdminGamesRoute: AdminAdminGamesRoute,
+  AdminAdminUsersRoute: AdminAdminUsersRoute,
+  AdminAdminWithdrawalsRoute: AdminAdminWithdrawalsRoute,
+  AdminAdminIndexRoute: AdminAdminIndexRoute,
+}
+
+const AdminAdminRouteRouteWithChildren = AdminAdminRouteRoute._addFileChildren(
+  AdminAdminRouteRouteChildren,
+)
+
 interface AdminRouteRouteChildren {
-  AdminAdminRoute: typeof AdminAdminRoute
+  AdminAdminRouteRoute: typeof AdminAdminRouteRouteWithChildren
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
-  AdminAdminRoute: AdminAdminRoute,
+  AdminAdminRouteRoute: AdminAdminRouteRouteWithChildren,
 }
 
 const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
