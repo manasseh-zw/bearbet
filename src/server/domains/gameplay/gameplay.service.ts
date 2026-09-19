@@ -20,10 +20,10 @@ import {
 } from "#/server/domains/wallet/wallet.policy";
 import {
 	applyWalletOperationInTransaction,
-	type DatabaseTransaction,
 	type WalletMovement,
 } from "#/server/domains/wallet/wallet.service";
 import { db } from "#/server/infra/db";
+import type { DatabaseTransaction } from "#/server/infra/db/database.types";
 import {
 	bonusAward,
 	gameRound,

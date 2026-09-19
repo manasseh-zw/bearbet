@@ -2,7 +2,7 @@ import "@tanstack/react-start/server-only";
 
 import { and, eq, inArray } from "drizzle-orm";
 
-import type { DatabaseTransaction } from "#/server/domains/wallet/wallet.service";
+import type { DatabaseTransaction } from "#/server/infra/db/database.types";
 import { providerOperation } from "#/server/infra/db/schema";
 
 export async function countUnsettledAwardBets(

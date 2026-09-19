@@ -46,7 +46,7 @@ export const playerAuthMiddleware = createMiddleware().server(
 
 export const adminAuthMiddleware = createMiddleware().server(
 	async ({ next }) => {
-		const session = await getCurrentSession();
+		const session = await getCurrentSession({ disableCookieCache: true });
 
 		if (!session) {
 			setResponseStatus(401);

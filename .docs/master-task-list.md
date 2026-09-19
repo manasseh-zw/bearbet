@@ -94,8 +94,8 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 - [ ] **A03. Add audited balance adjustments.** Require actor, target, amount, and reason. Record before and after balances through the existing wallet operation and ledger model.
 - [ ] **A04. Build game management.** Sync the catalogue, inspect games, enable or disable them, set categories, and manage featured, popular, and new curation without losing local edits during sync.
 - [ ] **A05. Build bonus management.** Create, edit, activate, and deactivate definitions with clear rules for existing awards.
-- [ ] **A06. Build operations management.** Inspect wallet and gameplay operations and approve or reject simulated withdrawals.
-- [~] **A07. Persist and verify the admin audit trail.** The immutable audit schema now records actor, target, action, reason, metadata, and time. Admin mutation writers, authorization checks, and verification coverage remain.
+- [~] **A06. Build operations management.** Inspect wallet and gameplay operations and approve or reject simulated withdrawals. Withdrawal review now has an authenticated admin server function and atomic wallet, status, and audit writes; operational reads and UI remain.
+- [~] **A07. Persist and verify the admin audit trail.** The audit schema and transaction-scoped writer now cover withdrawal decisions, with fresh-session and in-transaction admin authorization. Remaining admin mutation writers and broader verification coverage remain.
 
 ### 8. Live Drakon proof
 

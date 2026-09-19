@@ -2,7 +2,10 @@ import "@tanstack/react-start/server-only";
 
 import { z } from "zod";
 
-import { withdrawalRequestInputSchema } from "#/lib/schemas/withdrawal.schema";
+import {
+	withdrawalRequestInputSchema,
+	withdrawalReviewInputSchema,
+} from "#/lib/schemas/withdrawal.schema";
 
 const requiredIdentifierSchema = z.string().trim().min(1);
 
@@ -10,11 +13,8 @@ export const requestWithdrawalSchema = withdrawalRequestInputSchema.extend({
 	playerId: requiredIdentifierSchema,
 });
 
-export const reviewWithdrawalSchema = z.object({
-	withdrawalId: requiredIdentifierSchema,
+export const reviewWithdrawalSchema = withdrawalReviewInputSchema.extend({
 	reviewerUserId: requiredIdentifierSchema,
-	decision: z.enum(["approve", "reject"]),
-	reason: z.string().trim().min(1, "A review reason is required"),
 	now: z.date().optional(),
 });
 

@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test, { after, before } from "node:test";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { MoneyRuleError } from "#/server/domains/wallet/wallet.policy";
 import { db, pool } from "#/server/infra/db";
 import {
+	adminAuditEntry,
 	ledgerEntry,
 	player,
 	user,
@@ -67,6 +68,9 @@ after(async () => {
 			.where(eq(walletOperation.walletId, storedWallet.id));
 		await db.delete(wallet).where(eq(wallet.id, storedWallet.id));
 	}
+	await db
+		.delete(adminAuditEntry)
+		.where(eq(adminAuditEntry.actorUserId, adminId));
 	await db.delete(player).where(eq(player.userId, playerId));
 	await db.delete(user).where(eq(user.id, playerId));
 	await db.delete(user).where(eq(user.id, adminId));
@@ -162,6 +166,21 @@ test("only an active admin can approve and approval cannot be reversed", async (
 		reason: "Retry",
 	});
 	assert.equal(retry.isDuplicate, true);
+	const [auditEntry] = await db
+		.select()
+		.from(adminAuditEntry)
+		.where(
+			and(
+				eq(adminAuditEntry.actorUserId, adminId),
+				eq(adminAuditEntry.targetId, pending.withdrawal.id),
+			),
+		);
+	assert.equal(auditEntry?.action, "withdrawal_approved");
+	assert.equal(
+		(auditEntry?.metadata as { walletOperationId?: string })
+			.walletOperationId !== undefined,
+		true,
+	);
 	await assert.rejects(
 		reviewWithdrawal({
 			withdrawalId: pending.withdrawal.id,

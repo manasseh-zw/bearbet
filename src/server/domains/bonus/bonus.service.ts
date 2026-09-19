@@ -12,11 +12,9 @@ import {
 	createBonusDefinitionSchema,
 } from "#/server/domains/bonus/bonus.schema";
 import { countUnsettledAwardBets } from "#/server/domains/gameplay/gameplay.settlement";
-import {
-	applyWalletOperationInTransaction,
-	type DatabaseTransaction,
-} from "#/server/domains/wallet/wallet.service";
+import { applyWalletOperationInTransaction } from "#/server/domains/wallet/wallet.service";
 import { db } from "#/server/infra/db";
+import type { DatabaseTransaction } from "#/server/infra/db/database.types";
 import {
 	bonusAward,
 	bonusDefinition,

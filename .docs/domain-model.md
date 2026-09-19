@@ -1,6 +1,6 @@
 # Bearbet domain model
 
-Status: identity, player, wallet, welcome credit, wallet operation, bonus, withdrawal, game-session, round, provider-operation, game-engagement, and admin-audit schemas are implemented. Money, wagering, gameplay, and withdrawal rules are enforced by pure policy tests and PostgreSQL integration tests. Engagement reads/writes and administrator workflows remain planned.
+Status: identity, player, wallet, welcome credit, wallet operation, bonus, withdrawal, game-session, round, provider-operation, game-engagement, and admin-audit schemas are implemented. Money, wagering, gameplay, and withdrawal rules are enforced by pure policy tests and PostgreSQL integration tests. The first administrator mutation slice now uses fresh-session authorization, an in-transaction active-admin check, and audited withdrawal review; remaining management workflows are planned.
 
 ## Required player journey
 
@@ -157,7 +157,7 @@ The simulated withdrawal request and its pending, approved, or rejected lifecycl
 
 ### Admin audit entry
 
-Records non-financial administrative actions such as suspending a user, changing a game, or editing a bonus. Each entry stores the actor, target type and ID, action, required reason, optional structured metadata, and creation time. Financial admin adjustments already have ledger evidence but may also reference the audit entry.
+Records administrative actions such as suspending a user, changing a game, editing a bonus, or reviewing a withdrawal. Each entry stores the actor, target type and ID, action, required reason, optional structured metadata, and creation time. Audit writes are transaction-scoped so the evidence commits or rolls back with the mutation. Financial admin adjustments already have ledger evidence but may also reference the audit entry.
 
 ## Relationships
 

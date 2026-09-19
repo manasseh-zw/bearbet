@@ -112,14 +112,14 @@ Complete player profile and password recovery. Profile edits must exclude role, 
 
 Use the persisted player–game favorite and recent-game projections, then move catalogue filtering to indexed, paginated PostgreSQL reads with provider filters, URL state, and the local featured, popular, and new curation flags. These close the original product brief, but they follow the playable and bonus journeys.
 
-Add a nested administrator route group with a server-side role check on every function. Build operations in this order:
+Add a nested administrator route group with a fresh-session server-side role check on every function. Mutations must re-read and lock the active admin inside their transaction, and transaction-scoped audit writes must commit or roll back with the mutation. The first withdrawal-review slice now follows this boundary. Build the remaining operations in this order:
 
 1. User search, inspection, suspension, activation, and bonus assignment.
 2. Audited balance adjustments through the wallet engine.
 3. Game sync, availability, categories, and collection curation.
 4. Bonus definition management.
 5. Wallet and gameplay inspection plus withdrawal review.
-6. Audit writers over the new immutable admin-audit table for every administrator mutation.
+6. Extend the transaction-scoped audit writer over the new admin-audit table for every administrator mutation.
 
 The overview comes from those operational reads. It should report useful counts and recent events, not invented gambling revenue.
 

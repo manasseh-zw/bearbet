@@ -16,3 +16,13 @@ export const withdrawalRequestInputSchema = z
 export type WithdrawalRequestInput = z.input<
 	typeof withdrawalRequestInputSchema
 >;
+
+export const withdrawalReviewInputSchema = z
+	.object({
+		withdrawalId: z.string().trim().min(1),
+		decision: z.enum(["approve", "reject"]),
+		reason: z.string().trim().min(1, "A review reason is required").max(500),
+	})
+	.strict();
+
+export type WithdrawalReviewInput = z.input<typeof withdrawalReviewInputSchema>;

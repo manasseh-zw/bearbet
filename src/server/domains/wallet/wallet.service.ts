@@ -18,6 +18,7 @@ import {
 	type WalletMovement,
 } from "#/server/domains/wallet/wallet.schema";
 import { db } from "#/server/infra/db";
+import type { DatabaseTransaction } from "#/server/infra/db/database.types";
 import {
 	ledgerEntry,
 	user,
@@ -29,9 +30,6 @@ import {
 export { DEMO_TOP_UP_AMOUNTS_MINOR } from "#/server/domains/wallet/wallet.schema";
 
 type WalletBucket = WalletMovement["bucket"];
-export type DatabaseTransaction = Parameters<
-	Parameters<typeof db.transaction>[0]
->[0];
 
 export type {
 	ApplyWalletOperationInput,
@@ -316,6 +314,8 @@ function operationResult(
 ) {
 	return {
 		operationId: operation.id,
+		publicReference: operation.publicReference,
+		type: operation.type,
 		isDuplicate,
 		balances: {
 			cashBalanceMinor: operation.resultCashBalanceMinor,

@@ -2,6 +2,11 @@ import "@tanstack/react-start/server-only";
 
 import { eq } from "drizzle-orm";
 
+import {
+	AdminAuthorizationError,
+	assertActiveAdminInTransaction,
+} from "#/server/domains/admin/admin-auth.service";
+import { recordAuditEntryInTransaction } from "#/server/domains/audit/audit.service";
 import { applyWalletOperationInTransaction } from "#/server/domains/wallet/wallet.service";
 import {
 	type RequestWithdrawalCommand,
@@ -12,7 +17,7 @@ import {
 	reviewWithdrawalSchema,
 } from "#/server/domains/withdrawal/withdrawal.schema";
 import { db } from "#/server/infra/db";
-import { user, wallet, withdrawal } from "#/server/infra/db/schema";
+import { wallet, withdrawal } from "#/server/infra/db/schema";
 
 export class WithdrawalServiceError extends Error {
 	constructor(
@@ -103,15 +108,16 @@ export async function reviewWithdrawal(input: ReviewWithdrawalInput) {
 	const command = parseWithdrawalReview(input);
 
 	return db.transaction(async (transaction) => {
-		const [reviewer] = await transaction
-			.select({ role: user.role, banned: user.banned })
-			.from(user)
-			.where(eq(user.id, command.reviewerUserId));
-		if (!reviewer || reviewer.role !== "admin" || reviewer.banned) {
-			throw new WithdrawalServiceError(
-				"An active administrator must review withdrawals",
-				"ADMIN_REQUIRED",
-			);
+		try {
+			await assertActiveAdminInTransaction(transaction, command.reviewerUserId);
+		} catch (error) {
+			if (error instanceof AdminAuthorizationError) {
+				throw new WithdrawalServiceError(
+					"An active administrator must review withdrawals",
+					"ADMIN_REQUIRED",
+				);
+			}
+			throw error;
 		}
 
 		const [current] = await transaction
@@ -137,40 +143,48 @@ export async function reviewWithdrawal(input: ReviewWithdrawalInput) {
 			);
 		}
 
-		await applyWalletOperationInTransaction(transaction, {
-			playerId: current.playerId,
-			type:
-				command.decision === "approve"
-					? "withdrawal_debit"
-					: "withdrawal_release",
-			idempotencyKey: `withdrawal:${current.id}:${command.decision}`,
-			movements:
-				command.decision === "approve"
-					? [
-							{
-								bucket: "reserved_cash",
-								amountMinor: -current.reservedAmountMinor,
-							},
-						]
-					: [
-							{
-								bucket: "reserved_cash",
-								amountMinor: -current.reservedAmountMinor,
-							},
-							{ bucket: "cash", amountMinor: current.reservedAmountMinor },
-						],
-			sourceType: "withdrawal",
-			sourceId: current.id,
-			actorUserId: command.reviewerUserId,
-		});
+		const movements =
+			command.decision === "approve"
+				? [
+						{
+							bucket: "reserved_cash" as const,
+							amountMinor: -current.reservedAmountMinor,
+						},
+					]
+				: [
+						{
+							bucket: "reserved_cash" as const,
+							amountMinor: -current.reservedAmountMinor,
+						},
+						{
+							bucket: "cash" as const,
+							amountMinor: current.reservedAmountMinor,
+						},
+					];
+		const walletOperation = await applyWalletOperationInTransaction(
+			transaction,
+			{
+				playerId: current.playerId,
+				type:
+					command.decision === "approve"
+						? "withdrawal_debit"
+						: "withdrawal_release",
+				idempotencyKey: `withdrawal:${current.id}:${command.decision}`,
+				movements,
+				sourceType: "withdrawal",
+				sourceId: current.id,
+				actorUserId: command.reviewerUserId,
+			},
+		);
 
+		const reviewedAt = command.now ?? new Date();
 		const [reviewed] = await transaction
 			.update(withdrawal)
 			.set({
 				status: nextStatus,
 				reviewerUserId: command.reviewerUserId,
 				reviewReason: command.reason,
-				reviewedAt: command.now ?? new Date(),
+				reviewedAt,
 			})
 			.where(eq(withdrawal.id, current.id))
 			.returning();
@@ -180,6 +194,28 @@ export async function reviewWithdrawal(input: ReviewWithdrawalInput) {
 				"INVALID_WITHDRAWAL",
 			);
 		}
+
+		await recordAuditEntryInTransaction(transaction, {
+			actorUserId: command.reviewerUserId,
+			target: { type: "withdrawal", id: current.id },
+			action:
+				command.decision === "approve"
+					? "withdrawal_approved"
+					: "withdrawal_rejected",
+			reason: command.reason,
+			createdAt: reviewedAt,
+			metadata: {
+				decision: command.decision,
+				currencyCode: current.currencyCode,
+				requestedAmountMinor: current.requestedAmountMinor,
+				reservedAmountMinor: current.reservedAmountMinor,
+				walletOperationId: walletOperation.operationId,
+				walletPublicReference: walletOperation.publicReference,
+				walletOperationType: walletOperation.type,
+				movements,
+			},
+		});
+
 		return { withdrawal: reviewed, isDuplicate: false };
 	});
 }
