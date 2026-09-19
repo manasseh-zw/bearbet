@@ -268,7 +268,9 @@ export function AdminOverview() {
 								search={{
 									tab: "wallet",
 									search: "",
+									types: [],
 									withdrawalStatus: "all",
+									withdrawalStatuses: [],
 									limit: 25,
 								}}
 								to="/admin/activity"

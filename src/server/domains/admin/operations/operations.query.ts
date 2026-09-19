@@ -16,6 +16,7 @@ import { alias } from "drizzle-orm/pg-core";
 
 import {
 	type AdminActivityQuery,
+	type AdminActivityQueryInput,
 	type AdminWithdrawalQuery,
 	adminActivityQuerySchema,
 	adminWithdrawalQuerySchema,
@@ -126,7 +127,7 @@ export async function listAdminWithdrawals(input: AdminWithdrawalQuery) {
 	};
 }
 
-export async function listAdminActivity(input: AdminActivityQuery) {
+export async function listAdminActivity(input: AdminActivityQueryInput) {
 	const query = adminActivityQuerySchema.parse(input);
 
 	switch (query.tab) {
@@ -146,7 +147,9 @@ async function listWalletActivity(query: AdminActivityQuery) {
 	const actor = alias(user, "wallet_actor");
 	const conditions = [
 		...playerSearchConditions(query.search),
-		...(query.type ? [eq(walletOperation.type, query.type)] : []),
+		...(selectedActivityTypes(query).length
+			? [inArray(walletOperation.type, selectedActivityTypes(query))]
+			: []),
 		...(cursor
 			? [
 					or(
@@ -212,10 +215,16 @@ async function listWalletActivity(query: AdminActivityQuery) {
 
 async function listGameplayActivity(query: AdminActivityQuery) {
 	const cursor = readCursor(query.cursor);
+	const selectedTypes = selectedActivityTypes(query);
+	const gameplayTypes = selectedTypes.filter(isGameplayType);
 	const conditions = [
 		...playerSearchConditions(query.search),
-		...(isGameplayType(query.type)
-			? [eq(providerOperation.type, query.type)]
+		...(selectedTypes.length
+			? [
+					gameplayTypes.length
+						? inArray(providerOperation.type, gameplayTypes)
+						: sql`false`,
+				]
 			: []),
 		...(cursor
 			? [
@@ -288,8 +297,8 @@ async function listWithdrawalActivity(query: AdminActivityQuery) {
 	const cursor = readCursor(query.cursor);
 	const conditions = [
 		...playerSearchConditions(query.search),
-		...(query.withdrawalStatus !== "all"
-			? [eq(withdrawal.status, query.withdrawalStatus)]
+		...(selectedWithdrawalStatuses(query).length
+			? [inArray(withdrawal.status, selectedWithdrawalStatuses(query))]
 			: []),
 		...(cursor
 			? [
@@ -480,13 +489,19 @@ function displayActivityAmount(movements: LedgerMovement[]) {
 	);
 }
 
-function isGameplayType(
-	type: AdminActivityQuery["type"],
-): type is (typeof GAMEPLAY_TYPES)[number] {
-	return (
-		type !== undefined &&
-		GAMEPLAY_TYPES.includes(type as (typeof GAMEPLAY_TYPES)[number])
-	);
+function isGameplayType(type: string): type is (typeof GAMEPLAY_TYPES)[number] {
+	return GAMEPLAY_TYPES.includes(type as (typeof GAMEPLAY_TYPES)[number]);
+}
+
+function selectedActivityTypes(query: AdminActivityQuery) {
+	return query.types.length ? query.types : query.type ? [query.type] : [];
+}
+
+function selectedWithdrawalStatuses(query: AdminActivityQuery) {
+	if (query.withdrawalStatuses.length) {
+		return query.withdrawalStatuses.filter((status) => status !== "all");
+	}
+	return query.withdrawalStatus === "all" ? [] : [query.withdrawalStatus];
 }
 
 function activityPagination(

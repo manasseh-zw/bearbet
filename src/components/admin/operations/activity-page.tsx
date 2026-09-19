@@ -30,13 +30,16 @@ import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import {
+	MultiSelect,
+	type MultiSelectOption,
+} from "#/components/ui/multi-select";
+import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
 } from "#/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { adminOperationsQueries } from "#/lib/queries/admin-operations.queries";
 import type {
 	AdminActivityQuery,
@@ -90,6 +93,12 @@ const statusLabels: Record<AdminWithdrawalStatus, string> = {
 	rejected: "Rejected",
 };
 
+const withdrawalStatusOptions: MultiSelectOption[] = [
+	{ value: "pending", label: statusLabels.pending },
+	{ value: "approved", label: statusLabels.approved },
+	{ value: "rejected", label: statusLabels.rejected },
+];
+
 export function ActivityPage({
 	query,
 	onQueryChange,
@@ -109,7 +118,11 @@ export function ActivityPage({
 
 	const pages = activityQuery.data?.pages ?? [];
 	const hasFilters = Boolean(
-		query.search || query.type || query.withdrawalStatus !== "all",
+		query.search ||
+			query.type ||
+			query.types.length ||
+			query.withdrawalStatus !== "all" ||
+			query.withdrawalStatuses.length,
 	);
 
 	function patchQuery(patch: Partial<AdminActivityQuery>) {
@@ -124,7 +137,9 @@ export function ActivityPage({
 			tab: value,
 			search: "",
 			type: undefined,
+			types: [],
 			withdrawalStatus: "all",
+			withdrawalStatuses: [],
 			cursor: undefined,
 		});
 	}
@@ -151,17 +166,22 @@ export function ActivityPage({
 				</Badge>
 			</header>
 
-			<Tabs value={query.tab} onValueChange={changeTab}>
-				<TabsList className="w-full max-w-xl sm:w-fit">
-					{(Object.keys(tabLabels) as AdminActivityTab[]).map((tab) => (
-						<TabsTrigger key={tab} value={tab}>
-							{tabLabels[tab]}
-						</TabsTrigger>
-					))}
-				</TabsList>
-			</Tabs>
-
 			<AdminTableToolbar ariaLabel="Activity filters">
+				<Select value={query.tab} onValueChange={changeTab}>
+					<SelectTrigger
+						aria-label="Activity view"
+						className="h-9 w-full lg:w-44"
+					>
+						<SelectValue>{tabLabels[query.tab]}</SelectValue>
+					</SelectTrigger>
+					<SelectContent align="start">
+						{(Object.keys(tabLabels) as AdminActivityTab[]).map((tab) => (
+							<SelectItem key={tab} value={tab}>
+								{tabLabels[tab]}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 				<div className="relative min-w-0 flex-1 lg:max-w-md">
 					<SearchIcon className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground" />
 					<Input
@@ -180,55 +200,51 @@ export function ActivityPage({
 					/>
 				</div>
 				{showTypeFilter ? (
-					<Select
-						value={query.type ?? "all"}
-						onValueChange={(value) =>
+					<MultiSelect
+						ariaLabel="Activity operation types"
+						className="lg:w-64"
+						emptyLabel={
+							query.tab === "wallet"
+								? "All wallet operations"
+								: "All gameplay operations"
+						}
+						onValuesChange={(values) =>
 							patchQuery({
-								type:
-									value === "all"
-										? undefined
-										: (value as AdminActivityQuery["type"]),
+								type: undefined,
+								types: values as AdminActivityQuery["types"],
 							})
 						}
-					>
-						<SelectTrigger
-							aria-label="Activity operation type"
-							className="h-9 w-full lg:w-48"
-						>
-							<SelectValue>{typeOptions[query.type ?? "all"]}</SelectValue>
-						</SelectTrigger>
-						<SelectContent align="start">
-							{Object.entries(typeOptions).map(([value, label]) => (
-								<SelectItem key={value} value={value}>
-									{label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+						options={Object.entries(typeOptions)
+							.filter(([value]) => value !== "all")
+							.map(([value, label]) => ({ value, label }))}
+						searchPlaceholder="Search operations"
+						values={
+							query.types.length ? query.types : query.type ? [query.type] : []
+						}
+					/>
 				) : null}
 				{query.tab === "withdrawals" ? (
-					<Select
-						value={query.withdrawalStatus}
-						onValueChange={(value) =>
+					<MultiSelect
+						ariaLabel="Withdrawal decisions"
+						className="lg:w-48"
+						emptyLabel="All decisions"
+						onValuesChange={(values) =>
 							patchQuery({
-								withdrawalStatus: (value ?? "all") as AdminWithdrawalStatus,
+								withdrawalStatus: "all",
+								withdrawalStatuses:
+									values as AdminActivityQuery["withdrawalStatuses"],
 							})
 						}
-					>
-						<SelectTrigger
-							aria-label="Withdrawal decision"
-							className="h-9 w-full lg:w-40"
-						>
-							<SelectValue>{statusLabels[query.withdrawalStatus]}</SelectValue>
-						</SelectTrigger>
-						<SelectContent align="start">
-							{Object.entries(statusLabels).map(([value, label]) => (
-								<SelectItem key={value} value={value}>
-									{label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+						options={withdrawalStatusOptions}
+						searchPlaceholder="Search decisions"
+						values={
+							query.withdrawalStatuses.length
+								? query.withdrawalStatuses
+								: query.withdrawalStatus === "all"
+									? []
+									: [query.withdrawalStatus]
+						}
+					/>
 				) : null}
 				{hasFilters ? (
 					<Button
@@ -238,7 +254,9 @@ export function ActivityPage({
 								...query,
 								search: "",
 								type: undefined,
+								types: [],
 								withdrawalStatus: "all",
+								withdrawalStatuses: [],
 								cursor: undefined,
 							});
 						}}

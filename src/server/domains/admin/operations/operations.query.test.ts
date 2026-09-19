@@ -202,11 +202,20 @@ test("admin activity uses cursors and exposes wallet, withdrawal, and audit tabs
 		firstPage.items[0]?.operation.id,
 	);
 
+	const walletFilteredByType = (await listAdminActivity({
+		tab: "wallet",
+		search: playerId,
+		limit: 20,
+		types: ["demo_top_up"],
+	})) as WalletActivityPage;
+	assert.equal(walletFilteredByType.items.length, 1);
+	assert.equal(walletFilteredByType.items[0]?.operation.type, "demo_top_up");
+
 	const withdrawals = (await listAdminActivity({
 		tab: "withdrawals",
 		search: playerId,
 		limit: 20,
-		withdrawalStatus: "pending",
+		withdrawalStatuses: ["pending"],
 	})) as WithdrawalActivityPage;
 	assert.equal(
 		withdrawals.items.some(

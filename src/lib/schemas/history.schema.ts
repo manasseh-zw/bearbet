@@ -34,6 +34,10 @@ export const historyQuerySchema = z.object({
 	page: z.coerce.number().int().positive().max(10_000).default(1),
 	bucket: z.enum(historyBuckets).optional(),
 	type: z.enum(historyOperationTypes).optional(),
+	types: z
+		.array(z.enum(historyOperationTypes))
+		.max(historyOperationTypes.length)
+		.default([]),
 	timeRange: z.enum(historyTimeRanges).default("all"),
 	direction: z.enum(historyDirections).default("desc"),
 });
@@ -42,6 +46,6 @@ export type HistoryQueryInput = z.input<typeof historyQuerySchema>;
 export type HistoryQuery = z.output<typeof historyQuerySchema>;
 export type HistoryCategory = HistoryQuery["category"];
 export type HistoryBucket = NonNullable<HistoryQuery["bucket"]>;
-export type HistoryOperationType = NonNullable<HistoryQuery["type"]>;
+export type HistoryOperationType = (typeof historyOperationTypes)[number];
 export type HistoryTimeRange = HistoryQuery["timeRange"];
 export type HistoryDirection = HistoryQuery["direction"];

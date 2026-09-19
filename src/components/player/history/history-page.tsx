@@ -23,6 +23,10 @@ import {
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
+	MultiSelect,
+	type MultiSelectOption,
+} from "#/components/ui/multi-select";
+import {
 	Select,
 	SelectContent,
 	SelectGroup,
@@ -31,7 +35,6 @@ import {
 	SelectValue,
 } from "#/components/ui/select";
 import { Skeleton } from "#/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { historyQueries } from "#/lib/queries/history.queries";
 import {
 	type HistoryCategory,
@@ -45,7 +48,7 @@ import {
 } from "#/lib/schemas/history.schema";
 import { cn } from "#/lib/utils";
 
-const categoryTabs: {
+const categoryOptions: {
 	value: HistoryCategory;
 	label: string;
 }[] = [
@@ -82,6 +85,20 @@ const directionLabels: Record<HistoryDirection, string> = {
 	asc: "Oldest first",
 };
 
+const gameplayHistoryTypes = new Set<HistoryOperationType>([
+	"bet",
+	"win",
+	"refund",
+]);
+
+function historyOperationOptions(
+	category: HistoryCategory,
+): MultiSelectOption[] {
+	return historyOperationTypes
+		.filter((type) => category !== "wallet" || !gameplayHistoryTypes.has(type))
+		.map((type) => ({ value: type, label: transactionLabels[type] }));
+}
+
 const historyTableClassName =
 	"[&_th]:h-11 [&_th]:px-4 [&_th]:text-xs [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted-foreground [&_th:first-child]:pl-6 [&_th:last-child]:pr-6 [&_td]:px-4 [&_td:first-child]:pl-6 [&_td:last-child]:pr-6";
 
@@ -106,6 +123,7 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 	const hasExtraFilters = Boolean(
 		query.bucket ||
 			query.type ||
+			query.types.length ||
 			query.timeRange !== "all" ||
 			query.direction !== "desc",
 	);
@@ -129,34 +147,9 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 			<section aria-label="Transaction history" className="grid gap-5">
 				<div className="flex flex-col gap-4">
 					<div className="flex items-center justify-between gap-4">
-						<Tabs
-							className="min-w-0"
-							value={query.category}
-							onValueChange={(value) =>
-								patchQuery({
-									category: value as HistoryCategory,
-									type: undefined,
-									bucket: value === "bet" ? undefined : query.bucket,
-								})
-							}
-						>
-							<div className="overflow-x-auto">
-								<TabsList variant="line" aria-label="Activity category">
-									{categoryTabs.map((tab) => (
-										<TabsTrigger
-											key={tab.value}
-											value={tab.value}
-											className="gap-2 px-2.5 data-active:text-primary data-active:after:bg-primary"
-										>
-											{tab.label}
-											<span className="rounded-full border px-1.5 text-[11px] leading-4 text-muted-foreground tabular-nums">
-												{history.data?.counts[tab.value] ?? 0}
-											</span>
-										</TabsTrigger>
-									))}
-								</TabsList>
-							</div>
-						</Tabs>
+						<p className="text-sm font-medium text-muted-foreground">
+							Filter activity
+						</p>
 						{history.isFetching && !history.isPending ? (
 							<LoaderCircleIcon
 								className="size-4 animate-spin text-muted-foreground"
@@ -167,6 +160,22 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 
 					<div className="flex flex-col gap-3 lg:flex-row lg:items-center">
 						<div className="flex flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap">
+							<FilterSelect
+								label="Activity view"
+								className="sm:w-40"
+								value={query.category}
+								onChange={(value) =>
+									patchQuery({
+										category: value as HistoryCategory,
+										type: undefined,
+										types: [],
+										bucket: value === "bet" ? undefined : query.bucket,
+									})
+								}
+								options={categoryOptions.map(
+									(tab) => [tab.value, tab.label] as const,
+								)}
+							/>
 							{query.category !== "bet" ? (
 								<FilterSelect
 									label="Wallet bucket"
@@ -188,25 +197,28 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 									]}
 								/>
 							) : null}
-							{query.category !== "bet" ? (
-								<FilterSelect
-									label="Operation"
-									className="sm:w-44"
-									value={query.type ?? "all"}
-									onChange={(value) =>
+							{query.category !== "bet" &&
+							query.category !== "win" &&
+							query.category !== "refund" ? (
+								<MultiSelect
+									ariaLabel="Operation types"
+									className="sm:w-64"
+									emptyLabel="All operations"
+									onValuesChange={(values) =>
 										patchQuery({
-											type:
-												value === "all"
-													? undefined
-													: (value as HistoryOperationType),
+											type: undefined,
+											types: values as HistoryOperationType[],
 										})
 									}
-									options={[
-										["all", "All operations"],
-										...historyOperationTypes.map(
-											(type) => [type, transactionLabels[type]] as const,
-										),
-									]}
+									options={historyOperationOptions(query.category)}
+									searchPlaceholder="Search operations"
+									values={
+										query.types.length
+											? query.types
+											: query.type
+												? [query.type]
+												: []
+									}
 								/>
 							) : null}
 							<FilterSelect
@@ -240,6 +252,9 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 									onQueryChange({
 										category: query.category,
 										page: 1,
+										type: undefined,
+										types: [],
+										bucket: undefined,
 										timeRange: "all",
 										direction: "desc",
 									})
@@ -263,7 +278,7 @@ export function HistoryPage({ query, onQueryChange }: HistoryPageProps) {
 					) : history.data ? (
 						<AnimatePresence mode="wait" initial={false}>
 							<motion.div
-								key={`${query.category}:${query.page}:${query.bucket}:${query.type}:${query.timeRange}:${query.direction}`}
+								key={`${query.category}:${query.page}:${query.bucket}:${query.type}:${query.types.join(",")}:${query.timeRange}:${query.direction}`}
 								initial={reducedMotion ? false : { opacity: 0, y: 5 }}
 								animate={{ opacity: 1, y: 0 }}
 								exit={reducedMotion ? undefined : { opacity: 0, y: -3 }}

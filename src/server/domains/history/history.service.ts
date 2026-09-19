@@ -75,7 +75,11 @@ export async function getPlayerHistory(
 	const conditions = [eq(walletOperation.walletId, current.wallet.id)];
 	const categoryCondition = conditionForCategory(query.category);
 	if (categoryCondition) conditions.push(categoryCondition);
-	if (query.type) conditions.push(eq(walletOperation.type, query.type));
+	if (query.types.length) {
+		conditions.push(inArray(walletOperation.type, query.types));
+	} else if (query.type) {
+		conditions.push(eq(walletOperation.type, query.type));
+	}
 	if (query.bucket) conditions.push(eq(ledgerEntry.bucket, query.bucket));
 	if (query.timeRange === "today") {
 		const startOfToday = new Date();

@@ -381,6 +381,7 @@ export function WalletPage() {
 										search={{
 											category: "all",
 											page: 1,
+											types: [],
 											timeRange: "all",
 											direction: "desc",
 										}}
