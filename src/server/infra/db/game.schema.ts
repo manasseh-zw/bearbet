@@ -46,6 +46,8 @@ export const game = pgTable(
 		isAvailable: boolean("is_available").notNull(),
 		isEnabled: boolean("is_enabled").default(true).notNull(),
 		isFeatured: boolean("is_featured").default(false).notNull(),
+		isPopular: boolean("is_popular").default(false).notNull(),
+		isNew: boolean("is_new").default(false).notNull(),
 		isMobile: boolean("is_mobile").notNull(),
 		hasFreeSpins: boolean("has_free_spins").notNull(),
 		hasLobby: boolean("has_lobby").notNull(),

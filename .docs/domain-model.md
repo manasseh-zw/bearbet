@@ -1,6 +1,6 @@
 # Bearbet domain model
 
-Status: identity, player, wallet, welcome credit, wallet operation, bonus, withdrawal, game-session, round, and provider-operation models and services are implemented. Money, wagering, gameplay, and withdrawal rules are enforced by pure policy tests and PostgreSQL integration tests. Catalogue persistence and admin-audit entities remain planned.
+Status: identity, player, wallet, welcome credit, wallet operation, bonus, withdrawal, game-session, round, provider-operation, game-engagement, and admin-audit schemas are implemented. Money, wagering, gameplay, and withdrawal rules are enforced by pure policy tests and PostgreSQL integration tests. Engagement reads/writes and administrator workflows remain planned.
 
 ## Required player journey
 
@@ -121,6 +121,12 @@ The content vendor reported by the casino integration, such as Evolution. It sup
 
 The normalized catalogue item. It stores the external game ID, integration provider, content provider, name, category, artwork, capabilities, provider availability, local enabled state, featured state, and sync timestamps. The MVP imports this data through one explicit operator action. Missing upstream games become unavailable rather than being deleted.
 
+Local curation also stores popular and new collection flags. These remain Bearbet-owned fields and are preserved when provider sync refreshes upstream game data.
+
+### Player game engagement
+
+Favorites and recently played games are normalized player–game records rather than arrays or JSON columns on the user. A favorite has one row per player and canonical game. A recent-game row has one row per player and game, with `lastPlayedAt` and `playCount` so the lobby can order recent games and update the projection idempotently when a launch begins. Both records reference the persisted game UUID and player profile with foreign keys.
+
 ### Game session
 
 A user's attempt to launch and play one game. It stores user, game, integration provider, mode, currency, external session ID when supplied, status, launch error code, and timestamps.
@@ -151,7 +157,7 @@ The simulated withdrawal request and its pending, approved, or rejected lifecycl
 
 ### Admin audit entry
 
-Records non-financial administrative actions such as suspending a user, changing a game, or editing a bonus. Financial admin adjustments already have ledger evidence but may also reference the audit entry.
+Records non-financial administrative actions such as suspending a user, changing a game, or editing a bonus. Each entry stores the actor, target type and ID, action, required reason, optional structured metadata, and creation time. Financial admin adjustments already have ledger evidence but may also reference the audit entry.
 
 ## Relationships
 
@@ -160,13 +166,15 @@ Better Auth user
   ├── sessions and credential accounts
   └── 0 or 1 player
         ├── 1 wallet
-  │     └── many ledger entries
+        │     └── many ledger entries
         ├── many game sessions
-  │     └── many game rounds
-  │           └── many provider operations
-  │                 └── related ledger entries
+        │     └── many game rounds
+        │           └── many provider operations
+        │                 └── related ledger entries
+        ├── many favorite games
+        ├── many recently played games
         ├── many bonus awards
-  │     └── related ledger entries
+        │     └── related ledger entries
         └── many withdrawals
               └── related ledger entries
 

@@ -64,7 +64,7 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 ### 3. Catalogue at product scale
 
 - [x] **P11. Move catalogue filtering to PostgreSQL.** The casino and promotions views use validated, indexed, paginated PostgreSQL reads for name, content provider, category, availability, and local curation. Trigram matching handles partial names and common typing errors without sending the full catalogue to the browser.
-- [~] **P12. Finish lobby collections and URL state.** The lobby has top picks, search, categories, result loading, errors, and empty states. Add persisted featured, popular, and new collections, provider filtering, result counts, clear-all, and useful URL-backed state.
+- [~] **P12. Finish lobby collections and URL state.** The schema now has local featured, popular, and new curation flags plus indexed player favorite/recent-game projections. The lobby still needs the authenticated reads/writes, provider filtering, result counts, clear-all, and useful URL-backed state.
 - [ ] **P13. Handle catalogue edge cases.** Verify broken artwork, unavailable games, empty sync results, slow reads, keyboard use, and mobile layouts.
 
 ### 4. Playable simulator journey
@@ -95,7 +95,7 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 - [ ] **A04. Build game management.** Sync the catalogue, inspect games, enable or disable them, set categories, and manage featured, popular, and new curation without losing local edits during sync.
 - [ ] **A05. Build bonus management.** Create, edit, activate, and deactivate definitions with clear rules for existing awards.
 - [ ] **A06. Build operations management.** Inspect wallet and gameplay operations and approve or reject simulated withdrawals.
-- [ ] **A07. Persist and verify the admin audit trail.** Record actor, target, action, reason, and time for every admin mutation. Direct server calls must enforce the same policy as the UI.
+- [~] **A07. Persist and verify the admin audit trail.** The immutable audit schema now records actor, target, action, reason, metadata, and time. Admin mutation writers, authorization checks, and verification coverage remain.
 
 ### 8. Live Drakon proof
 

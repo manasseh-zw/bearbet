@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
 	bigint,
 	boolean,
@@ -9,24 +9,46 @@ import {
 	timestamp,
 } from "drizzle-orm/pg-core";
 
-export const user = pgTable("user", {
-	id: text("id").primaryKey(),
-	name: text("name").notNull(),
-	email: text("email").notNull().unique(),
-	emailVerified: boolean("email_verified").default(false).notNull(),
-	image: text("image"),
-	createdAt: timestamp("created_at").defaultNow().notNull(),
-	updatedAt: timestamp("updated_at")
-		.defaultNow()
-		.$onUpdate(() => /* @__PURE__ */ new Date())
-		.notNull(),
-	username: text("username").unique(),
-	displayUsername: text("display_username"),
-	role: text("role"),
-	banned: boolean("banned").default(false),
-	banReason: text("ban_reason"),
-	banExpires: timestamp("ban_expires"),
-});
+export const user = pgTable(
+	"user",
+	{
+		id: text("id").primaryKey(),
+		name: text("name").notNull(),
+		email: text("email").notNull().unique(),
+		emailVerified: boolean("email_verified").default(false).notNull(),
+		image: text("image"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.notNull(),
+		username: text("username").unique(),
+		displayUsername: text("display_username"),
+		role: text("role"),
+		banned: boolean("banned").default(false),
+		banReason: text("ban_reason"),
+		banExpires: timestamp("ban_expires"),
+	},
+	(table) => [
+		index("user_admin_status_idx").on(
+			table.banned,
+			table.role,
+			table.createdAt,
+		),
+		index("user_name_trgm_idx").using(
+			"gin",
+			sql`lower(${table.name}) gin_trgm_ops`,
+		),
+		index("user_email_trgm_idx").using(
+			"gin",
+			sql`lower(${table.email}) gin_trgm_ops`,
+		),
+		index("user_username_trgm_idx").using(
+			"gin",
+			sql`lower(coalesce(${table.username}, '')) gin_trgm_ops`,
+		),
+	],
+);
 
 export const session = pgTable(
 	"session",

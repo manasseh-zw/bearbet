@@ -110,7 +110,7 @@ This stage delivers tasks P19 through P21. It depends on wallet and gameplay. Ad
 
 Complete player profile and password recovery. Profile edits must exclude role, status, balances, and audit fields. Password changes require a fresh session.
 
-Add favourites and recently played games, then move catalogue filtering to indexed, paginated PostgreSQL reads with provider filters, URL state, and persisted featured, popular, and new collections. These close the original product brief, but they follow the playable and bonus journeys.
+Use the persisted player–game favorite and recent-game projections, then move catalogue filtering to indexed, paginated PostgreSQL reads with provider filters, URL state, and the local featured, popular, and new curation flags. These close the original product brief, but they follow the playable and bonus journeys.
 
 Add a nested administrator route group with a server-side role check on every function. Build operations in this order:
 
@@ -119,7 +119,7 @@ Add a nested administrator route group with a server-side role check on every fu
 3. Game sync, availability, categories, and collection curation.
 4. Bonus definition management.
 5. Wallet and gameplay inspection plus withdrawal review.
-6. A persistent audit trail for every administrator mutation.
+6. Audit writers over the new immutable admin-audit table for every administrator mutation.
 
 The overview comes from those operational reads. It should report useful counts and recent events, not invented gambling revenue.
 
