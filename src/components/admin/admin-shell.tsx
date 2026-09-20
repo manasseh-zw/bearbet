@@ -24,6 +24,7 @@ import { Button } from "#/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
@@ -194,12 +195,14 @@ function AdminProfile() {
 				side="top"
 				className="w-(--anchor-width)"
 			>
-				<DropdownMenuLabel className="font-normal">
-					<p className="truncate font-medium">{displayName}</p>
-					<p className="mt-1 truncate text-xs text-muted-foreground">
-						{user?.email || "Admin portal access"}
-					</p>
-				</DropdownMenuLabel>
+				<DropdownMenuGroup>
+					<DropdownMenuLabel className="font-normal">
+						<p className="truncate font-medium">{displayName}</p>
+						<p className="mt-1 truncate text-xs text-muted-foreground">
+							{user?.email || "Admin portal access"}
+						</p>
+					</DropdownMenuLabel>
+				</DropdownMenuGroup>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					disabled={logout.isPending}
