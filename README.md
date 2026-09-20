@@ -32,22 +32,7 @@ Live application: [bearbet.vercel.app](https://bearbet.vercel.app)
 - Simulated withdrawal approval and rejection
 - Filterable wallet, gameplay, withdrawal, and audit activity
 
-## Provider strategy and trade-offs
-
-The original assignment specified Drakon. Its catalogue and callback probe worked, but every tested game launch ended on Drakon's `/game-error` page. Without a playable session, there was no honest way to demonstrate provider-originated wallet callbacks.
-
-Bearbet therefore uses two complementary gameplay paths.
-
-1. **The fixture simulator proves Bearbet's money system.** It calls the same gameplay, wallet, bonus, and ledger services used by the rest of the application. Outcomes are deterministic, persisted, and safe to retry.
-2. **BigBang proves genuine provider play.** Bearbet synchronizes the BigBang Standard catalogue, creates a provider player, and launches a signed playable sandbox session.
-
-The tested BigBang sandbox kept one provider-managed balance and did not send the documented wallet callbacks, even after direct callback probes succeeded. It also behaved like a shared account, so concurrent player sessions could not be reconciled safely.
-
-The submission uses a deliberately narrow hybrid bridge. Bearbet records the BigBang balance before launch, permits one active BigBang session at a time, then reads the final provider balance when the session closes. It applies only the net delta as one idempotent `provider_reconciliation` ledger operation. Bearbet never copies BigBang's absolute synthetic balance and never invents per-round bets, wins, or refunds that the provider did not report.
-
-This produces a more immersive playable demo, but it is not a production wallet integration. The fixture remains the authoritative proof for per-round money movement and bonus behavior. The full investigation is recorded in [`.docs/bigbang-sandbox-findings.md`](.docs/bigbang-sandbox-findings.md) and [`.docs/drakon-v0-findings.md`](.docs/drakon-v0-findings.md).
-
-## Architecture
+## Architecture and engineering
 
 ```text
 Browser
@@ -70,7 +55,85 @@ The main technical choices are:
 - Node's test runner for policy, service, provider, and database tests
 - Vercel for hosting, Neon for PostgreSQL, and Vercel Blob for managed bonus artwork
 
-Domain services write current wallet balances and immutable ledger evidence in the same database transaction. Provider operations and user-triggered mutations use idempotency keys so a retry cannot move virtual funds twice.
+### Code boundaries
+
+Routes own URL behavior, authentication guards, loaders, and page composition. React components own presentation and interaction. Browser requests reach typed TanStack server functions, which validate their input and add trusted session data before calling a domain service.
+
+The domain services under `src/server/domains` own wallet, gameplay, bonus, withdrawal, catalogue, engagement, and admin rules. They call Drizzle directly and open the transaction around the complete business action. Provider code, database setup, email, and blob storage stay under `src/server/infra`.
+
+Portable Zod schemas live under `src/lib/schemas`. The browser can use them for form feedback, but the server parses every request again. User IDs, roles, balances, account status, and audit fields never come from browser input.
+
+### Identity and authorization
+
+Better Auth owns users, credentials, sessions, verification records, roles, and suspended state. Bearbet extends a user with a one-to-one player record and one wallet. Public registration cannot choose a role, account status, starting balance, or email-verification state.
+
+Route guards improve navigation, but they are not the security boundary. Every protected server function reads a fresh session and checks the player's status, ownership, or admin role. Sensitive admin mutations repeat the active-admin check inside the database transaction so a status change cannot race the operation.
+
+### Wallet and ledger
+
+Bearbet stores money as integer minor units. A balance of $1,000.00 is `100000`, so wallet arithmetic never depends on floating point values.
+
+Each wallet has cash, bonus, and reserved-cash buckets. The current balance is the fast projection. Immutable ledger entries are the audit record. A domain service locks or atomically updates the wallet and writes the corresponding ledger entries in the same PostgreSQL transaction. If either write fails, neither survives.
+
+Withdrawals demonstrate the bucket model. A request moves cash into reserved cash. Approval consumes the reserve, while rejection returns it to cash. Gameplay records the cash and bonus portions of every stake so wins and refunds can return money to the correct buckets.
+
+The application does not keep separate transaction-history or bet-history tables. Transaction history reads the ledger. Bet history groups game rounds and their provider operations. This avoids a second copy of financial state drifting away from the source records.
+
+### Idempotency and concurrency
+
+Every money-changing command carries an idempotency key. Bearbet stores the key with a fingerprint of the normalized request and the original result.
+
+- A retry with the same key and fingerprint returns the stored result without moving money again.
+- Reusing the key with different input is rejected as a conflict.
+- Provider operations use the integration provider, operation type, and external transaction ID as their unique identity.
+- Refunds point to the operation they reverse and cannot exceed its unrefunded amount.
+
+Wallet debits serialize at the database layer, so two concurrent requests cannot both spend the same balance. The same pattern protects withdrawal decisions, game launches, bonus completion, and BigBang reconciliation. The test suite covers duplicate operations, conflicting retries, concurrent debits, and repeated callback delivery.
+
+### Bonus accounting
+
+Eligible games spend bonus funds before cash. Ineligible games spend cash only. Only the bonus-funded part of an eligible stake advances wagering progress.
+
+For a mixed stake, Bearbet stores the cash and bonus portions. Wins return in the same ratio, rounded to whole minor units. Refunds restore the original buckets and reverse the matching wagering contribution. When a player reaches the wagering target, the service converts the remaining bonus to cash once. Expiry and cancellation forfeit the remaining bonus instead.
+
+One active award per player keeps the aggregate bonus balance attributable to one rule set. Each award snapshots its definition, so an administrator can edit a future offer without changing an award a player already accepted.
+
+### Catalogue and provider boundary
+
+The application depends on a small normalized provider contract for catalogue sync and game launch. Provider payloads do not leak into the wallet or gameplay domains.
+
+Catalogue sync upserts provider games, marks missing games unavailable, and preserves Bearbet-owned curation such as enabled, featured, popular, and new flags. Public catalogue reads use PostgreSQL rather than calling the provider on every request. Search is paginated and backed by trigram indexes for names, content providers, and categories.
+
+The fixture and BigBang adapters implement the active contract. The Drakon adapter remains in the codebase as integration evidence, but the release does not depend on it.
+
+## Integration issues and trade-offs
+
+### Drakon
+
+The assignment supplied Drakon as the expected provider. Authentication and catalogue retrieval worked. The callback URL also passed direct dashboard probes. Playable launches did not work: each tested launch ended on Drakon's `/game-error` page.
+
+That left no real game session and no provider-originated financial callback to verify. Treating the adapter as complete would have hidden the main missing proof, so Drakon was removed from the release path.
+
+### BigBang
+
+BigBang provided the missing playable experience. Bearbet can synchronize its Standard catalogue, create a provider player, receive a signed launch URL, and run the game in an iframe.
+
+Its sandbox introduced a different problem. Test spins changed the balance held by BigBang, but BigBang sent no `user_data`, `balance_change`, or round webhook request to Bearbet. Direct probes to the same public callback URLs succeeded, so the receiver and tunnel were reachable. The sandbox also appeared to expose one shared provider balance rather than an isolated balance for each Bearbet player.
+
+Standard games report a net round movement, while Bearbet's money engine records separate bet, win, and refund operations. Without genuine callbacks, splitting a net change into those operations would require guessing.
+
+### The hybrid path
+
+The submission uses two gameplay paths because each proves a different part of the system.
+
+1. The fixture simulator proves Bearbet-owned money movement. It runs through the production gameplay, wallet, bonus, history, and ledger services. Outcomes are deterministic and repeatable.
+2. BigBang proves a real external catalogue and signed playable session.
+
+For BigBang, Bearbet stores the provider balance immediately before launch. It allows one active BigBang session at a time because the sandbox balance appears to be shared. When the player closes the session, Bearbet reads the final balance and calculates `final balance - launch balance`.
+
+Only that delta enters Bearbet as one idempotent `provider_reconciliation` operation. The application never copies BigBang's absolute synthetic balance. It also does not manufacture per-round bets, wins, or refunds. If the final balance cannot be read, the reconciliation stays pending instead of estimating a result.
+
+This is an honest sandbox compromise, not a production seamless-wallet design. The fixture is the authoritative proof for exact per-round accounting. BigBang is the authoritative proof for external game launch.
 
 ## Reviewer path
 
@@ -175,15 +238,3 @@ Useful development commands:
 - Drakon launch and callback proof remains incomplete because the supplied integration did not produce a playable session.
 - Profile editing, broader access and browser lifecycle coverage, targeted abuse protection, security headers, health checks, and automated end-to-end coverage remain in the release backlog.
 - VIP, cashback, referrals, loyalty, two-factor authentication, and real payments are outside the MVP.
-
-## Project documentation
-
-The `.docs` folder keeps the assignment and implementation evidence separate from this reviewer-facing overview:
-
-- [Task brief](.docs/task-brief.md)
-- [Architecture](.docs/architecture.md)
-- [Domain model](.docs/domain-model.md)
-- [Delivery task list](.docs/master-task-list.md)
-- [Implementation plan](.docs/implementation-plan.md)
-- [BigBang sandbox findings](.docs/bigbang-sandbox-findings.md)
-- [Drakon integration findings](.docs/drakon-v0-findings.md)
