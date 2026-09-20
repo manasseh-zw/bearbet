@@ -117,7 +117,7 @@ being mistaken for a current implementation blocker.
 
 ### 9. Release and handover
 
-- [~] **R01. Add repeatable seed and reset commands.** The local `auth:seed-admin` command now creates or promotes a credential account with the `admin` role and resets its password. Known player, wallet, bonus, catalogue, and full reset state remain to be added.
+- [x] **R01. Add repeatable seed and reset commands.** `auth:seed-admin` creates or promotes a credential account with the `admin` role and resets its password. `db:reset-review` clears player, wallet, gameplay, bonus, catalogue, audit, and non-admin auth state in one guarded transaction while preserving the administrator.
 - [~] **R02. Finish abuse protection.** Better Auth has database-backed limits for registration and login. Add targeted limits for password reset, launch, top-up, withdrawal, and callbacks without breaking provider retries.
 - [ ] **R03. Add structured redacted logs.** Cover authentication, launches, callbacks, wallet changes, bonuses, admin actions, latency, and failures without storing credentials or sensitive payloads.
 - [ ] **R04. Harden browser and response behavior.** Add secure headers, a game-compatible frame policy, CSRF protection where needed, no-store wallet responses, and safe error mapping.
