@@ -87,6 +87,7 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 					<Link to="/" aria-label="BearBet home" className="inline-flex">
 						<Logo className="text-2xl" />
 					</Link>
+					<span className="text-xs text-muted-foreground">Player account</span>
 				</div>
 
 				<div className="grid gap-2">

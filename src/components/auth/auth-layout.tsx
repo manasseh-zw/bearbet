@@ -24,10 +24,13 @@ export function AuthLayout({ children, imageAlt }: AuthLayoutProps) {
 					</Link>
 
 					<div className="max-w-sm">
-						<h2 className="text-4xl font-semibold tracking-[-0.03em] text-white xl:text-5xl">
+						<p className="text-sm font-medium tracking-[0.16em] text-primary uppercase">
+							BearBet casino
+						</p>
+						<h2 className="mt-4 text-4xl font-semibold tracking-[-0.03em] text-white xl:text-5xl">
 							Your next game starts here.
 						</h2>
-						<p className="mt-5 max-w-xs text-sm leading-6 text-white">
+						<p className="mt-5 max-w-xs text-sm leading-6 text-white/70">
 							Sign in or create an account to pick up where you left off.
 						</p>
 					</div>
