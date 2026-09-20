@@ -4,6 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
 import { useId, useState } from "react";
 
+import { AuthLayout } from "#/components/auth/auth-layout";
 import { Logo } from "#/components/shared/brand";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
@@ -54,83 +55,56 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 	});
 
 	return (
-		<div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl shadow-black/20 sm:p-8">
-			<Link to="/" aria-label="BearBet home" className="inline-flex">
-				<Logo className="text-3xl" />
-			</Link>
-
-			<div className="mt-8">
-				<h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-					Welcome back
-				</h1>
-				<p className="mt-2 text-sm text-muted-foreground">
-					Sign in to continue playing.
-				</p>
-			</div>
-
-			{login.error ? (
-				<div
-					className="mt-6 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-					role="alert"
-				>
-					{login.error.message}
+		<AuthLayout imageAlt="BearBet mascot at a card table">
+			<div className="grid gap-8">
+				<div className="flex items-center justify-between gap-4">
+					<Link to="/" aria-label="BearBet home" className="inline-flex">
+						<Logo className="text-2xl" />
+					</Link>
+					<span className="text-xs text-muted-foreground">Player account</span>
 				</div>
-			) : null}
 
-			<form
-				className="mt-7 grid gap-5"
-				aria-busy={login.isPending}
-				onSubmit={(event) => {
-					event.preventDefault();
-					event.stopPropagation();
-					void form.handleSubmit();
-				}}
-				noValidate
-			>
-				<fieldset disabled={login.isPending} className="contents">
-					<form.Field name="identifier">
-						{(field) => {
-							const error = getFieldError(field.state.meta.errors);
-							const invalid = field.state.meta.isTouched && Boolean(error);
+				<div className="grid gap-2">
+					<h1 className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+						Welcome back
+					</h1>
+					<p className="text-sm leading-6 text-muted-foreground">
+						Sign in to continue playing.
+					</p>
+				</div>
 
-							return (
-								<div className="grid gap-2">
-									<Label htmlFor={field.name}>Email or username</Label>
-									<Input
-										id={field.name}
-										name={field.name}
-										autoComplete="username"
-										value={field.state.value}
-										onBlur={field.handleBlur}
-										onChange={(event) => field.handleChange(event.target.value)}
-										aria-invalid={invalid}
-										aria-describedby={
-											invalid ? `${field.name}-error` : undefined
-										}
-										className="h-10"
-									/>
-									{invalid ? (
-										<FieldError id={`${field.name}-error`}>{error}</FieldError>
-									) : null}
-								</div>
-							);
-						}}
-					</form.Field>
+				{login.error ? (
+					<p
+						className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+						role="alert"
+					>
+						{login.error.message}
+					</p>
+				) : null}
 
-					<form.Field name="password">
-						{(field) => {
-							const error = getFieldError(field.state.meta.errors);
-							const invalid = field.state.meta.isTouched && Boolean(error);
+				<form
+					className="grid gap-5"
+					aria-busy={login.isPending}
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						void form.handleSubmit();
+					}}
+					noValidate
+				>
+					<fieldset disabled={login.isPending} className="contents">
+						<form.Field name="identifier">
+							{(field) => {
+								const error = getFieldError(field.state.meta.errors);
+								const invalid = field.state.meta.isTouched && Boolean(error);
 
-							return (
-								<div className="grid gap-2">
-									<Label htmlFor={passwordId}>Password</Label>
-									<div className="relative">
+								return (
+									<div className="grid gap-2">
+										<Label htmlFor={field.name}>Email or username</Label>
 										<Input
-											id={passwordId}
+											id={field.name}
 											name={field.name}
-											type={showPassword ? "text" : "password"}
-											autoComplete="current-password"
+											autoComplete="username"
 											value={field.state.value}
 											onBlur={field.handleBlur}
 											onChange={(event) =>
@@ -138,77 +112,114 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 											}
 											aria-invalid={invalid}
 											aria-describedby={
-												invalid ? `${passwordId}-error` : undefined
+												invalid ? `${field.name}-error` : undefined
 											}
-											className="h-10 pr-10"
+											className="h-11 rounded-xl"
 										/>
-										<button
-											type="button"
-											className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-											onClick={() => setShowPassword((value) => !value)}
-											aria-label={
-												showPassword ? "Hide password" : "Show password"
-											}
-											aria-pressed={showPassword}
-										>
-											{showPassword ? (
-												<EyeOffIcon aria-hidden="true" />
-											) : (
-												<EyeIcon aria-hidden="true" />
-											)}
-										</button>
+										{invalid ? (
+											<FieldError id={`${field.name}-error`}>
+												{error}
+											</FieldError>
+										) : null}
 									</div>
-									{invalid ? (
-										<FieldError id={`${passwordId}-error`}>{error}</FieldError>
-									) : null}
-								</div>
-							);
-						}}
-					</form.Field>
+								);
+							}}
+						</form.Field>
 
-					<div className="-mt-2 text-right">
-						<Link
-							to="/forgot-password"
-							className="text-xs font-medium text-muted-foreground hover:text-primary hover:underline"
+						<form.Field name="password">
+							{(field) => {
+								const error = getFieldError(field.state.meta.errors);
+								const invalid = field.state.meta.isTouched && Boolean(error);
+
+								return (
+									<div className="grid gap-2">
+										<div className="flex items-center justify-between gap-4">
+											<Label htmlFor={passwordId}>Password</Label>
+											<Link
+												to="/forgot-password"
+												className="text-xs font-medium text-primary hover:underline"
+											>
+												Forgot password?
+											</Link>
+										</div>
+										<div className="relative">
+											<Input
+												id={passwordId}
+												name={field.name}
+												type={showPassword ? "text" : "password"}
+												autoComplete="current-password"
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(event) =>
+													field.handleChange(event.target.value)
+												}
+												aria-invalid={invalid}
+												aria-describedby={
+													invalid ? `${passwordId}-error` : undefined
+												}
+												className="h-11 rounded-xl pr-10"
+											/>
+											<button
+												type="button"
+												className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+												onClick={() => setShowPassword((value) => !value)}
+												aria-label={
+													showPassword ? "Hide password" : "Show password"
+												}
+												aria-pressed={showPassword}
+											>
+												{showPassword ? (
+													<EyeOffIcon aria-hidden="true" />
+												) : (
+													<EyeIcon aria-hidden="true" />
+												)}
+											</button>
+										</div>
+										{invalid ? (
+											<FieldError id={`${passwordId}-error`}>
+												{error}
+											</FieldError>
+										) : null}
+									</div>
+								);
+							}}
+						</form.Field>
+
+						<form.Subscribe
+							selector={(state) => [state.canSubmit, state.isSubmitting]}
 						>
-							Forgot password?
-						</Link>
-					</div>
+							{([canSubmit, isSubmitting]) => (
+								<Button
+									type="submit"
+									size="lg"
+									className="mt-1 h-12 w-full"
+									disabled={!canSubmit || isSubmitting || login.isPending}
+								>
+									{login.isPending ? (
+										<LoaderCircleIcon
+											className="animate-spin"
+											aria-hidden="true"
+										/>
+									) : null}
+									{login.isPending ? "Signing in..." : "Sign in"}
+								</Button>
+							)}
+						</form.Subscribe>
+					</fieldset>
+				</form>
 
-					<form.Subscribe
-						selector={(state) => [state.canSubmit, state.isSubmitting]}
+				<p className="text-center text-sm text-muted-foreground">
+					New here?{" "}
+					<Link
+						to="/register"
+						search={{ redirect: redirectTo }}
+						className="font-medium text-primary hover:underline"
 					>
-						{([canSubmit, isSubmitting]) => (
-							<Button
-								type="submit"
-								size="lg"
-								className="mt-1 w-full"
-								disabled={!canSubmit || isSubmitting || login.isPending}
-							>
-								{login.isPending ? (
-									<LoaderCircleIcon
-										className="animate-spin"
-										aria-hidden="true"
-									/>
-								) : null}
-								{login.isPending ? "Signing in..." : "Sign in"}
-							</Button>
-						)}
-					</form.Subscribe>
-				</fieldset>
-			</form>
-
-			<p className="mt-6 text-center text-sm text-muted-foreground">
-				New to BearBet?{" "}
-				<Link
-					to="/register"
-					search={{ redirect: redirectTo }}
-					className="font-medium text-primary hover:underline"
-				>
-					Create an account
-				</Link>
-			</p>
-		</div>
+						Create a free account
+					</Link>
+				</p>
+			</div>
+		</AuthLayout>
 	);
 }
 

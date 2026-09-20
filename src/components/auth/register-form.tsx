@@ -4,6 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
 import { useId, useState } from "react";
 
+import { AuthLayout } from "#/components/auth/auth-layout";
 import { Logo } from "#/components/shared/brand";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
@@ -80,184 +81,200 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 	});
 
 	return (
-		<div className="w-full max-w-2xl rounded-3xl border border-border bg-card p-6 shadow-2xl shadow-black/20 sm:p-8">
-			<Link to="/" aria-label="BearBet home" className="inline-flex">
-				<Logo className="text-3xl" />
-			</Link>
+		<AuthLayout imageAlt="BearBet mascot welcoming new players">
+			<div className="grid gap-8">
+				<div className="flex items-center justify-between gap-4">
+					<Link to="/" aria-label="BearBet home" className="inline-flex">
+						<Logo className="text-2xl" />
+					</Link>
+					<span className="text-xs text-muted-foreground">Player account</span>
+				</div>
 
-			<div className="mt-8">
-				<h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-					Create your account
-				</h1>
-				<p className="mt-2 text-sm text-muted-foreground">
-					Join BearBet and receive $1,000 in virtual funds to play.
+				<div className="grid gap-2">
+					<h1 className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+						Create your account
+					</h1>
+					<p className="text-sm leading-6 text-muted-foreground">
+						Join BearBet and receive $1,000 in virtual funds to play.
+					</p>
+				</div>
+
+				{registration.error ? (
+					<p
+						className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+						role="alert"
+					>
+						{registration.error.message}
+					</p>
+				) : null}
+
+				<form
+					className="grid gap-4 sm:grid-cols-2"
+					aria-busy={registration.isPending}
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						void form.handleSubmit();
+					}}
+					noValidate
+				>
+					<fieldset disabled={registration.isPending} className="contents">
+						<TextField
+							form={form}
+							name="firstName"
+							label="First name"
+							autoComplete="given-name"
+						/>
+						<TextField
+							form={form}
+							name="lastName"
+							label="Last name"
+							autoComplete="family-name"
+						/>
+						<TextField
+							form={form}
+							name="username"
+							label="Username"
+							autoComplete="username"
+						/>
+						<TextField
+							form={form}
+							name="email"
+							label="Email address"
+							type="email"
+							autoComplete="email"
+						/>
+						<TextField
+							form={form}
+							name="dateOfBirth"
+							label="Date of birth"
+							type="date"
+							autoComplete="bday"
+						/>
+
+						<form.Field name="countryCode">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor={field.name}>Country</Label>
+									<Select
+										value={field.state.value}
+										onValueChange={(value) => {
+											if (value === null) return;
+											field.handleChange(value);
+											const country = countries.find(
+												(item) => item.code === value,
+											);
+											if (country)
+												form.setFieldValue(
+													"currencyCode",
+													country.currencyCode,
+												);
+										}}
+										disabled={registration.isPending}
+									>
+										<SelectTrigger
+											id={field.name}
+											className="h-11 w-full rounded-xl"
+										>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{countries.map((country) => (
+												<SelectItem key={country.code} value={country.code}>
+													{country.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="currencyCode">
+							{(field) => (
+								<div className="grid gap-2">
+									<Label htmlFor={field.name}>Account currency</Label>
+									<Select
+										value={field.state.value}
+										onValueChange={(value) => {
+											if (value !== null) field.handleChange(value);
+										}}
+										disabled={registration.isPending}
+									>
+										<SelectTrigger
+											id={field.name}
+											className="h-11 w-full rounded-xl"
+										>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{supportedCurrencies.map((currency) => (
+												<SelectItem key={currency} value={currency}>
+													{currency} · {currencyNames[currency]}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+							)}
+						</form.Field>
+
+						<PasswordField
+							form={form}
+							name="password"
+							label="Password"
+							inputId={passwordId}
+							visible={showPassword}
+							onToggle={() => setShowPassword((value) => !value)}
+						/>
+						<PasswordField
+							form={form}
+							name="confirmPassword"
+							label="Confirm password"
+							inputId={confirmPasswordId}
+							visible={showConfirmPassword}
+							onToggle={() => setShowConfirmPassword((value) => !value)}
+						/>
+
+						<form.Subscribe
+							selector={(state) => [state.canSubmit, state.isSubmitting]}
+						>
+							{([canSubmit, isSubmitting]) => (
+								<Button
+									type="submit"
+									size="lg"
+									className="mt-1 h-12 w-full sm:col-span-2"
+									disabled={
+										!canSubmit || isSubmitting || registration.isPending
+									}
+								>
+									{registration.isPending ? (
+										<LoaderCircleIcon
+											className="animate-spin"
+											aria-hidden="true"
+										/>
+									) : null}
+									{registration.isPending
+										? "Creating account..."
+										: "Create account"}
+								</Button>
+							)}
+						</form.Subscribe>
+					</fieldset>
+				</form>
+
+				<p className="text-center text-sm text-muted-foreground">
+					Already have an account?{" "}
+					<Link
+						to="/login"
+						search={{ redirect: redirectTo }}
+						className="font-medium text-primary hover:underline"
+					>
+						Sign in
+					</Link>
 				</p>
 			</div>
-
-			{registration.error ? (
-				<div
-					className="mt-6 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-					role="alert"
-				>
-					{registration.error.message}
-				</div>
-			) : null}
-
-			<form
-				className="mt-7 grid gap-5 sm:grid-cols-2"
-				aria-busy={registration.isPending}
-				onSubmit={(event) => {
-					event.preventDefault();
-					event.stopPropagation();
-					void form.handleSubmit();
-				}}
-				noValidate
-			>
-				<fieldset disabled={registration.isPending} className="contents">
-					<TextField
-						form={form}
-						name="firstName"
-						label="First name"
-						autoComplete="given-name"
-					/>
-					<TextField
-						form={form}
-						name="lastName"
-						label="Last name"
-						autoComplete="family-name"
-					/>
-					<TextField
-						form={form}
-						name="username"
-						label="Username"
-						autoComplete="username"
-					/>
-					<TextField
-						form={form}
-						name="email"
-						label="Email address"
-						type="email"
-						autoComplete="email"
-					/>
-					<TextField
-						form={form}
-						name="dateOfBirth"
-						label="Date of birth"
-						type="date"
-						autoComplete="bday"
-					/>
-
-					<form.Field name="countryCode">
-						{(field) => (
-							<div className="grid gap-2">
-								<Label htmlFor={field.name}>Country</Label>
-								<Select
-									value={field.state.value}
-									onValueChange={(value) => {
-										if (value === null) return;
-										field.handleChange(value);
-										const country = countries.find(
-											(item) => item.code === value,
-										);
-										if (country)
-											form.setFieldValue("currencyCode", country.currencyCode);
-									}}
-									disabled={registration.isPending}
-								>
-									<SelectTrigger id={field.name} className="h-10 w-full">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{countries.map((country) => (
-											<SelectItem key={country.code} value={country.code}>
-												{country.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-						)}
-					</form.Field>
-
-					<form.Field name="currencyCode">
-						{(field) => (
-							<div className="grid gap-2">
-								<Label htmlFor={field.name}>Account currency</Label>
-								<Select
-									value={field.state.value}
-									onValueChange={(value) => {
-										if (value !== null) field.handleChange(value);
-									}}
-									disabled={registration.isPending}
-								>
-									<SelectTrigger id={field.name} className="h-10 w-full">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{supportedCurrencies.map((currency) => (
-											<SelectItem key={currency} value={currency}>
-												{currency} · {currencyNames[currency]}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-						)}
-					</form.Field>
-
-					<PasswordField
-						form={form}
-						name="password"
-						label="Password"
-						inputId={passwordId}
-						visible={showPassword}
-						onToggle={() => setShowPassword((value) => !value)}
-					/>
-					<PasswordField
-						form={form}
-						name="confirmPassword"
-						label="Confirm password"
-						inputId={confirmPasswordId}
-						visible={showConfirmPassword}
-						onToggle={() => setShowConfirmPassword((value) => !value)}
-					/>
-
-					<form.Subscribe
-						selector={(state) => [state.canSubmit, state.isSubmitting]}
-					>
-						{([canSubmit, isSubmitting]) => (
-							<Button
-								type="submit"
-								size="lg"
-								className="mt-1 w-full sm:col-span-2"
-								disabled={!canSubmit || isSubmitting || registration.isPending}
-							>
-								{registration.isPending ? (
-									<LoaderCircleIcon
-										className="animate-spin"
-										aria-hidden="true"
-									/>
-								) : null}
-								{registration.isPending
-									? "Creating account..."
-									: "Create account"}
-							</Button>
-						)}
-					</form.Subscribe>
-				</fieldset>
-			</form>
-
-			<p className="mt-6 text-center text-sm text-muted-foreground">
-				Already have an account?{" "}
-				<Link
-					to="/login"
-					search={{ redirect: redirectTo }}
-					className="font-medium text-primary hover:underline"
-				>
-					Sign in
-				</Link>
-			</p>
-		</div>
+		</AuthLayout>
 	);
 }
 
@@ -302,7 +319,7 @@ function TextField({
 							onChange={(event) => field.handleChange(event.target.value)}
 							aria-invalid={invalid}
 							aria-describedby={invalid ? `${field.name}-error` : undefined}
-							className="h-10"
+							className="h-11 rounded-xl"
 						/>
 						{invalid ? (
 							<FieldError id={`${field.name}-error`}>{error}</FieldError>
@@ -351,7 +368,7 @@ function PasswordField({
 								onChange={(event) => field.handleChange(event.target.value)}
 								aria-invalid={invalid}
 								aria-describedby={invalid ? `${inputId}-error` : undefined}
-								className="h-10 pr-10"
+								className="h-11 rounded-xl pr-10"
 							/>
 							<button
 								type="button"
