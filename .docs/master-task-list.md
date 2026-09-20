@@ -89,7 +89,7 @@ The contracts, authenticated functions, main Wallet route, and unified History r
 
 ### 7. Administration
 
-- [~] **A01. Add an administrator route group and overview.** The protected `/admin` route group now has a separate operations shell, admin navigation, placeholder operational counts, a Recharts activity view, attention links, and recent virtual-money activity. Replace the illustrative values with authenticated admin queries as the remaining management functions land.
+- [x] **A01. Add an administrator route group and overview.** The protected `/admin` route group has a separate operations shell, admin navigation, authenticated operational counts, a live seven-day Recharts activity view, attention links, and a merged recent-event feed from wallet, gameplay, withdrawal, and bonus records.
 - [x] **A02. Build user management.** Search users, inspect profile and wallet state, suspend or activate accounts, and assign a bonus. The admin users page uses URL-backed filters, a responsive table/card view, a detail sheet, and transaction-scoped mutation functions.
 - [x] **A03. Add audited balance adjustments.** Require actor, target, amount, and reason. Record before and after balances through the existing wallet operation and ledger model, with idempotent retries and focused service tests.
 - [x] **A04. Build game management.** The admin Games route syncs and paginates the provider catalogue, filters by search/provider/availability/status/curation, edits enabled state, featured, popular, and new flags through reason-confirmed audited mutations, preserves local curation edits during sync, treats provider category metadata as read-only, and exposes unavailable/artwork-fallback states.
