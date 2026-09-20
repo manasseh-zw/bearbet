@@ -4,6 +4,8 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
+	CalendarDaysIcon,
+	ChevronDownIcon,
 	EyeIcon,
 	EyeOffIcon,
 	LoaderCircleIcon,
@@ -19,11 +21,17 @@ import {
 	registrationDraftKey,
 	useRegistrationDraftStorage,
 } from "#/components/auth/registration-draft-storage";
+import { WheelPicker } from "#/components/motion/wheel-picker";
 import { Logo } from "#/components/shared/brand";
 import { useLocalStorage } from "#/components/shared/local-storage-provider";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "#/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -33,6 +41,7 @@ import {
 } from "#/components/ui/select";
 import { registerPlayer } from "#/lib/auth-client";
 import {
+	MINIMUM_PLAYER_AGE,
 	type RegistrationFormInput,
 	registrationFormSchema,
 	supportedCurrencies,
@@ -51,6 +60,83 @@ const currencyNames: Record<(typeof supportedCurrencies)[number], string> = {
 	ZAR: "South African rand",
 	GBP: "British pound",
 };
+
+const birthMonthFormatter = new Intl.DateTimeFormat("en-US", {
+	month: "long",
+	timeZone: "UTC",
+});
+const birthDateFormatter = new Intl.DateTimeFormat("en-US", {
+	month: "long",
+	day: "numeric",
+	year: "numeric",
+	timeZone: "UTC",
+});
+const currentYear = new Date().getUTCFullYear();
+const birthMonthOptions = Array.from({ length: 12 }, (_, index) => {
+	const month = index + 1;
+	return {
+		label: birthMonthFormatter.format(new Date(Date.UTC(2024, index, 1))),
+		value: String(month).padStart(2, "0"),
+	};
+});
+const birthYearOptions = Array.from(
+	{ length: 120 - MINIMUM_PLAYER_AGE + 1 },
+	(_, index) => {
+		const year = currentYear - 120 + index;
+		return { label: String(year), value: String(year) };
+	},
+);
+
+type DateParts = {
+	year: string;
+	month: string;
+	day: string;
+};
+
+const fallbackBirthDate: DateParts = {
+	year: String(currentYear - 25),
+	month: "01",
+	day: "01",
+};
+
+function parseBirthDate(value: string): DateParts | null {
+	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+	if (!match) return null;
+
+	const year = Number(match[1]);
+	const month = Number(match[2]);
+	const day = Number(match[3]);
+	const date = new Date(Date.UTC(year, month - 1, day));
+
+	if (
+		date.getUTCFullYear() !== year ||
+		date.getUTCMonth() !== month - 1 ||
+		date.getUTCDate() !== day
+	) {
+		return null;
+	}
+
+	return {
+		year: String(year),
+		month: String(month).padStart(2, "0"),
+		day: String(day).padStart(2, "0"),
+	};
+}
+
+function daysInMonth(year: number, month: number) {
+	return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function formatBirthDate(value: string) {
+	const parts = parseBirthDate(value);
+	if (!parts) return null;
+
+	return birthDateFormatter.format(
+		new Date(
+			Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)),
+		),
+	);
+}
 
 const defaultValues: RegistrationFormInput = {
 	username: "",
@@ -449,12 +535,9 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 
 										{step === 2 ? (
 											<>
-												<TextField
+												<DateOfBirthField
 													form={form}
-													name="dateOfBirth"
-													label="Date of birth"
-													type="date"
-													autoComplete="bday"
+													disabled={registration.isPending}
 												/>
 												<CountryField
 													form={form}
@@ -648,12 +731,122 @@ function CurrencyField({
 	);
 }
 
-type TextFieldName =
-	| "firstName"
-	| "lastName"
-	| "username"
-	| "email"
-	| "dateOfBirth";
+function DateOfBirthField({
+	form,
+	disabled,
+}: {
+	form: FormApi;
+	disabled: boolean;
+}) {
+	const [open, setOpen] = useState(false);
+
+	return (
+		<form.Field name="dateOfBirth">
+			{(field) => {
+				const error = getFieldError(field.state.meta.errors);
+				const invalid = field.state.meta.isTouched && Boolean(error);
+				const selected = parseBirthDate(field.state.value) ?? fallbackBirthDate;
+				const dayOptions = Array.from(
+					{
+						length: daysInMonth(Number(selected.year), Number(selected.month)),
+					},
+					(_, index) => {
+						const day = index + 1;
+						return {
+							label: String(day),
+							value: String(day).padStart(2, "0"),
+						};
+					},
+				);
+				const displayDate = formatBirthDate(field.state.value);
+
+				function updateDate(changes: Partial<DateParts>) {
+					const year = changes.year ?? selected.year;
+					const month = changes.month ?? selected.month;
+					const day = Math.min(
+						Number(changes.day ?? selected.day),
+						daysInMonth(Number(year), Number(month)),
+					);
+
+					field.handleChange(
+						`${year}-${month}-${String(day).padStart(2, "0")}`,
+					);
+				}
+
+				return (
+					<div className="grid gap-2">
+						<Label htmlFor={`${field.name}-picker`}>Date of birth</Label>
+						<Popover open={open} onOpenChange={setOpen}>
+							<PopoverTrigger
+								render={
+									<Button
+										id={`${field.name}-picker`}
+										type="button"
+										variant="outline"
+										disabled={disabled}
+										onBlur={field.handleBlur}
+										aria-invalid={invalid}
+										aria-describedby={
+											invalid ? `${field.name}-error` : undefined
+										}
+										className="h-11 w-full justify-between rounded-xl px-3 font-normal"
+									/>
+								}
+							>
+								<CalendarDaysIcon data-icon="inline-start" aria-hidden="true" />
+								<span
+									className={cn(
+										"truncate",
+										!displayDate && "text-muted-foreground",
+									)}
+								>
+									{displayDate ?? "Select your date of birth"}
+								</span>
+								<ChevronDownIcon data-icon="inline-end" aria-hidden="true" />
+							</PopoverTrigger>
+							<PopoverContent
+								align="start"
+								className="w-[min(28rem,calc(100vw-2rem))] rounded-2xl p-2"
+							>
+								<div className="grid grid-cols-[minmax(0,1.35fr)_minmax(3.25rem,0.55fr)_minmax(4.75rem,0.75fr)] gap-2">
+									<WheelPicker
+										options={birthMonthOptions}
+										value={selected.month}
+										onValueChange={(month) => updateDate({ month })}
+										itemHeight={40}
+										aria-label="Birth month"
+										className="w-full"
+									/>
+									<WheelPicker
+										options={dayOptions}
+										value={selected.day}
+										onValueChange={(day) => updateDate({ day })}
+										itemHeight={40}
+										aria-label="Birth day"
+										className="w-full"
+									/>
+									<WheelPicker
+										options={birthYearOptions}
+										value={selected.year}
+										onValueChange={(year) => updateDate({ year })}
+										itemHeight={40}
+										aria-label="Birth year"
+										className="w-full"
+									/>
+								</div>
+							</PopoverContent>
+						</Popover>
+						{invalid ? (
+							<FieldError id={`${field.name}-error`}>{error}</FieldError>
+						) : null}
+					</div>
+				);
+			}}
+		</form.Field>
+	);
+}
+
+type TextFieldName = "firstName" | "lastName" | "username" | "email";
 
 function TextField({
 	form,
