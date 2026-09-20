@@ -57,11 +57,10 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 	return (
 		<AuthLayout imageAlt="BearBet mascot at a card table">
 			<div className="grid gap-8">
-				<div className="flex items-center justify-between gap-4">
+				<div>
 					<Link to="/" aria-label="BearBet home" className="inline-flex">
 						<Logo className="text-2xl" />
 					</Link>
-					<span className="text-xs text-muted-foreground">Player account</span>
 				</div>
 
 				<div className="grid gap-2">

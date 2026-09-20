@@ -60,15 +60,12 @@ const defaultValues: RegistrationFormInput = {
 const registrationSteps = [
 	{
 		title: "Start with the basics",
-		description: "Tell us who you are so we can set up your player profile.",
 	},
 	{
 		title: "Set up your account",
-		description: "Choose your sign-in details and keep your account secure.",
 	},
 	{
 		title: "Finish your profile",
-		description: "A few final details help us keep your play experience ready.",
 	},
 ] as const;
 
@@ -360,11 +357,10 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 	return (
 		<AuthLayout imageAlt="BearBet mascot welcoming new players">
 			<div className="grid gap-8">
-				<div className="flex items-center justify-between gap-4">
+				<div>
 					<Link to="/" aria-label="BearBet home" className="inline-flex">
 						<Logo className="text-2xl" />
 					</Link>
-					<span className="text-xs text-muted-foreground">Player account</span>
 				</div>
 
 				<div className="grid gap-2">
@@ -442,18 +438,9 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 									}}
 									className="grid gap-5"
 								>
-									<div className="grid gap-1">
-										<h2 className="text-lg font-medium">
-											{registrationSteps[step].title}
-										</h2>
-										<p className="text-sm leading-6 text-muted-foreground">
-											{registrationSteps[step].description}
-										</p>
-									</div>
-
 									<div className="grid gap-4 sm:grid-cols-2">
 										{step === 0 ? (
-											<div className="grid gap-4 sm:col-span-2">
+											<>
 												<TextField
 													form={form}
 													name="firstName"
@@ -466,7 +453,7 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 													label="Last name"
 													autoComplete="family-name"
 												/>
-												<div className="grid gap-2">
+												<div className="grid gap-2 sm:col-span-2">
 													<div className="flex items-center justify-between gap-4">
 														<Label htmlFor="promoCode">Promo code</Label>
 														<span className="text-xs text-muted-foreground">
@@ -493,7 +480,7 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 														Promo code support is coming soon.
 													</p>
 												</div>
-											</div>
+											</>
 										) : null}
 
 										{step === 1 ? (
