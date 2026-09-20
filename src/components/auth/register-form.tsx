@@ -110,6 +110,7 @@ const registrationDraftKey = "bearbet:register-draft:v1";
 const registrationDraftSchema = z.object({
 	firstName: z.string().max(80).optional(),
 	lastName: z.string().max(80).optional(),
+	promoCode: z.string().max(64).optional(),
 	username: z.string().max(30).optional(),
 	email: z.string().max(320).optional(),
 	dateOfBirth: z.string().optional(),
@@ -173,6 +174,7 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 	const confirmPasswordId = useId();
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+	const [promoCode, setPromoCode] = useState("");
 	const [step, setStep] = useState<RegistrationStep>(0);
 	const [direction, setDirection] = useState<1 | -1>(1);
 	const [draftReady, setDraftReady] = useState(false);
@@ -219,6 +221,7 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 
 				if (parsedDraft.success) {
 					const draft = parsedDraft.data;
+					if (draft.promoCode !== undefined) setPromoCode(draft.promoCode);
 					if (draft.firstName !== undefined)
 						form.setFieldValue("firstName", draft.firstName, {
 							dontUpdateMeta: true,
@@ -282,6 +285,7 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 			step > 0 ||
 			draftValues.firstName !== "" ||
 			draftValues.lastName !== "" ||
+			promoCode !== "" ||
 			draftValues.username !== "" ||
 			draftValues.email !== "" ||
 			draftValues.dateOfBirth !== "" ||
@@ -296,12 +300,12 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 
 			window.localStorage.setItem(
 				registrationDraftKey,
-				JSON.stringify({ ...draftValues, step }),
+				JSON.stringify({ ...draftValues, promoCode, step }),
 			);
 		} catch {
 			// Storage can be unavailable in private browsing contexts.
 		}
-	}, [draftReady, draftValues, step]);
+	}, [draftReady, draftValues, promoCode, step]);
 
 	async function validateCurrentStep() {
 		const fields = registrationStepFields[step];
@@ -462,6 +466,33 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 													label="Last name"
 													autoComplete="family-name"
 												/>
+												<div className="grid gap-2">
+													<div className="flex items-center justify-between gap-4">
+														<Label htmlFor="promoCode">Promo code</Label>
+														<span className="text-xs text-muted-foreground">
+															Optional
+														</span>
+													</div>
+													<Input
+														id="promoCode"
+														name="promoCode"
+														type="text"
+														autoComplete="off"
+														maxLength={64}
+														value={promoCode}
+														onChange={(event) =>
+															setPromoCode(event.target.value)
+														}
+														aria-describedby="promoCode-help"
+														className="h-11 rounded-xl"
+													/>
+													<p
+														id="promoCode-help"
+														className="text-xs text-muted-foreground"
+													>
+														Promo code support is coming soon.
+													</p>
+												</div>
 											</div>
 										) : null}
 
