@@ -25,6 +25,8 @@ import { WheelPicker } from "#/components/motion/wheel-picker";
 import { Logo } from "#/components/shared/brand";
 import { useLocalStorage } from "#/components/shared/local-storage-provider";
 import { Button } from "#/components/ui/button";
+import { CountryPicker } from "#/components/ui/country-picker";
+import { CurrencySelect } from "#/components/ui/currency-select";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import {
@@ -32,14 +34,8 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "#/components/ui/popover";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "#/components/ui/select";
 import { registerPlayer } from "#/lib/auth-client";
+import { countryOptions, getCurrencyOption } from "#/lib/country-data";
 import {
 	MINIMUM_PLAYER_AGE,
 	type RegistrationFormInput,
@@ -48,18 +44,10 @@ import {
 } from "#/lib/schemas/auth.schema";
 import { cn } from "#/lib/utils";
 
-const countries = [
-	{ code: "ZW", name: "Zimbabwe", currencyCode: "USD" },
-	{ code: "ZA", name: "South Africa", currencyCode: "ZAR" },
-	{ code: "GB", name: "United Kingdom", currencyCode: "GBP" },
-	{ code: "US", name: "United States", currencyCode: "USD" },
-] as const;
-
-const currencyNames: Record<(typeof supportedCurrencies)[number], string> = {
-	USD: "US dollar",
-	ZAR: "South African rand",
-	GBP: "British pound",
-};
+const supportedCurrencyOptions = supportedCurrencies.flatMap((code) => {
+	const currency = getCurrencyOption(code);
+	return currency ? [currency] : [];
+});
 
 const birthMonthFormatter = new Intl.DateTimeFormat("en-US", {
 	month: "long",
@@ -541,7 +529,6 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 												/>
 												<CountryField
 													form={form}
-													options={countries}
 													disabled={registration.isPending}
 												/>
 												<CurrencyField
@@ -629,11 +616,9 @@ type FormApi = ReturnType<typeof useRegistrationForm>;
 
 function CountryField({
 	form,
-	options,
 	disabled,
 }: {
 	form: FormApi;
-	options: typeof countries;
 	disabled: boolean;
 }) {
 	return (
@@ -645,33 +630,29 @@ function CountryField({
 				return (
 					<div className="grid gap-2">
 						<Label htmlFor={field.name}>Country</Label>
-						<Select
+						<CountryPicker
 							value={field.state.value}
+							options={countryOptions}
 							onValueChange={(value) => {
-								if (value === null) return;
 								field.handleChange(value);
-								const country = options.find((item) => item.code === value);
-								if (country)
-									form.setFieldValue("currencyCode", country.currencyCode);
+								const country = countryOptions.find(
+									(item) => item.alpha2 === value,
+								);
+								const countryCurrency = country?.currencies.find((code) =>
+									supportedCurrencies.includes(
+										code as (typeof supportedCurrencies)[number],
+									),
+								);
+								if (countryCurrency)
+									form.setFieldValue("currencyCode", countryCurrency);
 							}}
 							disabled={disabled}
-						>
-							<SelectTrigger
-								id={field.name}
-								aria-invalid={invalid}
-								aria-describedby={invalid ? `${field.name}-error` : undefined}
-								className="h-11 w-full rounded-xl"
-							>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{options.map((country) => (
-									<SelectItem key={country.code} value={country.code}>
-										{country.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+							id={field.name}
+							name={field.name}
+							invalid={invalid}
+							aria-describedby={invalid ? `${field.name}-error` : undefined}
+							onBlur={field.handleBlur}
+						/>
 						{invalid ? (
 							<FieldError id={`${field.name}-error`}>{error}</FieldError>
 						) : null}
@@ -698,29 +679,19 @@ function CurrencyField({
 				return (
 					<div className="grid gap-2 sm:col-span-2">
 						<Label htmlFor={field.name}>Account currency</Label>
-						<Select
+						<CurrencySelect
 							value={field.state.value}
+							options={supportedCurrencyOptions}
 							onValueChange={(value) => {
-								if (value !== null) field.handleChange(value);
+								field.handleChange(value);
 							}}
 							disabled={disabled}
-						>
-							<SelectTrigger
-								id={field.name}
-								aria-invalid={invalid}
-								aria-describedby={invalid ? `${field.name}-error` : undefined}
-								className="h-11 w-full rounded-xl"
-							>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{supportedCurrencies.map((currency) => (
-									<SelectItem key={currency} value={currency}>
-										{currency} · {currencyNames[currency]}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+							id={field.name}
+							name={field.name}
+							invalid={invalid}
+							aria-describedby={invalid ? `${field.name}-error` : undefined}
+							onBlur={field.handleBlur}
+						/>
 						{invalid ? (
 							<FieldError id={`${field.name}-error`}>{error}</FieldError>
 						) : null}

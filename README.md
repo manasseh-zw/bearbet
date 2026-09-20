@@ -15,6 +15,7 @@ Live application: [bearbet.vercel.app](https://bearbet.vercel.app)
 - Separate cash, bonus, and reserved balances stored in integer minor units
 - Demo top-ups and simulated withdrawal requests
 - Searchable, paginated game catalogue with categories and provider filters
+- ISO country picker with flag search and provider-supported account currencies
 - Favourites and recently played collections
 - Deterministic gameplay with persisted bets, wins, losses, refunds, and round history
 - BigBang Standard sandbox games in an embedded player
@@ -121,6 +122,10 @@ BigBang provided the missing playable experience. Bearbet can synchronize its St
 Its sandbox introduced a different problem. Test spins changed the balance held by BigBang, but BigBang sent no `user_data`, `balance_change`, or round webhook request to Bearbet. Direct probes to the same public callback URLs succeeded, so the receiver and tunnel were reachable. The sandbox also appeared to expose one shared provider balance rather than an isolated balance for each Bearbet player.
 
 Standard games report a net round movement, while Bearbet's money engine records separate bet, win, and refund operations. Without genuine callbacks, splitting a net change into those operations would require guessing.
+
+### Registration country and currency
+
+Registration accepts the active ISO country list and uses a searchable flag picker. Account currency remains limited to the currencies currently enabled by registration (`USD`, `ZAR`, and `GBP`); adding more currency choices requires the corresponding provider and gameplay support.
 
 ### The hybrid path
 
