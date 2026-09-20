@@ -449,7 +449,7 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 
 									<div className="grid gap-4 sm:grid-cols-2">
 										{step === 0 ? (
-											<>
+											<div className="grid gap-4 sm:col-span-2">
 												<TextField
 													form={form}
 													name="firstName"
@@ -462,7 +462,7 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 													label="Last name"
 													autoComplete="family-name"
 												/>
-											</>
+											</div>
 										) : null}
 
 										{step === 1 ? (
