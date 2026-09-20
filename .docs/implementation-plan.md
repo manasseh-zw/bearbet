@@ -161,10 +161,12 @@ authenticated BigBang bridge supplies a genuine playable Standard-game session,
 stores the provider-account baseline after launch, allows one active sandbox
 session at a time, and applies only `final - launch snapshot` as an idempotent,
 labelled `provider_reconciliation` operation when the player explicitly closes
-the session. Because missing BigBang Standard callbacks cannot provide round
-stakes, the absolute delta also advances the active local bonus and can trigger
-its normal conversion; it is not presented as a provider bet, win, or refund
-event.
+the session or leaves the game page. Explicit exits, SPA unmounts, refreshes, and
+page exits share the same authenticated close path; BigBang launches also carry
+a provider return URL. Because missing BigBang Standard callbacks cannot provide
+round stakes, the absolute delta also advances the active local bonus and can
+trigger its normal conversion; it is not presented as a provider bet, win, or
+refund event.
 
 Drakon launch and callback work is closed as a historical investigation. The
 adapter and callback tests remain useful evidence, but repeated playable launches

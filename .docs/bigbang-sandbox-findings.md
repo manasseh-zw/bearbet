@@ -138,8 +138,11 @@ creates the provider player with the signed-in BearBet user ID, stores the
 signed launch URL and provider session ID, and captures the managed sandbox
 account balance after launch. Because the tested account balance is shared,
 only one authenticated BigBang session may be active at a time. Ending the
-iframe session reads the final account balance under the same lock and applies
-only `final - launch snapshot` as one idempotent
-`provider_reconciliation` operation when the key is a sandbox key. The
-provider's absolute synthetic balance is never copied into the BearBet wallet,
-and the existing public `/bigbang-sandbox` route remains capture-only.
+iframe session, leaving the game route, refreshing, or closing the page uses the
+same authenticated close path; the launch also supplies BigBang's optional
+return URL so provider-side exit controls can return to the BearBet lobby. The
+close path reads the final account balance under the same lock and applies only
+`final - launch snapshot` as one idempotent `provider_reconciliation` operation
+when the key is a sandbox key. The provider's absolute synthetic balance is
+never copied into the BearBet wallet, and the existing public `/bigbang-sandbox`
+route remains capture-only.

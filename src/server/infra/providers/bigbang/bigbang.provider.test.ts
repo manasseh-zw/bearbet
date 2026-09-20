@@ -150,6 +150,7 @@ test("BigBang launches an authenticated player with a balance snapshot", async (
 			userId: "player-42",
 			userName: "Player 42",
 			currencyCode: "USD",
+			returnUrl: "https://bearbet.example/",
 		}),
 		{
 			url: "https://games.example/real/42",
@@ -163,8 +164,9 @@ test("BigBang launches an authenticated player with a balance snapshot", async (
 		requests[1]?.url,
 		"https://sandbox.example/api/v1/users/player-42",
 	);
+	assert.equal(requests[2]?.url, "https://sandbox.example/api/v1/games/launch");
 	assert.equal(
-		requests[2]?.url,
-		"https://sandbox.example/api/v1/games/launch",
+		requests[2]?.init?.body,
+		'{"game_id":42,"user_token":"player-42","language":"en","return_url":"https://bearbet.example/"}',
 	);
 });

@@ -39,6 +39,7 @@ import { Route as ApiBigbangUserDataRouteImport } from './routes/api/bigbang/use
 import { Route as ApiBigbangWebhookRouteImport } from './routes/api/bigbang/webhook'
 import { Route as ApiDrakonKeyRouteImport } from './routes/api/drakon/$key'
 import { Route as AppPlayerGamesGameIdRouteImport } from './routes/_app/_player/games/$gameId'
+import { Route as ApiPlayerGameSessionCloseRouteImport } from './routes/api/player/game-session/close'
 import { Route as ApiDrakonWebhookKeyDrakon_apiRouteImport } from './routes/api/drakon/webhook/$key/drakon_api'
 
 const AdminRouteRoute = AdminRouteRouteImport.update({
@@ -187,6 +188,12 @@ const AppPlayerGamesGameIdRoute = AppPlayerGamesGameIdRouteImport.update({
   path: '/games/$gameId',
   getParentRoute: () => AppPlayerRouteRoute,
 } as any)
+const ApiPlayerGameSessionCloseRoute =
+  ApiPlayerGameSessionCloseRouteImport.update({
+    id: '/api/player/game-session/close',
+    path: '/api/player/game-session/close',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiDrakonWebhookKeyDrakon_apiRoute =
   ApiDrakonWebhookKeyDrakon_apiRouteImport.update({
     id: '/api/drakon/webhook/$key/drakon_api',
@@ -221,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/admin/': typeof AdminAdminIndexRoute
   '/games/$gameId': typeof AppPlayerGamesGameIdRoute
+  '/api/player/game-session/close': typeof ApiPlayerGameSessionCloseRoute
   '/api/drakon/webhook/$key/drakon_api': typeof ApiDrakonWebhookKeyDrakon_apiRoute
 }
 export interface FileRoutesByTo {
@@ -249,6 +257,7 @@ export interface FileRoutesByTo {
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/admin': typeof AdminAdminIndexRoute
   '/games/$gameId': typeof AppPlayerGamesGameIdRoute
+  '/api/player/game-session/close': typeof ApiPlayerGameSessionCloseRoute
   '/api/drakon/webhook/$key/drakon_api': typeof ApiDrakonWebhookKeyDrakon_apiRoute
 }
 export interface FileRoutesById {
@@ -283,6 +292,7 @@ export interface FileRoutesById {
   '/api/drakon/$key': typeof ApiDrakonKeyRoute
   '/_admin/admin/': typeof AdminAdminIndexRoute
   '/_app/_player/games/$gameId': typeof AppPlayerGamesGameIdRoute
+  '/api/player/game-session/close': typeof ApiPlayerGameSessionCloseRoute
   '/api/drakon/webhook/$key/drakon_api': typeof ApiDrakonWebhookKeyDrakon_apiRoute
 }
 export interface FileRouteTypes {
@@ -314,6 +324,7 @@ export interface FileRouteTypes {
     | '/api/drakon/$key'
     | '/admin/'
     | '/games/$gameId'
+    | '/api/player/game-session/close'
     | '/api/drakon/webhook/$key/drakon_api'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -342,6 +353,7 @@ export interface FileRouteTypes {
     | '/api/drakon/$key'
     | '/admin'
     | '/games/$gameId'
+    | '/api/player/game-session/close'
     | '/api/drakon/webhook/$key/drakon_api'
   id:
     | '__root__'
@@ -375,6 +387,7 @@ export interface FileRouteTypes {
     | '/api/drakon/$key'
     | '/_admin/admin/'
     | '/_app/_player/games/$gameId'
+    | '/api/player/game-session/close'
     | '/api/drakon/webhook/$key/drakon_api'
   fileRoutesById: FileRoutesById
 }
@@ -388,6 +401,7 @@ export interface RootRouteChildren {
   ApiBigbangUserDataRoute: typeof ApiBigbangUserDataRoute
   ApiBigbangWebhookRoute: typeof ApiBigbangWebhookRoute
   ApiDrakonKeyRoute: typeof ApiDrakonKeyRoute
+  ApiPlayerGameSessionCloseRoute: typeof ApiPlayerGameSessionCloseRoute
   ApiDrakonWebhookKeyDrakon_apiRoute: typeof ApiDrakonWebhookKeyDrakon_apiRoute
 }
 
@@ -603,6 +617,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPlayerGamesGameIdRouteImport
       parentRoute: typeof AppPlayerRouteRoute
     }
+    '/api/player/game-session/close': {
+      id: '/api/player/game-session/close'
+      path: '/api/player/game-session/close'
+      fullPath: '/api/player/game-session/close'
+      preLoaderRoute: typeof ApiPlayerGameSessionCloseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/drakon/webhook/$key/drakon_api': {
       id: '/api/drakon/webhook/$key/drakon_api'
       path: '/api/drakon/webhook/$key/drakon_api'
@@ -715,6 +736,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBigbangUserDataRoute: ApiBigbangUserDataRoute,
   ApiBigbangWebhookRoute: ApiBigbangWebhookRoute,
   ApiDrakonKeyRoute: ApiDrakonKeyRoute,
+  ApiPlayerGameSessionCloseRoute: ApiPlayerGameSessionCloseRoute,
   ApiDrakonWebhookKeyDrakon_apiRoute: ApiDrakonWebhookKeyDrakon_apiRoute,
 }
 export const routeTree = rootRouteImport

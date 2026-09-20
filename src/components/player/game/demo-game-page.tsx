@@ -48,6 +48,7 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 	const launchKey = useRef(crypto.randomUUID());
 	const roundKey = useRef<string | null>(null);
 	const pendingBonusCompletion = useRef<BonusCompletionEvent | null>(null);
+	const closedSessionIds = useRef(new Set<string>());
 	const [stake, setStake] = useState("10.00");
 	const [summary, setSummary] = useState<Awaited<
 		ReturnType<typeof closeCurrentPlayerGame>
@@ -92,6 +93,7 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 		mutationFn: (sessionId: string) =>
 			closeCurrentPlayerGame({ data: { sessionId } }),
 		onSuccess: async (result) => {
+			closedSessionIds.current.add(result.sessionId);
 			await Promise.all([
 				queryClient.invalidateQueries({ queryKey: bonusQueries.all }),
 				queryClient.invalidateQueries({ queryKey: walletQueries.all }),
@@ -111,6 +113,23 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 	useEffect(() => {
 		start.mutate();
 	}, [start.mutate]);
+
+	useEffect(() => {
+		const sessionId = start.data?.sessionId;
+		if (!sessionId) return;
+
+		const closeOnExit = () => {
+			if (closedSessionIds.current.has(sessionId)) return;
+			closedSessionIds.current.add(sessionId);
+			sendCloseBeacon(sessionId);
+		};
+
+		window.addEventListener("pagehide", closeOnExit);
+		return () => {
+			window.removeEventListener("pagehide", closeOnExit);
+			closeOnExit();
+		};
+	}, [start.data?.sessionId]);
 
 	const session = start.data;
 	const money = useMemo(
@@ -176,6 +195,10 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 				<Link
 					to="/"
 					className={cn(buttonVariants({ variant: "ghost" }), "-ml-2")}
+					onClick={(event) => {
+						event.preventDefault();
+						if (!close.isPending) close.mutate(session.sessionId);
+					}}
 				>
 					<ArrowLeftIcon /> Games
 				</Link>
@@ -192,6 +215,11 @@ export function DemoGamePage({ gameId }: DemoGamePageProps) {
 					End game
 				</Button>
 			</header>
+			{close.isError ? (
+				<p className="mb-4 text-sm text-destructive">
+					{errorMessage(close.error)}
+				</p>
+			) : null}
 
 			<Card className="relative overflow-hidden border border-primary/20 bg-[radial-gradient(circle_at_top,var(--color-primary)/12%,transparent_52%)]">
 				<CardHeader className="text-center">
@@ -422,6 +450,10 @@ function BigBangProviderGame({
 				<Link
 					to="/"
 					className={cn(buttonVariants({ variant: "ghost" }), "-ml-2")}
+					onClick={(event) => {
+						event.preventDefault();
+						if (!isClosing) onClose();
+					}}
 				>
 					<ArrowLeftIcon /> Games
 				</Link>
@@ -496,4 +528,22 @@ function errorMessage(error: unknown) {
 	return error instanceof Error
 		? error.message
 		: "Something went wrong. Try again.";
+}
+
+function sendCloseBeacon(sessionId: string) {
+	const body = JSON.stringify({ sessionId });
+	try {
+		const payload = new Blob([body], { type: "application/json" });
+		if (navigator.sendBeacon("/api/player/game-session/close", payload)) return;
+	} catch {
+		// Fall through to a keepalive request when Beacon is unavailable.
+	}
+
+	void fetch("/api/player/game-session/close", {
+		method: "POST",
+		body,
+		credentials: "same-origin",
+		keepalive: true,
+		headers: { "Content-Type": "application/json" },
+	}).catch(() => undefined);
 }

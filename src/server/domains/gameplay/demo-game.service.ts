@@ -206,6 +206,7 @@ export async function startCurrentPlayerGame(
 			userId: input.playerId,
 			userName: input.userName ?? input.playerId,
 			currencyCode: wallet.currencyCode,
+			returnUrl: new URL("/", env.BETTER_AUTH_URL).href,
 		});
 		if (
 			!launch.providerPlayerId ||

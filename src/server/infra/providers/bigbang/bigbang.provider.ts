@@ -159,6 +159,7 @@ export function createBigBangProvider(
 						game_id: Number(input.gameId),
 						user_token: input.userId,
 						language: input.language ?? "en",
+						...(input.returnUrl ? { return_url: input.returnUrl } : {}),
 					}),
 				}),
 			);

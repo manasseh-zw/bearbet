@@ -29,6 +29,7 @@ export type LaunchGameInput = {
 	userName: string;
 	currencyCode: string;
 	language?: string;
+	returnUrl?: string;
 };
 
 export type LaunchGameResult = {
