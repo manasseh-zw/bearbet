@@ -190,6 +190,8 @@ npm run auth:seed-admin
 
 The default local identity is `admin@bearbet.local` with username `admin`. The seed command creates the account or promotes and resets the matching account.
 
+The review reset preserves existing administrators by default. To start with a completely empty identity table before seeding a new administrator, set `RESET_DATABASE_PRESERVE_ADMINS=false` for that run.
+
 ### Select a casino provider
 
 `CASINO_PROVIDER` accepts:
@@ -203,6 +205,16 @@ After configuring an external provider, synchronize its catalogue:
 ```bash
 npm run catalogue:sync
 ```
+
+After the catalogue is available, seed the three active review bonuses and
+resolve their thumbnails from the Vercel Blob store:
+
+```bash
+npm run bonuses:seed-review
+```
+
+The bonus seed is safe to rerun. It updates the three named definitions and
+does not remove other definitions or player awards.
 
 All provider credentials stay on the server. `.env.example` documents the available variables with empty placeholders.
 
@@ -230,6 +242,7 @@ Useful development commands:
 | `npm run catalogue:sync` | Synchronize the configured provider catalogue |
 | `npm run auth:seed-admin` | Create or reset the review administrator |
 | `npm run db:reset-review` | Reset review data when its confirmation variable is set |
+| `npm run bonuses:seed-review` | Seed the active review bonus definitions and Blob thumbnails |
 
 ## Known limits
 

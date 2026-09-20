@@ -12,6 +12,8 @@ if (!databaseUrl) {
 	throw new Error("DATABASE_URL is required");
 }
 
+const preserveAdmins = process.env.RESET_DATABASE_PRESERVE_ADMINS !== "false";
+
 const pool = new Pool({ connectionString: databaseUrl });
 
 const statements = [
@@ -33,8 +35,12 @@ const statements = [
 	"delete from session",
 	"delete from verification",
 	"delete from rate_limit",
-	`delete from account where user_id in (select id from "user" where role is distinct from 'admin')`,
-	`delete from "user" where role is distinct from 'admin'`,
+	preserveAdmins
+		? `delete from account where user_id in (select id from "user" where role is distinct from 'admin')`
+		: "delete from account",
+	preserveAdmins
+		? `delete from "user" where role is distinct from 'admin'`
+		: 'delete from "user"',
 ] as const;
 
 try {
@@ -45,7 +51,11 @@ try {
 			await client.query(statement);
 		}
 		await client.query("commit");
-		console.log("Review database reset complete. Existing admin users were preserved.");
+		console.log(
+			preserveAdmins
+				? "Review database reset complete. Existing admin users were preserved."
+				: "Review database reset complete. All existing users were removed.",
+		);
 	} catch (error) {
 		await client.query("rollback");
 		throw error;
