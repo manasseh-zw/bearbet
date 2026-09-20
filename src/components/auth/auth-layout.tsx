@@ -13,7 +13,7 @@ export function AuthLayout({ children, imageAlt }: AuthLayoutProps) {
 		<div className="grid min-h-svh bg-background md:grid-cols-[minmax(24rem,1fr)_minmax(30rem,0.95fr)]">
 			<aside className="relative hidden overflow-hidden bg-sidebar md:block md:h-svh">
 				<img
-					src="/images/bonus_bear.png"
+					src="/images/bearbet_splash.png"
 					alt={imageAlt}
 					className="absolute inset-0 size-full object-cover object-center"
 				/>
