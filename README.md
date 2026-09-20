@@ -55,6 +55,7 @@ The main technical choices are:
 - Base UI, shadcn components, and Tailwind CSS for the interface
 - Node's test runner for policy, service, provider, and database tests
 - Vercel for hosting, Neon for PostgreSQL, and Vercel Blob for managed bonus artwork
+- TanStack Router root-head metadata for site-wide Open Graph and Twitter cards, using the static `public/images/bearbet_og.webp` asset
 
 ### Code boundaries
 
