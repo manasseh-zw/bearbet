@@ -3,6 +3,7 @@ import "@tanstack/react-start/server-only";
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 
 import {
+	advanceWagering,
 	calculateRequiredWager,
 	determineActiveAwardOutcome,
 } from "#/server/domains/bonus/bonus.policy";
@@ -427,6 +428,71 @@ export async function settleBonusAwardInTransaction(
 		);
 	}
 	return { award: updated, isDuplicate: false };
+}
+
+/**
+ * Applies the BigBang sandbox session delta as a local wagering signal.
+ *
+ * BigBang's sandbox does not deliver usable round callbacks, so reconciliation
+ * is the only trustworthy session-level event BearBet receives. The absolute
+ * provider delta is therefore used as a conservative proxy for qualifying
+ * activity, while the wallet movement itself remains the provider delta.
+ */
+export async function applyProviderReconciliationToActiveBonusInTransaction(
+	transaction: DatabaseTransaction,
+	input: {
+		playerId: string;
+		deltaMinor: number;
+		now?: Date;
+	},
+) {
+	const contributionMinor = Math.abs(input.deltaMinor);
+	if (!Number.isSafeInteger(contributionMinor) || contributionMinor === 0) {
+		return null;
+	}
+
+	const [award] = await transaction
+		.select()
+		.from(bonusAward)
+		.where(
+			and(
+				eq(bonusAward.playerId, input.playerId),
+				eq(bonusAward.status, "active"),
+			),
+		)
+		.for("update");
+	if (!award) return null;
+
+	const now = input.now ?? new Date();
+	if (now >= award.expiresAt) return null;
+
+	const completedWagerMinor = advanceWagering({
+		completedWagerMinor: award.completedWagerMinor,
+		requiredWagerMinor: award.requiredWagerMinor,
+		contributionMinor,
+	});
+	await transaction
+		.update(bonusAward)
+		.set({ completedWagerMinor })
+		.where(eq(bonusAward.id, award.id));
+
+	const unsettledOperationCount = await countUnsettledAwardBets(
+		transaction,
+		award.id,
+	);
+	const result = await settleBonusAwardInTransaction(transaction, {
+		awardId: award.id,
+		reason: "evaluate",
+		unsettledOperationCount,
+		now,
+	});
+
+	return {
+		award: result.award,
+		contributionMinor,
+		convertedAmountMinor:
+			result.award.status === "completed" ? award.bonusBalanceMinor : 0,
+	};
 }
 
 async function resolveQualifyingDeposit(

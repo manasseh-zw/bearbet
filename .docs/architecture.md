@@ -269,8 +269,11 @@ across provider players. At explicit close it calculates `final - launch
 snapshot` and, when sandbox reconciliation is enabled, applies only that delta
 through an idempotent, explicitly-labelled `provider_reconciliation` operation.
 It never copies BigBang's absolute synthetic balance or invents per-round
-transactions when callbacks are absent. The public sandbox launcher remains
-read-only with respect to BearBet wallets.
+transactions when callbacks are absent. Since the sandbox has no usable
+per-round callback contract, the authenticated close path also applies the
+absolute session delta as a local wagering signal to the active bonus and runs
+the existing completion conversion when the target is reached. The public
+sandbox launcher remains read-only with respect to BearBet wallets.
 
 BigBang's `user_data`, `balance_change`, and webhook routes validate and capture
 provider traffic, but absent Standard-game callbacks are a documented sandbox

@@ -2,6 +2,7 @@ import "@tanstack/react-start/server-only";
 
 import { and, desc, eq, sql } from "drizzle-orm";
 
+import { applyProviderReconciliationToActiveBonusInTransaction } from "#/server/domains/bonus/bonus.service";
 import {
 	findGame,
 	findStoredGame,
@@ -455,6 +456,10 @@ export async function closeCurrentPlayerGame(
 				movements: [{ bucket: "cash", amountMinor: netDeltaMinor }],
 				sourceType: "bigbang_sandbox_reconciliation",
 				sourceId: currentSession.id,
+			});
+			await applyProviderReconciliationToActiveBonusInTransaction(transaction, {
+				playerId: input.playerId,
+				deltaMinor: netDeltaMinor,
 			});
 		}
 

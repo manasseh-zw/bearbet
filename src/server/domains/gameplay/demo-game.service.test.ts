@@ -1,11 +1,17 @@
 import assert from "node:assert/strict";
 import test, { after, before } from "node:test";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
+import {
+	activateBonusAward,
+	createBonusDefinition,
+} from "#/server/domains/bonus/bonus.service";
 import { env } from "#/server/env";
 import { db, pool } from "#/server/infra/db";
 import {
+	bonusAward,
+	bonusDefinition,
 	game,
 	gameProvider,
 	gameSession,
@@ -25,6 +31,7 @@ import {
 
 const playerId = `demo-session-test-${crypto.randomUUID()}`;
 const gameId = `demo-game-${crypto.randomUUID()}`;
+const bonusDefinitionIds: string[] = [];
 
 before(async () => {
 	await db
@@ -66,6 +73,7 @@ before(async () => {
 
 after(async () => {
 	await db.delete(gameSession).where(eq(gameSession.playerId, playerId));
+	await db.delete(bonusAward).where(eq(bonusAward.playerId, playerId));
 	const [testWallet] = await db
 		.select({ id: wallet.id })
 		.from(wallet)
@@ -79,6 +87,11 @@ after(async () => {
 	await db.delete(wallet).where(eq(wallet.playerId, playerId));
 	await db.delete(player).where(eq(player.userId, playerId));
 	await db.delete(user).where(eq(user.id, playerId));
+	if (bonusDefinitionIds.length > 0) {
+		await db
+			.delete(bonusDefinition)
+			.where(inArray(bonusDefinition.id, bonusDefinitionIds));
+	}
 	await db
 		.delete(game)
 		.where(
@@ -256,9 +269,107 @@ test("BigBang shared synthetic balance does not credit the provider baseline", {
 	assert.equal(closed.netDeltaMinor, 0);
 	assert.equal(closed.reconciliationApplied, false);
 	assert.equal(
-		(
-			await db.select().from(wallet).where(eq(wallet.playerId, playerId))
-		)[0]?.cashBalanceMinor,
+		(await db.select().from(wallet).where(eq(wallet.playerId, playerId)))[0]
+			?.cashBalanceMinor,
 		800_000,
+	);
+});
+
+test("BigBang reconciliation advances and completes the active bonus", {
+	skip: env.CASINO_PROVIDER !== "bigbang",
+}, async () => {
+	await db
+		.update(wallet)
+		.set({ cashBalanceMinor: 100_000, bonusBalanceMinor: 0 })
+		.where(eq(wallet.playerId, playerId));
+
+	const definition = await createBonusDefinition({
+		code: `provider_${crypto.randomUUID().slice(0, 8)}`,
+		name: "Provider reconciliation bonus",
+		type: "promotional",
+		amountMinor: 2_500,
+		wageringMultiplier: 5,
+		expiresAfterDays: 7,
+	});
+	bonusDefinitionIds.push(definition.id);
+	const activated = await activateBonusAward({
+		playerId,
+		definitionId: definition.id,
+		idempotencyKey: `${playerId}:provider-reconciliation-bonus`,
+	});
+
+	let providerBalanceMinor = 10_000_000;
+	const provider = {
+		async syncCatalogue() {
+			throw new Error("Not used by this test");
+		},
+		async launchGame() {
+			return {
+				url: "https://games.example/real/session",
+				externalSessionId: "provider-bonus-reconciliation-test",
+				providerPlayerId: playerId,
+				providerBalanceMinor,
+				providerCurrencyCode: "USD",
+			};
+		},
+		async getPlayerBalance(playerId: string) {
+			return {
+				playerId,
+				balanceMinor: providerBalanceMinor,
+				currencyCode: "USD",
+			};
+		},
+	};
+
+	const started = await startCurrentPlayerGame(
+		{
+			playerId,
+			gameId,
+			launchKey: crypto.randomUUID(),
+		},
+		provider,
+	);
+	providerBalanceMinor += 20_000;
+	const closed = await closeCurrentPlayerGame(
+		{ playerId, sessionId: started.sessionId },
+		provider,
+	);
+
+	assert.equal(closed.kind, "provider");
+	assert.equal(closed.netDeltaMinor, 20_000);
+	assert.equal(closed.reconciliationApplied, true);
+	const [storedAward] = await db
+		.select()
+		.from(bonusAward)
+		.where(eq(bonusAward.id, activated.award.id));
+	const [storedWallet] = await db
+		.select()
+		.from(wallet)
+		.where(eq(wallet.playerId, playerId));
+	assert.equal(storedAward?.status, "completed");
+	assert.equal(storedAward?.completedWagerMinor, 12_500);
+	assert.equal(storedWallet?.cashBalanceMinor, 122_500);
+	assert.equal(storedWallet?.bonusBalanceMinor, 0);
+
+	const retried = await closeCurrentPlayerGame(
+		{ playerId, sessionId: started.sessionId },
+		provider,
+	);
+	assert.equal(retried.kind, "provider");
+	assert.equal(retried.netDeltaMinor, 20_000);
+	assert.equal(
+		(
+			await db
+				.select()
+				.from(walletOperation)
+				.where(
+					and(
+						eq(walletOperation.walletId, storedWallet?.id ?? ""),
+						eq(walletOperation.sourceId, started.sessionId),
+					),
+				)
+		).filter((operation) => operation.type === "provider_reconciliation")
+			.length,
+		1,
 	);
 });

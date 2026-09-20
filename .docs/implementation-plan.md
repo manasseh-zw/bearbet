@@ -33,9 +33,9 @@ The Phase 3 foundation and UI closeout, the Phase 4 game-management slice, and t
 - The wallet engine performs exact, atomic, retry-safe movements across cash, bonus, and reserved cash.
 - The bonus engine handles activation, eligibility, wagering progress, completion, conversion, refund effects, expiry, exhaustion, and cancellation.
 - The gameplay engine handles bets, wins, losses, and refunds through the same wallet and bonus services used by the rest of the application.
-- The deterministic fixture runner exercises the production gameplay, bonus, wallet, and ledger services. It is the canonical BearBet money demonstration. The BigBang adapter provides the genuine playable-provider path; its authenticated bridge persists a provider baseline and reconciles only the final session delta at explicit close.
+- The deterministic fixture runner exercises the production gameplay, bonus, wallet, and ledger services. It is the canonical BearBet money demonstration. The BigBang adapter provides the genuine playable-provider path; its authenticated bridge persists a provider baseline, reconciles only the final session delta at explicit close, and uses that absolute delta as the local wagering signal when sandbox callbacks are unavailable.
 - Drakon was investigated and is no longer an active delivery dependency. Its adapter, callback route, tests, and findings remain as historical evidence only; no release milestone depends on a playable Drakon session.
-- The configured BigBang sandbox catalogue has been synchronized into PostgreSQL. Authenticated game cards can open a signed BigBang Standard session, preserve the provider-managed balance baseline, and reconcile only the final session delta at explicit close.
+- The configured BigBang sandbox catalogue has been synchronized into PostgreSQL. Authenticated game cards can open a signed BigBang Standard session, preserve the provider-managed balance baseline, reconcile only the final session delta at explicit close, and advance or complete the active local bonus from that delta.
 - Catalogue synchronization persists provider data and preserves Bearbet-owned availability and curation fields.
 - The protected admin shell and users slice are live. Admin users can search and filter accounts, inspect player and wallet projections, suspend or activate accounts, adjust cash, and assign bonuses with reasons and audit evidence.
 - The admin Games route is live. Administrators can sync the provider catalogue, search and filter by provider, availability, status, and curation, edit local curation fields with reason-confirmed audit entries, and preserve local curation fields across syncs. Provider category metadata is read-only and refreshed from the catalogue.
@@ -95,9 +95,11 @@ The BigBang sandbox path deliberately does not treat absent Standard-game
 callbacks as BearBet bet/win events. It takes the provider-account balance
 baseline immediately after launch, allows one active sandbox session at a time,
 and, when sandbox reconciliation is enabled, records only the final minus
-launch delta through the labelled idempotent wallet operation. The fixture
-simulator remains the authoritative demonstration for per-round wallet, bonus,
-ledger, and history behavior.
+launch delta through the labelled idempotent wallet operation. The same close
+transaction applies the absolute delta as a synthetic wagering contribution to
+the active bonus, allowing the normal conversion transition to complete it.
+The fixture simulator remains the authoritative demonstration for per-round
+wallet, bonus, ledger, and history behavior.
 
 Bet history now reads game rounds, provider operations, wallet operations, and ledger movements. It groups each round without creating a duplicate history table and calculates net results from the immutable money evidence.
 
@@ -159,8 +161,10 @@ authenticated BigBang bridge supplies a genuine playable Standard-game session,
 stores the provider-account baseline after launch, allows one active sandbox
 session at a time, and applies only `final - launch snapshot` as an idempotent,
 labelled `provider_reconciliation` operation when the player explicitly closes
-the session. Missing BigBang Standard callbacks are not treated as per-round
-BearBet bet, win, or refund events.
+the session. Because missing BigBang Standard callbacks cannot provide round
+stakes, the absolute delta also advances the active local bonus and can trigger
+its normal conversion; it is not presented as a provider bet, win, or refund
+event.
 
 Drakon launch and callback work is closed as a historical investigation. The
 adapter and callback tests remain useful evidence, but repeated playable launches
@@ -173,6 +177,7 @@ Checkpoint:
 Sign in -> launch a persisted BigBang game
 -> play in the provider sandbox -> close explicitly
 -> reconcile only the final session delta once
+-> advance or complete the active bonus from the local reconciliation signal
 -> use the fixture simulator for per-round wallet, bonus, ledger, and history proof
 ```
 

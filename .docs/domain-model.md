@@ -32,12 +32,16 @@ response without moving funds again.
 
 The active BigBang path is a genuine provider session. Its authenticated bridge
 stores the provider-account balance after launch and, on explicit close,
-reconciles only the final session delta. Absent sandbox callbacks are not
-interpreted as per-round Bearbet financial events.
+reconciles only the final session delta through an idempotent
+`provider_reconciliation` operation. Absent sandbox callbacks are not
+interpreted as per-round Bearbet financial events. Because the sandbox does not
+deliver usable round callbacks, the absolute session delta is also applied as a
+local wagering signal to the active bonus; the existing completion transition
+converts any remaining bonus balance once the target is reached.
 
 ### 6. Use a bonus
 
-The user receives or activates a bonus award. Eligible bets advance its wagering total. The award completes, expires, or is cancelled according to its definition. A completed award converts funds once.
+The user receives or activates a bonus award. Eligible bets advance its wagering total, and BigBang sandbox reconciliation contributes the absolute session delta when per-round callbacks are unavailable. The award completes, expires, or is cancelled according to its definition. A completed award converts funds once.
 
 ### 7. Review activity
 
