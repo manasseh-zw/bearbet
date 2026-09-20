@@ -207,3 +207,58 @@ test("BigBang sessions reconcile one provider delta and resume without relaunchi
 		163_400,
 	);
 });
+
+test("BigBang shared synthetic balance does not credit the provider baseline", {
+	skip: env.CASINO_PROVIDER !== "bigbang",
+}, async () => {
+	await db
+		.update(wallet)
+		.set({ cashBalanceMinor: 800_000, bonusBalanceMinor: 0 })
+		.where(eq(wallet.playerId, playerId));
+
+	const providerBalanceMinor = 10_000_000;
+	const provider = {
+		async syncCatalogue() {
+			throw new Error("Not used by this test");
+		},
+		async launchGame() {
+			return {
+				url: "https://games.example/real/session",
+				externalSessionId: "provider-shared-baseline-test",
+				providerPlayerId: playerId,
+				providerBalanceMinor,
+				providerCurrencyCode: "USD",
+			};
+		},
+		async getPlayerBalance(playerId: string) {
+			return {
+				playerId,
+				balanceMinor: providerBalanceMinor,
+				currencyCode: "USD",
+			};
+		},
+	};
+
+	const started = await startCurrentPlayerGame(
+		{
+			playerId,
+			gameId,
+			launchKey: crypto.randomUUID(),
+		},
+		provider,
+	);
+	const closed = await closeCurrentPlayerGame(
+		{ playerId, sessionId: started.sessionId },
+		provider,
+	);
+
+	assert.equal(closed.kind, "provider");
+	assert.equal(closed.netDeltaMinor, 0);
+	assert.equal(closed.reconciliationApplied, false);
+	assert.equal(
+		(
+			await db.select().from(wallet).where(eq(wallet.playerId, playerId))
+		)[0]?.cashBalanceMinor,
+		800_000,
+	);
+});

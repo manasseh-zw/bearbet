@@ -239,7 +239,7 @@ export function createBigBangProvider(
 
 	async function getPlayerBalance(playerId: string): Promise<ProviderBalance> {
 		const result = bigBangBalanceResponseSchema.safeParse(
-			await request(`balance/${encodeURIComponent(playerId)}`),
+			await request(`users/${encodeURIComponent(playerId)}`),
 		);
 		if (!result.success) {
 			throw new Error("BigBang did not return a valid player balance");

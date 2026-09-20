@@ -51,7 +51,7 @@ export function ForgotPasswordForm() {
 
 			{requestSent ? (
 				<output
-					className="mt-6 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground"
+					className="mt-6 block w-full rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm leading-6 text-foreground"
 					aria-live="polite"
 				>
 					If an account exists for that email, we’ll send a reset link shortly.

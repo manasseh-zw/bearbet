@@ -124,7 +124,7 @@ test("BigBang launches an authenticated player with a balance snapshot", async (
 			if (String(url).endsWith("users/create")) {
 				return Response.json({ success: true, data: {} }, { status: 201 });
 			}
-			if (String(url).includes("balance/")) {
+			if (String(url).includes("users/player-42")) {
 				return Response.json({
 					success: true,
 					data: {
@@ -162,6 +162,6 @@ test("BigBang launches an authenticated player with a balance snapshot", async (
 	assert.equal(requests[1]?.url, "https://sandbox.example/api/v1/games/launch");
 	assert.equal(
 		requests[2]?.url,
-		"https://sandbox.example/api/v1/balance/player-42",
+		"https://sandbox.example/api/v1/users/player-42",
 	);
 });
