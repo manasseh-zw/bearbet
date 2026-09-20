@@ -145,6 +145,12 @@ export function createBigBangProvider(
 					username: input.userName,
 				}),
 			});
+			const balance = await getPlayerBalance(input.userId);
+			if (balance.currencyCode !== input.currencyCode) {
+				throw new Error(
+					`BigBang player currency ${balance.currencyCode} does not match ${input.currencyCode}`,
+				);
+			}
 			const result = bigBangLaunchResponseSchema.safeParse(
 				await request("games/launch", {
 					method: "POST",
@@ -157,12 +163,6 @@ export function createBigBangProvider(
 				}),
 			);
 			if (!result.success) throw new Error("BigBang did not return a game URL");
-			const balance = await getPlayerBalance(input.userId);
-			if (balance.currencyCode !== input.currencyCode) {
-				throw new Error(
-					`BigBang player currency ${balance.currencyCode} does not match ${input.currencyCode}`,
-				);
-			}
 			return {
 				url: assertLaunchUrl(result.data.game_url),
 				externalSessionId: result.data.session_id,
