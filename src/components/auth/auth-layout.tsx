@@ -37,7 +37,7 @@ export function AuthLayout({ children, imageAlt }: AuthLayoutProps) {
 				</div>
 			</aside>
 
-			<section className="flex min-h-svh items-center overflow-y-auto bg-background px-5 py-10 sm:px-8 sm:py-12 md:px-12 md:py-16 xl:px-20">
+			<section className="flex min-h-svh items-center justify-center overflow-y-auto bg-background px-5 py-10 sm:px-8 sm:py-12 md:px-12 md:py-16 xl:px-20">
 				<div className="w-full max-w-[30rem]">{children}</div>
 			</section>
 		</div>
