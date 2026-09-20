@@ -29,7 +29,7 @@ const featureCards = [
 	},
 ] as const;
 
-export function GuestLobby() {
+export function GuestLobby({ isAdmin = false }: { isAdmin?: boolean }) {
 	return (
 		<main className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
 			<section className="grid overflow-hidden rounded-2xl border border-white/8 bg-card lg:grid-cols-[minmax(0,2fr)_minmax(18rem,0.68fr)]">
@@ -53,24 +53,43 @@ export function GuestLobby() {
 					<p className="mt-4 whitespace-nowrap text-sm leading-6 text-muted-foreground">
 						Find your next favourite.
 					</p>
-					<Link
-						to="/register"
-						className={buttonVariants({
-							size: "lg",
-							className: "mt-6 h-12 min-w-56 px-8 text-base font-bold",
-						})}
-					>
-						Register now <ArrowRightIcon data-icon="inline-end" />
-					</Link>
-					<p className="mt-4 text-xs text-muted-foreground">
-						Already playing?{" "}
-						<Link
-							to="/login"
-							className="text-foreground underline-offset-4 hover:underline"
-						>
-							Sign in
-						</Link>
-					</p>
+					{isAdmin ? (
+						<>
+							<Link
+								to="/admin"
+								className={buttonVariants({
+									size: "lg",
+									className: "mt-6 h-12 min-w-56 px-8 text-base font-bold",
+								})}
+							>
+								Go to admin dashboard <ArrowRightIcon data-icon="inline-end" />
+							</Link>
+							<p className="mt-4 text-xs text-muted-foreground">
+								Admin session active. You are browsing the public lobby.
+							</p>
+						</>
+					) : (
+						<>
+							<Link
+								to="/register"
+								className={buttonVariants({
+									size: "lg",
+									className: "mt-6 h-12 min-w-56 px-8 text-base font-bold",
+								})}
+							>
+								Register now <ArrowRightIcon data-icon="inline-end" />
+							</Link>
+							<p className="mt-4 text-xs text-muted-foreground">
+								Already playing?{" "}
+								<Link
+									to="/login"
+									className="text-foreground underline-offset-4 hover:underline"
+								>
+									Sign in
+								</Link>
+							</p>
+						</>
+					)}
 				</div>
 			</section>
 

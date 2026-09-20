@@ -40,7 +40,9 @@ function CasinoLobby() {
 		);
 	}
 
-	return session?.user ? (
+	const isAdmin = session?.user.role === "admin";
+
+	return session?.user && !isAdmin ? (
 		<PlayerLobby
 			query={query}
 			onQueryChange={(search) =>
@@ -48,6 +50,6 @@ function CasinoLobby() {
 			}
 		/>
 	) : (
-		<GuestLobby />
+		<GuestLobby isAdmin={isAdmin} />
 	);
 }

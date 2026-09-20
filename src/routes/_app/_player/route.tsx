@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_app/_player")({
 			});
 		}
 
-		if (session.user.banned) {
+		if (session.user.role !== "user" || session.user.banned) {
 			throw redirect({ to: "/" });
 		}
 

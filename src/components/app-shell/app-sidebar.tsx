@@ -61,6 +61,9 @@ const casinoNavigation: NavigationItem[] = [
 	{ label: "Bonuses", icon: BadgePercentIcon, to: "/bonuses" },
 	{ label: "VIP club", icon: CrownIcon, to: "/vip" },
 ];
+const adminCasinoNavigation = casinoNavigation.filter(
+	(item) => item.to !== "/bonuses",
+);
 
 const accountNavigation: NavigationItem[] = [
 	{ label: "Wallet", icon: WalletCardsIcon, to: "/wallet" },
@@ -144,9 +147,10 @@ function PlayerProfile() {
 	const navigate = useNavigate();
 	const { data: session, isPending } = authClient.useSession();
 	const user = session?.user;
+	const isPlayer = user?.role === "user";
 	const wallet = useQuery({
 		...walletQueries.current(),
-		enabled: Boolean(user),
+		enabled: isPlayer,
 	});
 	const logout = useMutation({
 		mutationFn: signOutPlayer,
@@ -207,7 +211,16 @@ function PlayerProfile() {
 					)}
 					<span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
 						{user ? (
-							wallet.isPending ? (
+							user.role === "admin" ? (
+								<>
+									<span className="text-xs text-sidebar-foreground/45">
+										Signed in as
+									</span>
+									<span className="truncate text-xl leading-none font-semibold text-sidebar-foreground">
+										Administrator
+									</span>
+								</>
+							) : wallet.isPending ? (
 								<>
 									<span className="text-xs text-sidebar-foreground/45">
 										Balance
@@ -251,7 +264,14 @@ function PlayerProfile() {
 				>
 					{user ? (
 						<>
-							{wallet.data && amount ? (
+							{user.role === "admin" ? (
+								<div className="px-2 py-2.5">
+									<p className="text-xs text-muted-foreground">
+										Current access
+									</p>
+									<p className="mt-0.5 text-lg font-semibold">Administrator</p>
+								</div>
+							) : wallet.data && amount ? (
 								<div className="px-2 py-2.5">
 									<p className="text-xs text-muted-foreground">
 										Available to play
@@ -293,20 +313,23 @@ function PlayerProfile() {
 								</DropdownMenuItem>
 							) : null}
 							<DropdownMenuSeparator />
-							<DropdownMenuItem render={<Link to="/wallet" />}>
-								<PlusCircleIcon />
-								Add funds
-							</DropdownMenuItem>
-							<DropdownMenuItem render={<Link to="/profile" />}>
-								<SettingsIcon />
-								Profile
-							</DropdownMenuItem>
 							{user.role === "admin" ? (
 								<DropdownMenuItem render={<Link to="/admin" />}>
 									<ShieldCheckIcon />
-									Admin
+									Admin dashboard
 								</DropdownMenuItem>
-							) : null}
+							) : (
+								<>
+									<DropdownMenuItem render={<Link to="/wallet" />}>
+										<PlusCircleIcon />
+										Add funds
+									</DropdownMenuItem>
+									<DropdownMenuItem render={<Link to="/profile" />}>
+										<SettingsIcon />
+										Profile
+									</DropdownMenuItem>
+								</>
+							)}
 							<DropdownMenuSeparator />
 							<DropdownMenuItem
 								variant="destructive"
@@ -350,6 +373,9 @@ function formatMinorUnits(valueMinor: number, formatter: Intl.NumberFormat) {
 }
 
 export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
+	const { data: session } = authClient.useSession();
+	const isAdmin = session?.user.role === "admin";
+
 	return (
 		<Sidebar
 			collapsible="offcanvas"
@@ -364,8 +390,12 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
 			</SidebarHeader>
 
 			<SidebarContent className="gap-8 px-4 py-6">
-				<NavigationGroup items={casinoNavigation} />
-				<NavigationGroup label="Your account" items={accountNavigation} />
+				<NavigationGroup
+					items={isAdmin ? adminCasinoNavigation : casinoNavigation}
+				/>
+				{!isAdmin ? (
+					<NavigationGroup label="Your account" items={accountNavigation} />
+				) : null}
 			</SidebarContent>
 
 			<SidebarFooter className="gap-0 p-0">
