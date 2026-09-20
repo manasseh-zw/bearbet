@@ -61,11 +61,10 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 					<Link to="/" aria-label="BearBet home" className="inline-flex">
 						<Logo className="text-2xl" />
 					</Link>
-					<span className="text-xs text-muted-foreground">Player account</span>
 				</div>
 
 				<div className="grid gap-2">
-					<h1 className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+					<h1 className="text-3xl font-normal tracking-[-0.03em] sm:text-4xl">
 						Welcome back
 					</h1>
 					<p className="text-sm leading-6 text-muted-foreground">
