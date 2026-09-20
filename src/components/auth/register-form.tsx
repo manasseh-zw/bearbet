@@ -760,7 +760,7 @@ function DateOfBirthField({
 										aria-describedby={
 											invalid ? `${field.name}-error` : undefined
 										}
-										className="h-11 w-full justify-between rounded-xl px-3 font-normal"
+										className="h-11 w-full justify-between rounded-xl border-transparent bg-input/50 px-3 font-normal hover:bg-input/50 dark:bg-input/50 dark:hover:bg-input/50"
 									/>
 								}
 							>

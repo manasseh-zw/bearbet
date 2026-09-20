@@ -47,7 +47,7 @@ export function CurrencySelect({
 				aria-invalid={invalid}
 				aria-describedby={ariaDescribedBy}
 				onBlur={onBlur}
-				className="h-11 w-full rounded-xl"
+				className="h-11 w-full rounded-xl data-[size=default]:h-11"
 			>
 				<SelectValue placeholder={placeholder}>
 					{(selectedValue: string | null) => {
