@@ -806,9 +806,9 @@ function DateOfBirthField({
 							</PopoverTrigger>
 							<PopoverContent
 								align="start"
-								className="w-[min(28rem,calc(100vw-2rem))] rounded-2xl p-2"
+								className="w-[min(24rem,calc(100vw-2rem))] rounded-2xl p-2"
 							>
-								<div className="grid grid-cols-[minmax(0,1.35fr)_minmax(3.25rem,0.55fr)_minmax(4.75rem,0.75fr)] gap-2">
+								<div className="grid grid-cols-[minmax(0,1.15fr)_minmax(2.75rem,0.42fr)_minmax(4rem,0.62fr)] gap-2">
 									<WheelPicker
 										options={birthMonthOptions}
 										value={selected.month}
