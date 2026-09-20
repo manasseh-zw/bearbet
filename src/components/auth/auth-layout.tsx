@@ -10,7 +10,7 @@ type AuthLayoutProps = {
 
 export function AuthLayout({ children, imageAlt }: AuthLayoutProps) {
 	return (
-		<div className="grid min-h-svh bg-background md:grid-cols-[minmax(24rem,1fr)_minmax(30rem,0.95fr)]">
+		<div className="grid min-h-svh bg-background md:grid-cols-[minmax(0,0.45fr)_minmax(30rem,0.55fr)]">
 			<aside className="relative hidden overflow-hidden bg-sidebar md:block md:h-svh">
 				<img
 					src="/images/bearbet_splash.png"
