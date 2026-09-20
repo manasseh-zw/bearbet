@@ -1,8 +1,16 @@
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
-import { useId, useState } from "react";
+import {
+	ArrowLeftIcon,
+	ArrowRightIcon,
+	EyeIcon,
+	EyeOffIcon,
+	LoaderCircleIcon,
+} from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useEffect, useId, useState } from "react";
+import { z } from "zod";
 
 import { AuthLayout } from "#/components/auth/auth-layout";
 import { Logo } from "#/components/shared/brand";
@@ -22,6 +30,7 @@ import {
 	registrationFormSchema,
 	supportedCurrencies,
 } from "#/lib/schemas/auth.schema";
+import { cn } from "#/lib/utils";
 
 const countries = [
 	{ code: "ZW", name: "Zimbabwe", currencyCode: "USD" },
@@ -48,6 +57,103 @@ const defaultValues: RegistrationFormInput = {
 	currencyCode: "USD",
 };
 
+const registrationSteps = [
+	{
+		title: "Start with the basics",
+		description: "Tell us who you are so we can set up your player profile.",
+	},
+	{
+		title: "Set up your account",
+		description: "Choose your sign-in details and keep your account secure.",
+	},
+	{
+		title: "Finish your profile",
+		description: "A few final details help us keep your play experience ready.",
+	},
+] as const;
+
+type RegistrationStep = 0 | 1 | 2;
+
+const registrationStepFields = [
+	["firstName", "lastName"],
+	["username", "email", "password", "confirmPassword"],
+	["dateOfBirth", "countryCode", "currencyCode"],
+] as const;
+
+const registrationShape = registrationFormSchema.shape;
+
+const registrationStepSchemas = [
+	z.object({
+		firstName: registrationShape.firstName,
+		lastName: registrationShape.lastName,
+	}),
+	z
+		.object({
+			username: registrationShape.username,
+			email: registrationShape.email,
+			password: registrationShape.password,
+			confirmPassword: registrationShape.confirmPassword,
+		})
+		.refine((input) => input.password === input.confirmPassword, {
+			message: "Passwords do not match",
+			path: ["confirmPassword"],
+		}),
+	z.object({
+		dateOfBirth: registrationShape.dateOfBirth,
+		countryCode: registrationShape.countryCode,
+		currencyCode: registrationShape.currencyCode,
+	}),
+] as const;
+
+const registrationDraftKey = "bearbet:register-draft:v1";
+
+const registrationDraftSchema = z.object({
+	firstName: z.string().max(80).optional(),
+	lastName: z.string().max(80).optional(),
+	username: z.string().max(30).optional(),
+	email: z.string().max(320).optional(),
+	dateOfBirth: z.string().optional(),
+	countryCode: z
+		.string()
+		.regex(/^[A-Z]{2}$/, "Country code must contain two uppercase letters")
+		.optional(),
+	currencyCode: z.enum(supportedCurrencies).optional(),
+	step: z
+		.number()
+		.int()
+		.min(0)
+		.max(registrationSteps.length - 1)
+		.optional(),
+});
+
+type RegistrationDraftValues = Pick<
+	RegistrationFormInput,
+	| "firstName"
+	| "lastName"
+	| "username"
+	| "email"
+	| "dateOfBirth"
+	| "countryCode"
+	| "currencyCode"
+>;
+
+const draftValueFields = [
+	"firstName",
+	"lastName",
+	"username",
+	"email",
+	"dateOfBirth",
+	"countryCode",
+	"currencyCode",
+] as const;
+
+function areDraftValuesEqual(
+	previous: RegistrationDraftValues,
+	next: RegistrationDraftValues,
+) {
+	return draftValueFields.every((field) => previous[field] === next[field]);
+}
+
 function useRegistrationForm(
 	onSubmit: (value: RegistrationFormInput) => Promise<void>,
 ) {
@@ -67,10 +173,20 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 	const confirmPasswordId = useId();
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+	const [step, setStep] = useState<RegistrationStep>(0);
+	const [direction, setDirection] = useState<1 | -1>(1);
+	const [draftReady, setDraftReady] = useState(false);
+	const [stepError, setStepError] = useState<string | null>(null);
+	const shouldReduceMotion = useReducedMotion();
 
 	const registration = useMutation({
 		mutationFn: registerPlayer,
 		onSuccess: async () => {
+			try {
+				window.localStorage.removeItem(registrationDraftKey);
+			} catch {
+				// Storage can be unavailable in private browsing contexts.
+			}
 			await navigate({ href: redirectTo ?? "/", replace: true });
 		},
 	});
@@ -79,6 +195,163 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 		const { confirmPassword: _, ...input } = value;
 		await registration.mutateAsync(input);
 	});
+	const draftValues = useStore(
+		form.store,
+		(state): RegistrationDraftValues => ({
+			firstName: state.values.firstName,
+			lastName: state.values.lastName,
+			username: state.values.username,
+			email: state.values.email,
+			dateOfBirth: state.values.dateOfBirth,
+			countryCode: state.values.countryCode,
+			currencyCode: state.values.currencyCode,
+		}),
+		areDraftValuesEqual,
+	);
+
+	useEffect(() => {
+		try {
+			const rawDraft = window.localStorage.getItem(registrationDraftKey);
+			if (rawDraft) {
+				const parsedDraft = registrationDraftSchema.safeParse(
+					JSON.parse(rawDraft),
+				);
+
+				if (parsedDraft.success) {
+					const draft = parsedDraft.data;
+					if (draft.firstName !== undefined)
+						form.setFieldValue("firstName", draft.firstName, {
+							dontUpdateMeta: true,
+							dontRunListeners: true,
+							dontValidate: true,
+						});
+					if (draft.lastName !== undefined)
+						form.setFieldValue("lastName", draft.lastName, {
+							dontUpdateMeta: true,
+							dontRunListeners: true,
+							dontValidate: true,
+						});
+					if (draft.username !== undefined)
+						form.setFieldValue("username", draft.username, {
+							dontUpdateMeta: true,
+							dontRunListeners: true,
+							dontValidate: true,
+						});
+					if (draft.email !== undefined)
+						form.setFieldValue("email", draft.email, {
+							dontUpdateMeta: true,
+							dontRunListeners: true,
+							dontValidate: true,
+						});
+					if (draft.dateOfBirth !== undefined)
+						form.setFieldValue("dateOfBirth", draft.dateOfBirth, {
+							dontUpdateMeta: true,
+							dontRunListeners: true,
+							dontValidate: true,
+						});
+					if (draft.countryCode !== undefined)
+						form.setFieldValue("countryCode", draft.countryCode, {
+							dontUpdateMeta: true,
+							dontRunListeners: true,
+							dontValidate: true,
+						});
+					if (draft.currencyCode !== undefined)
+						form.setFieldValue("currencyCode", draft.currencyCode, {
+							dontUpdateMeta: true,
+							dontRunListeners: true,
+							dontValidate: true,
+						});
+
+					// Passwords are intentionally never stored, so resume at the account
+					// step if a draft had already reached the profile step.
+					const savedStep = draft.step ?? 0;
+					setStep(Math.min(savedStep, 1) as RegistrationStep);
+				}
+			}
+		} catch {
+			// Storage can be unavailable or contain an invalid older draft.
+		} finally {
+			setDraftReady(true);
+		}
+	}, [form]);
+
+	useEffect(() => {
+		if (!draftReady) return;
+
+		const hasDraft =
+			step > 0 ||
+			draftValues.firstName !== "" ||
+			draftValues.lastName !== "" ||
+			draftValues.username !== "" ||
+			draftValues.email !== "" ||
+			draftValues.dateOfBirth !== "" ||
+			draftValues.countryCode !== defaultValues.countryCode ||
+			draftValues.currencyCode !== defaultValues.currencyCode;
+
+		try {
+			if (!hasDraft) {
+				window.localStorage.removeItem(registrationDraftKey);
+				return;
+			}
+
+			window.localStorage.setItem(
+				registrationDraftKey,
+				JSON.stringify({ ...draftValues, step }),
+			);
+		} catch {
+			// Storage can be unavailable in private browsing contexts.
+		}
+	}, [draftReady, draftValues, step]);
+
+	async function validateCurrentStep() {
+		const fields = registrationStepFields[step];
+		for (const field of fields) {
+			form.setFieldMeta(field, (previous) => ({
+				...(previous ?? {}),
+				isTouched: true,
+			}));
+		}
+		await Promise.all(
+			fields.map((field) => form.validateField(field, "change")),
+		);
+
+		if (!registrationStepSchemas[step].safeParse(form.state.values).success) {
+			setStepError(
+				step === registrationSteps.length - 1
+					? "Review the highlighted fields before creating your account."
+					: "Review the highlighted fields before continuing.",
+			);
+			return false;
+		}
+
+		setStepError(null);
+		return true;
+	}
+
+	async function continueToNextStep() {
+		if (!(await validateCurrentStep())) return;
+
+		setStepError(null);
+		setDirection(1);
+		setStep((currentStep) =>
+			currentStep < registrationSteps.length - 1
+				? ((currentStep + 1) as RegistrationStep)
+				: currentStep,
+		);
+	}
+
+	async function submitRegistration() {
+		if (!(await validateCurrentStep())) return;
+		await form.handleSubmit();
+	}
+
+	function returnToPreviousStep() {
+		setStepError(null);
+		setStep((currentStep) =>
+			currentStep > 0 ? ((currentStep - 1) as RegistrationStep) : currentStep,
+		);
+		setDirection(-1);
+	}
 
 	return (
 		<AuthLayout imageAlt="BearBet mascot welcoming new players">
@@ -108,158 +381,203 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 					</p>
 				) : null}
 
+				<div
+					role="progressbar"
+					aria-label="Registration progress"
+					aria-valuemin={1}
+					aria-valuemax={registrationSteps.length}
+					aria-valuenow={step + 1}
+					className="grid gap-3"
+				>
+					<div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
+						<span>
+							Step {step + 1} of {registrationSteps.length}
+						</span>
+						<span className="text-right">{registrationSteps[step].title}</span>
+					</div>
+					<div className="grid grid-cols-3 gap-2" aria-hidden="true">
+						{registrationSteps.map((registrationStep, index) => (
+							<span
+								key={registrationStep.title}
+								className={cn(
+									"h-1.5 rounded-full transition-colors duration-200",
+									index <= step ? "bg-primary" : "bg-muted",
+								)}
+							/>
+						))}
+					</div>
+				</div>
+
 				<form
-					className="grid gap-4 sm:grid-cols-2"
+					className="grid gap-6"
 					aria-busy={registration.isPending}
 					onSubmit={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
-						void form.handleSubmit();
+						void submitRegistration();
 					}}
 					noValidate
 				>
 					<fieldset disabled={registration.isPending} className="contents">
-						<TextField
-							form={form}
-							name="firstName"
-							label="First name"
-							autoComplete="given-name"
-						/>
-						<TextField
-							form={form}
-							name="lastName"
-							label="Last name"
-							autoComplete="family-name"
-						/>
-						<TextField
-							form={form}
-							name="username"
-							label="Username"
-							autoComplete="username"
-						/>
-						<TextField
-							form={form}
-							name="email"
-							label="Email address"
-							type="email"
-							autoComplete="email"
-						/>
-						<TextField
-							form={form}
-							name="dateOfBirth"
-							label="Date of birth"
-							type="date"
-							autoComplete="bday"
-						/>
-
-						<form.Field name="countryCode">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor={field.name}>Country</Label>
-									<Select
-										value={field.state.value}
-										onValueChange={(value) => {
-											if (value === null) return;
-											field.handleChange(value);
-											const country = countries.find(
-												(item) => item.code === value,
-											);
-											if (country)
-												form.setFieldValue(
-													"currencyCode",
-													country.currencyCode,
-												);
-										}}
-										disabled={registration.isPending}
-									>
-										<SelectTrigger
-											id={field.name}
-											className="h-11 w-full rounded-xl"
-										>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{countries.map((country) => (
-												<SelectItem key={country.code} value={country.code}>
-													{country.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-							)}
-						</form.Field>
-
-						<form.Field name="currencyCode">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor={field.name}>Account currency</Label>
-									<Select
-										value={field.state.value}
-										onValueChange={(value) => {
-											if (value !== null) field.handleChange(value);
-										}}
-										disabled={registration.isPending}
-									>
-										<SelectTrigger
-											id={field.name}
-											className="h-11 w-full rounded-xl"
-										>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{supportedCurrencies.map((currency) => (
-												<SelectItem key={currency} value={currency}>
-													{currency} · {currencyNames[currency]}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-							)}
-						</form.Field>
-
-						<PasswordField
-							form={form}
-							name="password"
-							label="Password"
-							inputId={passwordId}
-							visible={showPassword}
-							onToggle={() => setShowPassword((value) => !value)}
-						/>
-						<PasswordField
-							form={form}
-							name="confirmPassword"
-							label="Confirm password"
-							inputId={confirmPasswordId}
-							visible={showConfirmPassword}
-							onToggle={() => setShowConfirmPassword((value) => !value)}
-						/>
-
-						<form.Subscribe
-							selector={(state) => [state.canSubmit, state.isSubmitting]}
-						>
-							{([canSubmit, isSubmitting]) => (
-								<Button
-									type="submit"
-									size="lg"
-									className="mt-1 h-12 w-full sm:col-span-2"
-									disabled={
-										!canSubmit || isSubmitting || registration.isPending
-									}
+						<div className="min-h-[20rem]">
+							<AnimatePresence initial={false} mode="wait">
+								<motion.div
+									key={step}
+									initial={{
+										opacity: 0,
+										x: shouldReduceMotion ? 0 : direction > 0 ? 24 : -24,
+									}}
+									animate={{ opacity: 1, x: 0 }}
+									exit={{
+										opacity: 0,
+										x: shouldReduceMotion ? 0 : direction > 0 ? -24 : 24,
+									}}
+									transition={{
+										duration: shouldReduceMotion ? 0.12 : 0.22,
+										ease: [0.16, 1, 0.3, 1],
+									}}
+									className="grid gap-5"
 								>
-									{registration.isPending ? (
-										<LoaderCircleIcon
-											className="animate-spin"
-											aria-hidden="true"
-										/>
+									<div className="grid gap-1">
+										<h2 className="text-lg font-medium">
+											{registrationSteps[step].title}
+										</h2>
+										<p className="text-sm leading-6 text-muted-foreground">
+											{registrationSteps[step].description}
+										</p>
+									</div>
+
+									<div className="grid gap-4 sm:grid-cols-2">
+										{step === 0 ? (
+											<>
+												<TextField
+													form={form}
+													name="firstName"
+													label="First name"
+													autoComplete="given-name"
+												/>
+												<TextField
+													form={form}
+													name="lastName"
+													label="Last name"
+													autoComplete="family-name"
+												/>
+											</>
+										) : null}
+
+										{step === 1 ? (
+											<>
+												<TextField
+													form={form}
+													name="username"
+													label="Username"
+													autoComplete="username"
+												/>
+												<TextField
+													form={form}
+													name="email"
+													label="Email address"
+													type="email"
+													autoComplete="email"
+												/>
+												<PasswordField
+													form={form}
+													name="password"
+													label="Password"
+													inputId={passwordId}
+													visible={showPassword}
+													onToggle={() => setShowPassword((value) => !value)}
+												/>
+												<PasswordField
+													form={form}
+													name="confirmPassword"
+													label="Confirm password"
+													inputId={confirmPasswordId}
+													visible={showConfirmPassword}
+													onToggle={() =>
+														setShowConfirmPassword((value) => !value)
+													}
+												/>
+											</>
+										) : null}
+
+										{step === 2 ? (
+											<>
+												<TextField
+													form={form}
+													name="dateOfBirth"
+													label="Date of birth"
+													type="date"
+													autoComplete="bday"
+												/>
+												<CountryField
+													form={form}
+													options={countries}
+													disabled={registration.isPending}
+												/>
+												<CurrencyField
+													form={form}
+													disabled={registration.isPending}
+												/>
+											</>
+										) : null}
+									</div>
+									{stepError ? (
+										<p className="text-xs text-destructive" role="alert">
+											{stepError}
+										</p>
 									) : null}
-									{registration.isPending
-										? "Creating account..."
-										: "Create account"}
+								</motion.div>
+							</AnimatePresence>
+						</div>
+
+						<div className="flex gap-3">
+							{step > 0 ? (
+								<Button
+									type="button"
+									variant="outline"
+									size="icon-lg"
+									className="size-12"
+									onClick={returnToPreviousStep}
+									aria-label="Back to previous step"
+								>
+									<ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
+								</Button>
+							) : null}
+							{step === registrationSteps.length - 1 ? (
+								<form.Subscribe selector={(state) => state.isSubmitting}>
+									{(isSubmitting) => (
+										<Button
+											type="submit"
+											size="lg"
+											className="h-12 flex-1"
+											disabled={isSubmitting || registration.isPending}
+										>
+											{registration.isPending ? (
+												<LoaderCircleIcon
+													data-icon="inline-start"
+													className="animate-spin"
+													aria-hidden="true"
+												/>
+											) : null}
+											{registration.isPending
+												? "Creating account..."
+												: "Create account"}
+										</Button>
+									)}
+								</form.Subscribe>
+							) : (
+								<Button
+									type="button"
+									size="lg"
+									className="h-12 flex-1"
+									onClick={() => void continueToNextStep()}
+								>
+									Continue
+									<ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
 								</Button>
 							)}
-						</form.Subscribe>
+						</div>
 					</fieldset>
 				</form>
 
@@ -279,6 +597,110 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 }
 
 type FormApi = ReturnType<typeof useRegistrationForm>;
+
+function CountryField({
+	form,
+	options,
+	disabled,
+}: {
+	form: FormApi;
+	options: typeof countries;
+	disabled: boolean;
+}) {
+	return (
+		<form.Field name="countryCode">
+			{(field) => {
+				const error = getFieldError(field.state.meta.errors);
+				const invalid = field.state.meta.isTouched && Boolean(error);
+
+				return (
+					<div className="grid gap-2">
+						<Label htmlFor={field.name}>Country</Label>
+						<Select
+							value={field.state.value}
+							onValueChange={(value) => {
+								if (value === null) return;
+								field.handleChange(value);
+								const country = options.find((item) => item.code === value);
+								if (country)
+									form.setFieldValue("currencyCode", country.currencyCode);
+							}}
+							disabled={disabled}
+						>
+							<SelectTrigger
+								id={field.name}
+								aria-invalid={invalid}
+								aria-describedby={invalid ? `${field.name}-error` : undefined}
+								className="h-11 w-full rounded-xl"
+							>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{options.map((country) => (
+									<SelectItem key={country.code} value={country.code}>
+										{country.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						{invalid ? (
+							<FieldError id={`${field.name}-error`}>{error}</FieldError>
+						) : null}
+					</div>
+				);
+			}}
+		</form.Field>
+	);
+}
+
+function CurrencyField({
+	form,
+	disabled,
+}: {
+	form: FormApi;
+	disabled: boolean;
+}) {
+	return (
+		<form.Field name="currencyCode">
+			{(field) => {
+				const error = getFieldError(field.state.meta.errors);
+				const invalid = field.state.meta.isTouched && Boolean(error);
+
+				return (
+					<div className="grid gap-2 sm:col-span-2">
+						<Label htmlFor={field.name}>Account currency</Label>
+						<Select
+							value={field.state.value}
+							onValueChange={(value) => {
+								if (value !== null) field.handleChange(value);
+							}}
+							disabled={disabled}
+						>
+							<SelectTrigger
+								id={field.name}
+								aria-invalid={invalid}
+								aria-describedby={invalid ? `${field.name}-error` : undefined}
+								className="h-11 w-full rounded-xl"
+							>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{supportedCurrencies.map((currency) => (
+									<SelectItem key={currency} value={currency}>
+										{currency} · {currencyNames[currency]}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						{invalid ? (
+							<FieldError id={`${field.name}-error`}>{error}</FieldError>
+						) : null}
+					</div>
+				);
+			}}
+		</form.Field>
+	);
+}
 
 type TextFieldName =
 	| "firstName"
