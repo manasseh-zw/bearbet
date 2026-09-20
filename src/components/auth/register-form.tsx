@@ -9,11 +9,18 @@ import {
 	LoaderCircleIcon,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useId, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { z } from "zod";
 
 import { AuthLayout } from "#/components/auth/auth-layout";
+import {
+	type RegistrationDraft,
+	type RegistrationDraftValues,
+	registrationDraftKey,
+	useRegistrationDraftStorage,
+} from "#/components/auth/registration-draft-storage";
 import { Logo } from "#/components/shared/brand";
+import { useLocalStorage } from "#/components/shared/local-storage-provider";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
@@ -102,39 +109,6 @@ const registrationStepSchemas = [
 	}),
 ] as const;
 
-const registrationDraftKey = "bearbet:register-draft:v1";
-
-const registrationDraftSchema = z.object({
-	firstName: z.string().max(80).optional(),
-	lastName: z.string().max(80).optional(),
-	promoCode: z.string().max(64).optional(),
-	username: z.string().max(30).optional(),
-	email: z.string().max(320).optional(),
-	dateOfBirth: z.string().optional(),
-	countryCode: z
-		.string()
-		.regex(/^[A-Z]{2}$/, "Country code must contain two uppercase letters")
-		.optional(),
-	currencyCode: z.enum(supportedCurrencies).optional(),
-	step: z
-		.number()
-		.int()
-		.min(0)
-		.max(registrationSteps.length - 1)
-		.optional(),
-});
-
-type RegistrationDraftValues = Pick<
-	RegistrationFormInput,
-	| "firstName"
-	| "lastName"
-	| "username"
-	| "email"
-	| "dateOfBirth"
-	| "countryCode"
-	| "currencyCode"
->;
-
 const draftValueFields = [
 	"firstName",
 	"lastName",
@@ -174,18 +148,14 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 	const [promoCode, setPromoCode] = useState("");
 	const [step, setStep] = useState<RegistrationStep>(0);
 	const [direction, setDirection] = useState<1 | -1>(1);
-	const [draftReady, setDraftReady] = useState(false);
 	const [stepError, setStepError] = useState<string | null>(null);
 	const shouldReduceMotion = useReducedMotion();
+	const storage = useLocalStorage();
 
 	const registration = useMutation({
 		mutationFn: registerPlayer,
 		onSuccess: async () => {
-			try {
-				window.localStorage.removeItem(registrationDraftKey);
-			} catch {
-				// Storage can be unavailable in private browsing contexts.
-			}
+			storage.removeItem(registrationDraftKey);
 			await navigate({ href: redirectTo ?? "/", replace: true });
 		},
 	});
@@ -203,106 +173,64 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 			email: state.values.email,
 			dateOfBirth: state.values.dateOfBirth,
 			countryCode: state.values.countryCode,
-			currencyCode: state.values.currencyCode,
+			currencyCode: state.values
+				.currencyCode as RegistrationDraftValues["currencyCode"],
 		}),
 		areDraftValuesEqual,
 	);
 
-	useEffect(() => {
-		try {
-			const rawDraft = window.localStorage.getItem(registrationDraftKey);
-			if (rawDraft) {
-				const parsedDraft = registrationDraftSchema.safeParse(
-					JSON.parse(rawDraft),
-				);
+	const currentDraft = useMemo<RegistrationDraft>(
+		() => ({ ...draftValues, promoCode, step }),
+		[draftValues, promoCode, step],
+	);
+	const restoreDraft = useCallback(
+		(draft: RegistrationDraft) => {
+			const restoredValues: RegistrationDraftValues = {
+				firstName: draft.firstName ?? defaultValues.firstName,
+				lastName: draft.lastName ?? defaultValues.lastName,
+				username: draft.username ?? defaultValues.username,
+				email: draft.email ?? defaultValues.email,
+				dateOfBirth: draft.dateOfBirth ?? defaultValues.dateOfBirth,
+				countryCode: draft.countryCode ?? defaultValues.countryCode,
+				currencyCode: (draft.currencyCode ??
+					defaultValues.currencyCode) as RegistrationDraftValues["currencyCode"],
+			};
+			const restoreOptions = {
+				dontUpdateMeta: true,
+				dontRunListeners: true,
+				dontValidate: true,
+			};
 
-				if (parsedDraft.success) {
-					const draft = parsedDraft.data;
-					if (draft.promoCode !== undefined) setPromoCode(draft.promoCode);
-					if (draft.firstName !== undefined)
-						form.setFieldValue("firstName", draft.firstName, {
-							dontUpdateMeta: true,
-							dontRunListeners: true,
-							dontValidate: true,
-						});
-					if (draft.lastName !== undefined)
-						form.setFieldValue("lastName", draft.lastName, {
-							dontUpdateMeta: true,
-							dontRunListeners: true,
-							dontValidate: true,
-						});
-					if (draft.username !== undefined)
-						form.setFieldValue("username", draft.username, {
-							dontUpdateMeta: true,
-							dontRunListeners: true,
-							dontValidate: true,
-						});
-					if (draft.email !== undefined)
-						form.setFieldValue("email", draft.email, {
-							dontUpdateMeta: true,
-							dontRunListeners: true,
-							dontValidate: true,
-						});
-					if (draft.dateOfBirth !== undefined)
-						form.setFieldValue("dateOfBirth", draft.dateOfBirth, {
-							dontUpdateMeta: true,
-							dontRunListeners: true,
-							dontValidate: true,
-						});
-					if (draft.countryCode !== undefined)
-						form.setFieldValue("countryCode", draft.countryCode, {
-							dontUpdateMeta: true,
-							dontRunListeners: true,
-							dontValidate: true,
-						});
-					if (draft.currencyCode !== undefined)
-						form.setFieldValue("currencyCode", draft.currencyCode, {
-							dontUpdateMeta: true,
-							dontRunListeners: true,
-							dontValidate: true,
-						});
-
-					// Passwords are intentionally never stored, so resume at the account
-					// step if a draft had already reached the profile step.
-					const savedStep = draft.step ?? 0;
-					setStep(Math.min(savedStep, 1) as RegistrationStep);
-				}
-			}
-		} catch {
-			// Storage can be unavailable or contain an invalid older draft.
-		} finally {
-			setDraftReady(true);
-		}
-	}, [form]);
-
-	useEffect(() => {
-		if (!draftReady) return;
-
-		const hasDraft =
-			step > 0 ||
-			draftValues.firstName !== "" ||
-			draftValues.lastName !== "" ||
-			promoCode !== "" ||
-			draftValues.username !== "" ||
-			draftValues.email !== "" ||
-			draftValues.dateOfBirth !== "" ||
-			draftValues.countryCode !== defaultValues.countryCode ||
-			draftValues.currencyCode !== defaultValues.currencyCode;
-
-		try {
-			if (!hasDraft) {
-				window.localStorage.removeItem(registrationDraftKey);
-				return;
+			for (const field of draftValueFields) {
+				form.setFieldValue(field, restoredValues[field], restoreOptions);
 			}
 
-			window.localStorage.setItem(
-				registrationDraftKey,
-				JSON.stringify({ ...draftValues, promoCode, step }),
-			);
-		} catch {
-			// Storage can be unavailable in private browsing contexts.
-		}
-	}, [draftReady, draftValues, promoCode, step]);
+			setPromoCode(draft.promoCode ?? "");
+			// Passwords are intentionally never stored, so resume at the account
+			// step if a draft had already reached the profile step.
+			setStep(Math.min(draft.step ?? 0, 1) as RegistrationStep);
+		},
+		[form],
+	);
+	const hasDraft = useCallback(
+		(draft: RegistrationDraft) =>
+			(draft.step ?? 0) > 0 ||
+			Boolean(draft.firstName) ||
+			Boolean(draft.lastName) ||
+			Boolean(draft.promoCode) ||
+			Boolean(draft.username) ||
+			Boolean(draft.email) ||
+			Boolean(draft.dateOfBirth) ||
+			draft.countryCode !== defaultValues.countryCode ||
+			draft.currencyCode !== defaultValues.currencyCode,
+		[],
+	);
+
+	useRegistrationDraftStorage({
+		draft: currentDraft,
+		hasDraft,
+		onRestore: restoreDraft,
+	});
 
 	async function validateCurrentStep() {
 		const fields = registrationStepFields[step];
@@ -419,7 +347,7 @@ export function RegisterForm({ redirectTo }: { redirectTo?: string }) {
 					noValidate
 				>
 					<fieldset disabled={registration.isPending} className="contents">
-						<div className="min-h-[20rem]">
+						<div>
 							<AnimatePresence initial={false} mode="wait">
 								<motion.div
 									key={step}

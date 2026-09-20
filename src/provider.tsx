@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { PropsWithChildren } from "react";
 import { BonusCelebrationProvider } from "./components/shared/bonus-celebration-provider";
+import { LocalStorageProvider } from "./components/shared/local-storage-provider";
 import { ToastProvider } from "./components/shared/toast-provider";
 import { TooltipProvider } from "./components/ui/tooltip";
 
@@ -21,7 +22,9 @@ type AppProviderProps = PropsWithChildren<{
 export function AppProvider({ children, context }: AppProviderProps) {
 	return (
 		<QueryClientProvider client={context.queryClient}>
-			<TooltipProvider>{children}</TooltipProvider>
+			<LocalStorageProvider>
+				<TooltipProvider>{children}</TooltipProvider>
+			</LocalStorageProvider>
 			<ToastProvider />
 			<BonusCelebrationProvider />
 		</QueryClientProvider>
