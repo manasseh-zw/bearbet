@@ -1,265 +1,189 @@
-Welcome to your new TanStack Start app!
+# Bearbet
 
-# Getting Started
+Bearbet is a casino-only demo platform built around virtual funds. It covers the player journey from registration and a $1,000 welcome balance through catalogue browsing, gameplay, bonuses, wallet history, and simulated withdrawals. It also includes an admin portal for user, game, bonus, withdrawal, and activity management.
 
-Create a local environment file, start PostgreSQL, then run the application:
+Live application: [bearbet.vercel.app](https://bearbet.vercel.app)
+
+> Bearbet does not process real money. Deposits, bets, winnings, bonuses, and withdrawals in this project are simulated.
+
+## What is included
+
+### Player experience
+
+- Email and username registration, login, logout, password reset, and password change
+- Automatic $1,000 virtual cash balance for new players
+- Separate cash, bonus, and reserved balances stored in integer minor units
+- Demo top-ups and simulated withdrawal requests
+- Searchable, paginated game catalogue with categories and provider filters
+- Favourites and recently played collections
+- Deterministic gameplay with persisted bets, wins, losses, refunds, and round history
+- BigBang Standard sandbox games in an embedded player
+- Bonus activation, wagering progress, expiry, completion, and cash conversion
+- Unified wallet and gameplay history
+- Responsive desktop and mobile layouts
+
+### Admin experience
+
+- Live operational overview and recent activity
+- User search, account inspection, suspension, and activation
+- Audited balance adjustments and bonus assignment
+- Provider catalogue sync and local game curation
+- Bonus definition creation, editing, artwork, and availability controls
+- Simulated withdrawal approval and rejection
+- Filterable wallet, gameplay, withdrawal, and audit activity
+
+## Provider strategy and trade-offs
+
+The original assignment specified Drakon. Its catalogue and callback probe worked, but every tested game launch ended on Drakon's `/game-error` page. Without a playable session, there was no honest way to demonstrate provider-originated wallet callbacks.
+
+Bearbet therefore uses two complementary gameplay paths.
+
+1. **The fixture simulator proves Bearbet's money system.** It calls the same gameplay, wallet, bonus, and ledger services used by the rest of the application. Outcomes are deterministic, persisted, and safe to retry.
+2. **BigBang proves genuine provider play.** Bearbet synchronizes the BigBang Standard catalogue, creates a provider player, and launches a signed playable sandbox session.
+
+The tested BigBang sandbox kept one provider-managed balance and did not send the documented wallet callbacks, even after direct callback probes succeeded. It also behaved like a shared account, so concurrent player sessions could not be reconciled safely.
+
+The submission uses a deliberately narrow hybrid bridge. Bearbet records the BigBang balance before launch, permits one active BigBang session at a time, then reads the final provider balance when the session closes. It applies only the net delta as one idempotent `provider_reconciliation` ledger operation. Bearbet never copies BigBang's absolute synthetic balance and never invents per-round bets, wins, or refunds that the provider did not report.
+
+This produces a more immersive playable demo, but it is not a production wallet integration. The fixture remains the authoritative proof for per-round money movement and bonus behavior. The full investigation is recorded in [`.docs/bigbang-sandbox-findings.md`](.docs/bigbang-sandbox-findings.md) and [`.docs/drakon-v0-findings.md`](.docs/drakon-v0-findings.md).
+
+## Architecture
+
+```text
+Browser
+  -> TanStack Start routes and server functions
+    -> domain services
+      -> PostgreSQL through Drizzle
+      -> provider boundary
+        -> deterministic fixture
+        -> BigBang sandbox
+        -> archived Drakon adapter
+```
+
+The main technical choices are:
+
+- TanStack Start, React 19, and TanStack Query for the application
+- Better Auth for credentials, sessions, password flows, roles, and bans
+- PostgreSQL, Drizzle ORM, and immutable ledger entries for persistent state
+- Zod schemas at browser and provider boundaries
+- Base UI, shadcn components, and Tailwind CSS for the interface
+- Node's test runner for policy, service, provider, and database tests
+- Vercel for hosting, Neon for PostgreSQL, and Vercel Blob for managed bonus artwork
+
+Domain services write current wallet balances and immutable ledger evidence in the same database transaction. Provider operations and user-triggered mutations use idempotency keys so a retry cannot move virtual funds twice.
+
+## Reviewer path
+
+The quickest way to inspect the product is:
+
+1. Register a player and confirm the $1,000 starting balance.
+2. Browse, search, filter, favourite, and launch a game from the lobby.
+3. Use the deterministic game to place rounds and inspect wallet and bet history.
+4. Add demo funds, activate a bonus, and complete wagering through gameplay.
+5. Request a simulated withdrawal.
+6. Sign in as the seeded administrator, review the player, adjust funds, manage games and bonuses, and approve or reject the withdrawal.
+7. Launch a BigBang game to inspect the real provider session. Close it through the Bearbet player to trigger the labelled session-delta reconciliation.
+
+Submission credentials should be shared privately. They do not belong in this repository.
+
+## Local setup
+
+Requirements:
+
+- Node.js 22 or newer
+- npm
+- Docker with Compose
+
+Install and start the local database:
 
 ```bash
 npm install
 cp .env.example .env.local
 npm run db:up
-npm run dev
-```
-
-The local database runs on port `5432` and persists in a Docker volume. Stop it
-with `npm run db:down`. This does not delete the volume.
-
-Create and apply database migrations with:
-
-```bash
-npm run db:generate
 npm run db:migrate
 ```
 
-Run the database-backed domain tests with `npm test` while local PostgreSQL is running.
-
-# Building For Production
-
-To build this application for production:
+Generate a Better Auth secret and put it in `.env.local`:
 
 ```bash
-npm run build
+npx -y @better-auth/cli secret
 ```
 
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
-
-## Linting & Formatting
-
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
-
+For a local setup with no external provider credentials, change `CASINO_PROVIDER` to `fixture`. Then start the application:
 
 ```bash
-npm run lint
-npm run format
+npm run dev
+```
+
+Bearbet runs at [http://localhost:3000](http://localhost:3000). The local PostgreSQL container uses port `5432` and keeps its data in a Docker volume.
+
+### Seed an administrator
+
+Set `ADMIN_PASSWORD` in `.env.local`, then run:
+
+```bash
+npm run auth:seed-admin
+```
+
+The default local identity is `admin@bearbet.local` with username `admin`. The seed command creates the account or promotes and resets the matching account.
+
+### Select a casino provider
+
+`CASINO_PROVIDER` accepts:
+
+- `fixture`, the self-contained and repeatable local path
+- `bigbang`, the active external sandbox path, which also needs `BIGBANG_SANDBOX_KEY`
+- `drakon`, the retained investigation adapter, which needs the Drakon server credentials and is not part of the release path
+
+After configuring an external provider, synchronize its catalogue:
+
+```bash
+npm run catalogue:sync
+```
+
+All provider credentials stay on the server. `.env.example` documents the available variables with empty placeholders.
+
+## Verification
+
+With PostgreSQL running and `.env.local` configured:
+
+```bash
+npm test
+npm run typecheck
 npm run check
-```
-
-
-## Deploy with Nitro
-
-This project uses Nitro as a generic server adapter, so it can run on any Node-compatible host.
-
-```bash
 npm run build
-node dist/server/index.mjs
+git diff --check
 ```
 
-The build output is a self-contained Node server. To deploy, push the `dist/` directory to your host (Render, Fly.io, your own VPS, etc.) and run the server command above.
+Useful development commands:
 
-For host-specific presets (Vercel, Netlify, Cloudflare, AWS Lambda, etc.) and tuning, see https://v3.nitro.build/deploy.
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the development server on port 3000 |
+| `npm run db:up` | Start local PostgreSQL |
+| `npm run db:down` | Stop local PostgreSQL without deleting its volume |
+| `npm run db:migrate` | Apply committed Drizzle migrations |
+| `npm run db:studio` | Open Drizzle Studio |
+| `npm run catalogue:sync` | Synchronize the configured provider catalogue |
+| `npm run auth:seed-admin` | Create or reset the review administrator |
+| `npm run db:reset-review` | Reset review data when its confirmation variable is set |
 
+## Known limits
 
-## Shadcn
+- BigBang reconciliation is a session summary, not provider-confirmed per-round history.
+- The tested BigBang sandbox supports only one safely reconciled active session because its balance appeared to be shared.
+- Drakon launch and callback proof remains incomplete because the supplied integration did not produce a playable session.
+- Profile editing, broader access and browser lifecycle coverage, targeted abuse protection, security headers, health checks, and automated end-to-end coverage remain in the release backlog.
+- VIP, cashback, referrals, loyalty, two-factor authentication, and real payments are outside the MVP.
 
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
+## Project documentation
 
-```bash
-npx shadcn@latest add button
-```
+The `.docs` folder keeps the assignment and implementation evidence separate from this reviewer-facing overview:
 
-
-## Setting up Better Auth
-
-1. Generate and set the `BETTER_AUTH_SECRET` environment variable in your `.env.local`:
-
-   ```bash
-   npx -y @better-auth/cli secret
-   ```
-
-2. Visit the [Better Auth documentation](https://www.better-auth.com) to unlock the full potential of authentication in your app.
-
-### Adding a Database (Optional)
-
-Better Auth can work in stateless mode, but to persist user data, add a database:
-
-```typescript
-// src/lib/auth.ts
-import { betterAuth } from "better-auth";
-import { Pool } from "pg";
-
-export const auth = betterAuth({
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL,
-  }),
-  // ... rest of config
-});
-```
-
-Then run migrations:
-
-```bash
-npx -y @better-auth/cli migrate
-```
-
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+- [Task brief](.docs/task-brief.md)
+- [Architecture](.docs/architecture.md)
+- [Domain model](.docs/domain-model.md)
+- [Delivery task list](.docs/master-task-list.md)
+- [Implementation plan](.docs/implementation-plan.md)
+- [BigBang sandbox findings](.docs/bigbang-sandbox-findings.md)
+- [Drakon integration findings](.docs/drakon-v0-findings.md)
